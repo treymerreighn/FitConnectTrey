@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { storage } from "./storage";
-import { insertUserSchema, insertPostSchema, insertCommentSchema } from "@shared/schema";
+import { insertUserSchema, insertPostSchema, insertCommentSchema, insertConnectionSchema, insertProgressEntrySchema } from "@shared/schema";
 
 const router = Router();
 
@@ -187,6 +187,137 @@ router.post("/api/users/:id/unfollow", async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: "Failed to unfollow user" });
+  }
+});
+
+// Professional connections
+router.get("/api/professionals", async (req, res) => {
+  try {
+    const { type } = req.query;
+    const professionals = await storage.getProfessionals(type as "trainer" | "nutritionist");
+    res.json(professionals);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch professionals" });
+  }
+});
+
+router.post("/api/connections", async (req, res) => {
+  try {
+    const connectionData = insertConnectionSchema.parse(req.body);
+    const connection = await storage.createConnection(connectionData);
+    res.status(201).json(connection);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors });
+    }
+    res.status(500).json({ error: "Failed to create connection" });
+  }
+});
+
+router.get("/api/connections/client/:clientId", async (req, res) => {
+  try {
+    const connections = await storage.getConnectionsByClientId(req.params.clientId);
+    res.json(connections);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch client connections" });
+  }
+});
+
+router.get("/api/connections/professional/:professionalId", async (req, res) => {
+  try {
+    const connections = await storage.getConnectionsByProfessionalId(req.params.professionalId);
+    res.json(connections);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch professional connections" });
+  }
+});
+
+router.put("/api/connections/:id", async (req, res) => {
+  try {
+    const updates = req.body;
+    const connection = await storage.updateConnection(req.params.id, updates);
+    res.json(connection);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update connection" });
+  }
+});
+
+router.delete("/api/connections/:id", async (req, res) => {
+  try {
+    const success = await storage.deleteConnection(req.params.id);
+    if (!success) {
+      return res.status(404).json({ error: "Connection not found" });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to delete connection" });
+  }
+});
+
+// Progress tracking
+router.post("/api/progress", async (req, res) => {
+  try {
+    const entryData = insertProgressEntrySchema.parse(req.body);
+    const entry = await storage.createProgressEntry(entryData);
+    res.status(201).json(entry);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors });
+    }
+    res.status(500).json({ error: "Failed to create progress entry" });
+  }
+});
+
+router.get("/api/progress/user/:userId", async (req, res) => {
+  try {
+    const entries = await storage.getProgressEntriesByUserId(req.params.userId);
+    res.json(entries);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch progress entries" });
+  }
+});
+
+router.get("/api/progress/:id", async (req, res) => {
+  try {
+    const entry = await storage.getProgressEntryById(req.params.id);
+    if (!entry) {
+      return res.status(404).json({ error: "Progress entry not found" });
+    }
+    res.json(entry);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch progress entry" });
+  }
+});
+
+router.put("/api/progress/:id", async (req, res) => {
+  try {
+    const updates = req.body;
+    const entry = await storage.updateProgressEntry(req.params.id, updates);
+    res.json(entry);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update progress entry" });
+  }
+});
+
+router.delete("/api/progress/:id", async (req, res) => {
+  try {
+    const success = await storage.deleteProgressEntry(req.params.id);
+    if (!success) {
+      return res.status(404).json({ error: "Progress entry not found" });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to delete progress entry" });
+  }
+});
+
+router.post("/api/progress/:id/ai-insights", async (req, res) => {
+  try {
+    const { photos } = req.body;
+    const entry = await storage.generateAIInsights(req.params.id, photos || []);
+    res.json(entry);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to generate AI insights" });
   }
 });
 

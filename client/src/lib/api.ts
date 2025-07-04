@@ -1,5 +1,5 @@
 import { apiRequest } from "./queryClient";
-import type { Post, User, Comment, InsertPost, InsertComment } from "@shared/schema";
+import type { Post, User, Comment, Connection, ProgressEntry, InsertPost, InsertComment, InsertConnection, InsertProgressEntry } from "@shared/schema";
 
 export const api = {
   // Posts
@@ -63,6 +63,58 @@ export const api = {
   },
   unfollowUser: async (userId: string, followerId: string): Promise<{ success: boolean }> => {
     const res = await apiRequest("POST", `/api/users/${userId}/unfollow`, { followerId });
+    return res.json();
+  },
+  
+  // Professional connections
+  getProfessionals: async (type?: "trainer" | "nutritionist"): Promise<User[]> => {
+    const res = await apiRequest("GET", `/api/professionals${type ? `?type=${type}` : ""}`);
+    return res.json();
+  },
+  createConnection: async (connection: InsertConnection): Promise<Connection> => {
+    const res = await apiRequest("POST", "/api/connections", connection);
+    return res.json();
+  },
+  getClientConnections: async (clientId: string): Promise<Connection[]> => {
+    const res = await apiRequest("GET", `/api/connections/client/${clientId}`);
+    return res.json();
+  },
+  getProfessionalConnections: async (professionalId: string): Promise<Connection[]> => {
+    const res = await apiRequest("GET", `/api/connections/professional/${professionalId}`);
+    return res.json();
+  },
+  updateConnection: async (id: string, updates: Partial<Connection>): Promise<Connection> => {
+    const res = await apiRequest("PUT", `/api/connections/${id}`, updates);
+    return res.json();
+  },
+  deleteConnection: async (id: string): Promise<{ success: boolean }> => {
+    const res = await apiRequest("DELETE", `/api/connections/${id}`);
+    return res.json();
+  },
+  
+  // Progress tracking
+  createProgressEntry: async (entry: InsertProgressEntry): Promise<ProgressEntry> => {
+    const res = await apiRequest("POST", "/api/progress", entry);
+    return res.json();
+  },
+  getProgressEntries: async (userId: string): Promise<ProgressEntry[]> => {
+    const res = await apiRequest("GET", `/api/progress/user/${userId}`);
+    return res.json();
+  },
+  getProgressEntry: async (id: string): Promise<ProgressEntry> => {
+    const res = await apiRequest("GET", `/api/progress/${id}`);
+    return res.json();
+  },
+  updateProgressEntry: async (id: string, updates: Partial<ProgressEntry>): Promise<ProgressEntry> => {
+    const res = await apiRequest("PUT", `/api/progress/${id}`, updates);
+    return res.json();
+  },
+  deleteProgressEntry: async (id: string): Promise<{ success: boolean }> => {
+    const res = await apiRequest("DELETE", `/api/progress/${id}`);
+    return res.json();
+  },
+  generateAIInsights: async (id: string, photos: string[]): Promise<ProgressEntry> => {
+    const res = await apiRequest("POST", `/api/progress/${id}/ai-insights`, { photos });
     return res.json();
   },
 };

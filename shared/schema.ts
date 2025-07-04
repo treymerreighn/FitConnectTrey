@@ -11,6 +11,16 @@ export const userSchema = z.object({
   fitnessGoals: z.array(z.string()).optional(),
   followers: z.array(z.string()).default([]),
   following: z.array(z.string()).default([]),
+  // Professional verification
+  isVerified: z.boolean().default(false),
+  professionalType: z.enum(["trainer", "nutritionist"]).optional(),
+  certifications: z.array(z.string()).default([]),
+  specialties: z.array(z.string()).default([]),
+  experience: z.string().optional(),
+  hourlyRate: z.number().optional(),
+  // Client relationships
+  clients: z.array(z.string()).default([]),
+  trainers: z.array(z.string()).default([]),
   createdAt: z.date().default(() => new Date()),
 });
 
@@ -77,11 +87,61 @@ export const commentSchema = z.object({
 
 export type Comment = z.infer<typeof commentSchema>;
 
+// Client-Professional Connection schema
+export const connectionSchema = z.object({
+  id: z.string(),
+  clientId: z.string(),
+  professionalId: z.string(),
+  status: z.enum(["pending", "active", "inactive"]),
+  startDate: z.date(),
+  endDate: z.date().optional(),
+  notes: z.string().optional(),
+  createdAt: z.date().default(() => new Date()),
+});
+
+export type Connection = z.infer<typeof connectionSchema>;
+
+// Progress Entry schema for detailed tracking
+export const progressEntrySchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  date: z.date(),
+  weight: z.number().optional(),
+  bodyFatPercentage: z.number().optional(),
+  muscleMass: z.number().optional(),
+  measurements: z.object({
+    chest: z.number().optional(),
+    waist: z.number().optional(),
+    hips: z.number().optional(),
+    arms: z.number().optional(),
+    thighs: z.number().optional(),
+  }).optional(),
+  photos: z.array(z.string()).default([]), // photo URLs
+  notes: z.string().optional(),
+  mood: z.enum(["excellent", "good", "average", "poor", "terrible"]).optional(),
+  energyLevel: z.number().min(1).max(10).optional(),
+  isPrivate: z.boolean().default(true),
+  aiInsights: z.object({
+    bodyComposition: z.string().optional(),
+    progressAnalysis: z.string().optional(),
+    recommendations: z.array(z.string()).default([]),
+    confidenceScore: z.number().min(0).max(1).optional(),
+    generatedAt: z.date().optional(),
+  }).optional(),
+  createdAt: z.date().default(() => new Date()),
+});
+
+export type ProgressEntry = z.infer<typeof progressEntrySchema>;
+
 // Insert schemas
 export const insertUserSchema = userSchema.omit({ id: true, createdAt: true });
 export const insertPostSchema = postSchema.omit({ id: true, createdAt: true, likes: true, comments: true });
 export const insertCommentSchema = commentSchema.omit({ id: true, createdAt: true });
+export const insertConnectionSchema = connectionSchema.omit({ id: true, createdAt: true });
+export const insertProgressEntrySchema = progressEntrySchema.omit({ id: true, createdAt: true });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertPost = z.infer<typeof insertPostSchema>;
 export type InsertComment = z.infer<typeof insertCommentSchema>;
+export type InsertConnection = z.infer<typeof insertConnectionSchema>;
+export type InsertProgressEntry = z.infer<typeof insertProgressEntrySchema>;

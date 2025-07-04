@@ -1,50 +1,178 @@
-import { useQuery } from "@tanstack/react-query";
-import { TrendingUp, TrendingDown, Calendar, Award } from "lucide-react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Plus, Camera, TrendingUp, Brain, Calendar, Weight, Eye, EyeOff, Share2, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PostCard } from "@/components/post-card";
-import { Skeleton } from "@/components/ui/skeleton";
-import type { Post } from "@shared/schema";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Progress as ProgressBar } from "@/components/ui/progress";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { api } from "@/lib/api";
+import { CURRENT_USER_ID } from "@/lib/constants";
+import type { ProgressEntry, InsertProgressEntry } from "@shared/schema";
+import { format } from "date-fns";
+
+const progressFormSchema = z.object({
+  date: z.string(),
+  weight: z.number().optional(),
+  bodyFatPercentage: z.number().min(0).max(100).optional(),
+  muscleMass: z.number().optional(),
+  measurements: z.object({
+    chest: z.number().optional(),
+    waist: z.number().optional(),
+    hips: z.number().optional(),
+    arms: z.number().optional(),
+    thighs: z.number().optional(),
+  }).optional(),
+  notes: z.string().optional(),
+  mood: z.enum(["excellent", "good", "average", "poor", "terrible"]).optional(),
+  energyLevel: z.number().min(1).max(10).optional(),
+  isPrivate: z.boolean().default(true),
+});
+
+type ProgressFormData = z.infer<typeof progressFormSchema>;
 
 export default function Progress() {
-  const { data: posts = [], isLoading } = useQuery<Post[]>({
-    queryKey: ["/api/posts"],
+  const queryClient = useQueryClient();
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
+  const [generatingInsights, setGeneratingInsights] = useState<string | null>(null);
+
+  const { data: progressEntries = [], isLoading } = useQuery<ProgressEntry[]>({
+    queryKey: ["/api/progress", CURRENT_USER_ID],
+    queryFn: () => api.getProgressEntries(CURRENT_USER_ID),
   });
 
-  const progressPosts = posts.filter(post => post.type === "progress");
+  const form = useForm<ProgressFormData>({
+    resolver: zodResolver(progressFormSchema),
+    defaultValues: {
+      date: format(new Date(), "yyyy-MM-dd"),
+      isPrivate: true,
+      energyLevel: 5,
+    },
+  });
 
-  const progressStats = {
-    totalUpdates: progressPosts.length,
-    weightChanges: progressPosts.filter(p => p.progressData?.weightLost).length,
-    bodyFatChanges: progressPosts.filter(p => p.progressData?.bodyFat).length,
-    muscleGains: progressPosts.filter(p => p.progressData?.muscleGain).length,
+  const createProgressMutation = useMutation({
+    mutationFn: async (data: ProgressFormData) => {
+      const progressData: InsertProgressEntry = {
+        userId: CURRENT_USER_ID,
+        date: new Date(data.date),
+        weight: data.weight,
+        bodyFatPercentage: data.bodyFatPercentage,
+        muscleMass: data.muscleMass,
+        measurements: data.measurements,
+        notes: data.notes,
+        mood: data.mood,
+        energyLevel: data.energyLevel,
+        photos: selectedPhotos,
+        isPrivate: data.isPrivate,
+      };
+      return api.createProgressEntry(progressData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/progress", CURRENT_USER_ID] });
+      setIsCreateModalOpen(false);
+      form.reset();
+      setSelectedPhotos([]);
+    },
+  });
+
+  const generateInsightsMutation = useMutation({
+    mutationFn: async ({ id, photos }: { id: string; photos: string[] }) => {
+      return api.generateAIInsights(id, photos);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/progress", CURRENT_USER_ID] });
+      setGeneratingInsights(null);
+    },
+  });
+
+  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files) {
+      // Simulate photo upload - in real app, upload to cloud storage
+      const mockUrls = Array.from(files).map((file, index) => 
+        `https://images.unsplash.com/photo-${Date.now()}-${index}?w=300&h=400&fit=crop`
+      );
+      setSelectedPhotos(prev => [...prev, ...mockUrls]);
+    }
   };
 
-  const progressTypes = progressPosts.reduce((acc, post) => {
-    const type = post.progressData?.progressType || "Other";
-    acc[type] = (acc[type] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const onSubmit = (data: ProgressFormData) => {
+    createProgressMutation.mutate(data);
+  };
+
+  const handleGenerateInsights = (entry: ProgressEntry) => {
+    if (entry.photos.length === 0) return;
+    setGeneratingInsights(entry.id);
+    generateInsightsMutation.mutate({ id: entry.id, photos: entry.photos });
+  };
+
+  const getMoodColor = (mood?: string) => {
+    switch (mood) {
+      case "excellent": return "bg-green-500";
+      case "good": return "bg-blue-500";
+      case "average": return "bg-yellow-500";
+      case "poor": return "bg-orange-500";
+      case "terrible": return "bg-red-500";
+      default: return "bg-gray-500";
+    }
+  };
+
+  const getMoodEmoji = (mood?: string) => {
+    switch (mood) {
+      case "excellent": return "😄";
+      case "good": return "🙂";
+      case "average": return "😐";
+      case "poor": return "😕";
+      case "terrible": return "😞";
+      default: return "❓";
+    }
+  };
+
+  const calculateProgress = () => {
+    if (progressEntries.length < 2) return null;
+    
+    const latest = progressEntries[0];
+    const earliest = progressEntries[progressEntries.length - 1];
+    
+    const weightChange = latest.weight && earliest.weight 
+      ? latest.weight - earliest.weight 
+      : null;
+    
+    const bodyFatChange = latest.bodyFatPercentage && earliest.bodyFatPercentage
+      ? latest.bodyFatPercentage - earliest.bodyFatPercentage
+      : null;
+
+    return { weightChange, bodyFatChange };
+  };
+
+  const progressStats = calculateProgress();
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
         <div className="px-4 py-6">
-          <div className="flex items-center space-x-3 mb-6">
-            <Skeleton className="w-8 h-8 rounded-lg" />
-            <Skeleton className="w-32 h-8" />
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-24 rounded-lg" />
-            ))}
-          </div>
-          
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-96 rounded-lg" />
-            ))}
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3" />
+            <div className="grid grid-cols-2 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-24 bg-gray-200 dark:bg-gray-700 rounded" />
+              ))}
+            </div>
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-64 bg-gray-200 dark:bg-gray-700 rounded" />
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -55,102 +183,440 @@ export default function Progress() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
       <div className="px-4 py-6">
         {/* Header */}
-        <div className="flex items-center space-x-3 mb-6">
-          <div className="w-8 h-8 bg-fit-gold rounded-lg flex items-center justify-center">
-            <TrendingUp className="w-4 h-4 text-white" />
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-fit-green rounded-lg flex items-center justify-center">
+              <TrendingUp className="w-4 h-4 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Progress Tracking</h1>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Progress</h1>
+          
+          <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-fit-green hover:bg-fit-green/90">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Entry
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Add Progress Entry</DialogTitle>
+              </DialogHeader>
+              
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <div>
+                  <Label htmlFor="date">Date</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    {...form.register("date")}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="weight">Weight (lbs)</Label>
+                    <Input
+                      id="weight"
+                      type="number"
+                      step="0.1"
+                      {...form.register("weight", { valueAsNumber: true })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="bodyFat">Body Fat %</Label>
+                    <Input
+                      id="bodyFat"
+                      type="number"
+                      step="0.1"
+                      {...form.register("bodyFatPercentage", { valueAsNumber: true })}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="muscleMass">Muscle Mass (lbs)</Label>
+                  <Input
+                    id="muscleMass"
+                    type="number"
+                    step="0.1"
+                    {...form.register("muscleMass", { valueAsNumber: true })}
+                  />
+                </div>
+
+                {/* Measurements */}
+                <div className="space-y-2">
+                  <Label>Measurements (inches)</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      placeholder="Chest"
+                      type="number"
+                      step="0.1"
+                      {...form.register("measurements.chest", { valueAsNumber: true })}
+                    />
+                    <Input
+                      placeholder="Waist"
+                      type="number"
+                      step="0.1"
+                      {...form.register("measurements.waist", { valueAsNumber: true })}
+                    />
+                    <Input
+                      placeholder="Hips"
+                      type="number"
+                      step="0.1"
+                      {...form.register("measurements.hips", { valueAsNumber: true })}
+                    />
+                    <Input
+                      placeholder="Arms"
+                      type="number"
+                      step="0.1"
+                      {...form.register("measurements.arms", { valueAsNumber: true })}
+                    />
+                  </div>
+                </div>
+
+                {/* Photos */}
+                <div>
+                  <Label>Progress Photos</Label>
+                  <div className="mt-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                      id="photo-upload"
+                    />
+                    <label
+                      htmlFor="photo-upload"
+                      className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
+                      <div className="text-center">
+                        <Camera className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Upload progress photos
+                        </p>
+                      </div>
+                    </label>
+                    
+                    {selectedPhotos.length > 0 && (
+                      <div className="mt-2 grid grid-cols-3 gap-2">
+                        {selectedPhotos.map((photo, index) => (
+                          <img
+                            key={index}
+                            src={photo}
+                            alt={`Progress ${index + 1}`}
+                            className="w-full h-20 object-cover rounded"
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Mood */}
+                <div>
+                  <Label htmlFor="mood">Mood</Label>
+                  <Select onValueChange={(value) => form.setValue("mood", value as any)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="How are you feeling?" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="excellent">😄 Excellent</SelectItem>
+                      <SelectItem value="good">🙂 Good</SelectItem>
+                      <SelectItem value="average">😐 Average</SelectItem>
+                      <SelectItem value="poor">😕 Poor</SelectItem>
+                      <SelectItem value="terrible">😞 Terrible</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Energy Level */}
+                <div>
+                  <Label>Energy Level: {form.watch("energyLevel")}/10</Label>
+                  <Slider
+                    value={[form.watch("energyLevel") || 5]}
+                    onValueChange={(value) => form.setValue("energyLevel", value[0])}
+                    max={10}
+                    min={1}
+                    step={1}
+                    className="mt-2"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="notes">Notes</Label>
+                  <Textarea
+                    id="notes"
+                    placeholder="How are you feeling? Any observations?"
+                    {...form.register("notes")}
+                  />
+                </div>
+
+                {/* Privacy Toggle */}
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="privacy"
+                    checked={form.watch("isPrivate")}
+                    onCheckedChange={(checked) => form.setValue("isPrivate", checked)}
+                  />
+                  <Label htmlFor="privacy" className="flex items-center space-x-2">
+                    {form.watch("isPrivate") ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    <span>{form.watch("isPrivate") ? "Private" : "Shareable"}</span>
+                  </Label>
+                </div>
+
+                <Button 
+                  type="submit" 
+                  className="w-full bg-fit-green hover:bg-fit-green/90"
+                  disabled={createProgressMutation.isPending}
+                >
+                  {createProgressMutation.isPending ? "Saving..." : "Save Entry"}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
 
-        {/* Progress Stats */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-fit-gold/10 rounded-lg flex items-center justify-center">
-                  <Calendar className="w-5 h-5 text-fit-gold" />
+        {/* Progress Overview */}
+        {progressStats && (
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
+                    <Weight className="w-5 h-5 text-blue-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Weight Change</p>
+                    <p className={`text-lg font-bold ${progressStats.weightChange && progressStats.weightChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {progressStats.weightChange ? 
+                        `${progressStats.weightChange > 0 ? '+' : ''}${progressStats.weightChange.toFixed(1)} lbs` : 
+                        'No data'
+                      }
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{progressStats.totalUpdates}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Updates</p>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center">
+                    <TrendingUp className="w-5 h-5 text-purple-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Body Fat Change</p>
+                    <p className={`text-lg font-bold ${progressStats.bodyFatChange && progressStats.bodyFatChange < 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {progressStats.bodyFatChange ? 
+                        `${progressStats.bodyFatChange > 0 ? '+' : ''}${progressStats.bodyFatChange.toFixed(1)}%` : 
+                        'No data'
+                      }
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center">
-                  <TrendingDown className="w-5 h-5 text-green-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{progressStats.weightChanges}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Weight Changes</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-blue-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{progressStats.bodyFatChanges}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Body Fat Updates</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center">
-                  <Award className="w-5 h-5 text-purple-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{progressStats.muscleGains}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Muscle Gains</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Progress Types */}
-        {Object.keys(progressTypes).length > 0 && (
-          <Card className="border-0 shadow-sm mb-6">
-            <CardHeader>
-              <CardTitle className="text-lg">Progress Types</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(progressTypes).map(([type, count]) => (
-                  <Badge key={type} variant="secondary" className="bg-fit-gold/10 text-fit-gold">
-                    {type} ({count})
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
-        {/* Recent Progress */}
+        {/* Progress Entries */}
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Progress</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Progress History</h2>
           
-          {progressPosts.length === 0 ? (
-            <div className="text-center py-8">
-              <TrendingUp className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 dark:text-gray-400">No progress updates yet</p>
+          {progressEntries.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                <TrendingUp className="h-8 w-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Start Your Progress Journey</h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">Track your transformation with photos, measurements, and AI insights</p>
+              <Button onClick={() => setIsCreateModalOpen(true)} className="bg-fit-green hover:bg-fit-green/90">
+                Add Your First Entry
+              </Button>
             </div>
           ) : (
-            progressPosts.map((post) => (
-              <PostCard key={post.id} post={post} />
+            progressEntries.map((entry) => (
+              <Card key={entry.id} className="border-0 shadow-sm">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-2">
+                        <Calendar className="w-4 h-4 text-gray-500" />
+                        <CardTitle className="text-lg">
+                          {format(new Date(entry.date), "MMMM dd, yyyy")}
+                        </CardTitle>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        {entry.mood && (
+                          <Badge variant="secondary" className="flex items-center space-x-1">
+                            <span>{getMoodEmoji(entry.mood)}</span>
+                            <span className="capitalize">{entry.mood}</span>
+                          </Badge>
+                        )}
+                        
+                        {entry.isPrivate ? (
+                          <EyeOff className="w-4 h-4 text-gray-400" />
+                        ) : (
+                          <Eye className="w-4 h-4 text-gray-400" />
+                        )}
+                      </div>
+                    </div>
+
+                    {entry.photos.length > 0 && !entry.aiInsights && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleGenerateInsights(entry)}
+                        disabled={generatingInsights === entry.id}
+                        className="border-fit-green text-fit-green hover:bg-fit-green hover:text-white"
+                      >
+                        {generatingInsights === entry.id ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-fit-green border-t-transparent rounded-full animate-spin mr-2" />
+                            Analyzing...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            Generate AI Insights
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="space-y-4">
+                  {/* Metrics */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {entry.weight && (
+                      <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <div className="text-2xl font-bold text-gray-900 dark:text-white">{entry.weight}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">lbs</div>
+                      </div>
+                    )}
+                    
+                    {entry.bodyFatPercentage && (
+                      <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <div className="text-2xl font-bold text-gray-900 dark:text-white">{entry.bodyFatPercentage}%</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">Body Fat</div>
+                      </div>
+                    )}
+                    
+                    {entry.energyLevel && (
+                      <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <div className="text-2xl font-bold text-gray-900 dark:text-white">{entry.energyLevel}/10</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">Energy</div>
+                      </div>
+                    )}
+                    
+                    {entry.muscleMass && (
+                      <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <div className="text-2xl font-bold text-gray-900 dark:text-white">{entry.muscleMass}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">Muscle Mass</div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Progress Photos */}
+                  {entry.photos.length > 0 && (
+                    <div>
+                      <h4 className="font-medium text-gray-900 dark:text-white mb-2">Progress Photos</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {entry.photos.map((photo, index) => (
+                          <img
+                            key={index}
+                            src={photo}
+                            alt={`Progress ${index + 1}`}
+                            className="w-full h-40 object-cover rounded-lg"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* AI Insights */}
+                  {entry.aiInsights && (
+                    <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <Brain className="w-5 h-5 text-purple-600" />
+                        <h4 className="font-medium text-purple-900 dark:text-purple-100">AI Insights</h4>
+                        <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+                          {Math.round((entry.aiInsights.confidenceScore || 0) * 100)}% confidence
+                        </Badge>
+                      </div>
+                      
+                      {entry.aiInsights.bodyComposition && (
+                        <div className="mb-3">
+                          <h5 className="font-medium text-gray-900 dark:text-white mb-1">Body Composition Analysis</h5>
+                          <p className="text-sm text-gray-700 dark:text-gray-300">{entry.aiInsights.bodyComposition}</p>
+                        </div>
+                      )}
+                      
+                      {entry.aiInsights.progressAnalysis && (
+                        <div className="mb-3">
+                          <h5 className="font-medium text-gray-900 dark:text-white mb-1">Progress Analysis</h5>
+                          <p className="text-sm text-gray-700 dark:text-gray-300">{entry.aiInsights.progressAnalysis}</p>
+                        </div>
+                      )}
+                      
+                      {entry.aiInsights.recommendations.length > 0 && (
+                        <div>
+                          <h5 className="font-medium text-gray-900 dark:text-white mb-2">Recommendations</h5>
+                          <ul className="space-y-1">
+                            {entry.aiInsights.recommendations.map((rec, index) => (
+                              <li key={index} className="text-sm text-gray-700 dark:text-gray-300 flex items-start space-x-2">
+                                <span className="text-purple-600 mt-1">•</span>
+                                <span>{rec}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Notes */}
+                  {entry.notes && (
+                    <div>
+                      <h4 className="font-medium text-gray-900 dark:text-white mb-2">Notes</h4>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+                        {entry.notes}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Measurements */}
+                  {entry.measurements && Object.values(entry.measurements).some(val => val) && (
+                    <div>
+                      <h4 className="font-medium text-gray-900 dark:text-white mb-2">Measurements</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
+                        {Object.entries(entry.measurements).map(([key, value]) => 
+                          value ? (
+                            <div key={key} className="text-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                              <div className="font-medium text-gray-900 dark:text-white">{value}"</div>
+                              <div className="text-gray-600 dark:text-gray-400 capitalize">{key}</div>
+                            </div>
+                          ) : null
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Share to Feed Option */}
+                  {!entry.isPrivate && (
+                    <div className="flex items-center justify-between bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <Share2 className="w-4 h-4 text-green-600" />
+                        <span className="text-sm text-green-800 dark:text-green-200">Shared to your feed</span>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             ))
           )}
         </div>

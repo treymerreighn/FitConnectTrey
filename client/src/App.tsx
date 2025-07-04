@@ -4,6 +4,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Home, Search, Dumbbell, TrendingUp, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "wouter";
+import { ThemeProvider } from "@/contexts/theme-context";
+import { ThemeToggle } from "@/components/theme-toggle";
 import Feed from "./pages/feed";
 import Profile from "./pages/profile";
 import CreatePost from "./pages/create-post";
@@ -53,30 +55,32 @@ function BottomNavigation() {
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Switch>
-          <Route path="/" component={Feed} />
-          <Route path="/profile" component={Profile} />
-          <Route path="/create-post" component={CreatePost} />
-          <Route path="/log-workout" component={LogWorkout} />
-          <Route path="/workouts" component={Workouts} />
-          <Route path="/progress" component={Progress} />
-          <Route path="/search">
-            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center pb-20">
-              <div className="text-center">
-                <Search className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Search</h2>
-                <p className="text-gray-600 dark:text-gray-400">Find users and posts</p>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+          <Switch>
+            <Route path="/" component={Feed} />
+            <Route path="/profile" component={Profile} />
+            <Route path="/create-post" component={CreatePost} />
+            <Route path="/log-workout" component={LogWorkout} />
+            <Route path="/workouts" component={Workouts} />
+            <Route path="/progress" component={Progress} />
+            <Route path="/search">
+              <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center pb-20">
+                <div className="text-center">
+                  <Search className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Search</h2>
+                  <p className="text-gray-600 dark:text-gray-400">Find users and posts</p>
+                </div>
               </div>
-            </div>
-          </Route>
-          <Route component={NotFound} />
-        </Switch>
-        
-        <BottomNavigation />
-        <Toaster />
-      </div>
-    </QueryClientProvider>
+            </Route>
+            <Route component={NotFound} />
+          </Switch>
+          
+          <BottomNavigation />
+          <Toaster />
+        </div>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }

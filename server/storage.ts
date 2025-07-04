@@ -1,4 +1,4 @@
-import type { User, Post, Comment, InsertUser, InsertPost, InsertComment } from "@shared/schema";
+import type { User, Post, Comment, Connection, ProgressEntry, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry } from "@shared/schema";
 import { nanoid } from "nanoid";
 
 export interface IStorage {
@@ -28,12 +28,31 @@ export interface IStorage {
   unlikePost(postId: string, userId: string): Promise<Post>;
   followUser(followerId: string, followingId: string): Promise<void>;
   unfollowUser(followerId: string, followingId: string): Promise<void>;
+  
+  // Professional connections
+  createConnection(connection: InsertConnection): Promise<Connection>;
+  getConnectionById(id: string): Promise<Connection | null>;
+  getConnectionsByClientId(clientId: string): Promise<Connection[]>;
+  getConnectionsByProfessionalId(professionalId: string): Promise<Connection[]>;
+  updateConnection(id: string, updates: Partial<Connection>): Promise<Connection>;
+  deleteConnection(id: string): Promise<boolean>;
+  getProfessionals(type?: "trainer" | "nutritionist"): Promise<User[]>;
+  
+  // Progress tracking
+  createProgressEntry(entry: InsertProgressEntry): Promise<ProgressEntry>;
+  getProgressEntryById(id: string): Promise<ProgressEntry | null>;
+  getProgressEntriesByUserId(userId: string): Promise<ProgressEntry[]>;
+  updateProgressEntry(id: string, updates: Partial<ProgressEntry>): Promise<ProgressEntry>;
+  deleteProgressEntry(id: string): Promise<boolean>;
+  generateAIInsights(entryId: string, photos: string[]): Promise<ProgressEntry>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<string, User> = new Map();
   private posts: Map<string, Post> = new Map();
   private comments: Map<string, Comment> = new Map();
+  private connections: Map<string, Connection> = new Map();
+  private progressEntries: Map<string, ProgressEntry> = new Map();
 
   constructor() {
     this.seedData();
@@ -52,6 +71,14 @@ export class MemStorage implements IStorage {
         fitnessGoals: ["Weight Loss", "Strength Training"],
         followers: ["user2", "user3"],
         following: ["user2", "user4"],
+        isVerified: true,
+        professionalType: "trainer",
+        certifications: ["NASM-CPT", "ACSM-CPT"],
+        specialties: ["Strength Training", "Weight Loss", "Functional Movement"],
+        experience: "5+ years helping clients achieve their fitness goals",
+        hourlyRate: 75,
+        clients: ["user3", "user4"],
+        trainers: [],
         createdAt: new Date('2024-01-15'),
       },
       {
@@ -64,6 +91,14 @@ export class MemStorage implements IStorage {
         fitnessGoals: ["Muscle Building", "Nutrition"],
         followers: ["user1", "user3", "user4"],
         following: ["user1", "user3"],
+        isVerified: true,
+        professionalType: "nutritionist",
+        certifications: ["RD", "CSCS"],
+        specialties: ["Meal Planning", "Sports Nutrition", "Weight Management"],
+        experience: "8+ years in clinical and sports nutrition",
+        hourlyRate: 85,
+        clients: ["user1", "user3"],
+        trainers: [],
         createdAt: new Date('2024-01-10'),
       },
       {
@@ -76,6 +111,11 @@ export class MemStorage implements IStorage {
         fitnessGoals: ["Weight Loss", "Body Recomposition"],
         followers: ["user1", "user2"],
         following: ["user1", "user2", "user4"],
+        isVerified: false,
+        certifications: [],
+        specialties: [],
+        clients: [],
+        trainers: ["user1", "user2"],
         createdAt: new Date('2024-01-20'),
       },
       {
@@ -88,6 +128,11 @@ export class MemStorage implements IStorage {
         fitnessGoals: ["Flexibility", "Cardio Fitness"],
         followers: ["user2", "user3"],
         following: ["user1", "user2"],
+        isVerified: false,
+        certifications: [],
+        specialties: [],
+        clients: [],
+        trainers: ["user1"],
         createdAt: new Date('2024-01-25'),
       },
     ];
@@ -352,6 +397,116 @@ export class MemStorage implements IStorage {
         return bScore - aScore;
       })
       .slice(0, 10); // Return top 10 trending workouts
+  }
+
+  // Professional connection methods
+  async createConnection(connection: InsertConnection): Promise<Connection> {
+    const newConnection: Connection = {
+      id: nanoid(),
+      ...connection,
+      createdAt: new Date(),
+    };
+    
+    this.connections.set(newConnection.id, newConnection);
+    return newConnection;
+  }
+
+  async getConnectionById(id: string): Promise<Connection | null> {
+    return this.connections.get(id) || null;
+  }
+
+  async getConnectionsByClientId(clientId: string): Promise<Connection[]> {
+    return Array.from(this.connections.values()).filter(
+      connection => connection.clientId === clientId
+    );
+  }
+
+  async getConnectionsByProfessionalId(professionalId: string): Promise<Connection[]> {
+    return Array.from(this.connections.values()).filter(
+      connection => connection.professionalId === professionalId
+    );
+  }
+
+  async updateConnection(id: string, updates: Partial<Connection>): Promise<Connection> {
+    const connection = this.connections.get(id);
+    if (!connection) throw new Error("Connection not found");
+    
+    const updatedConnection = { ...connection, ...updates };
+    this.connections.set(id, updatedConnection);
+    return updatedConnection;
+  }
+
+  async deleteConnection(id: string): Promise<boolean> {
+    return this.connections.delete(id);
+  }
+
+  async getProfessionals(type?: "trainer" | "nutritionist"): Promise<User[]> {
+    return Array.from(this.users.values()).filter(user => {
+      if (!user.isVerified) return false;
+      if (type && user.professionalType !== type) return false;
+      return true;
+    });
+  }
+
+  // Progress tracking methods
+  async createProgressEntry(entry: InsertProgressEntry): Promise<ProgressEntry> {
+    const newEntry: ProgressEntry = {
+      id: nanoid(),
+      ...entry,
+      createdAt: new Date(),
+    };
+    
+    this.progressEntries.set(newEntry.id, newEntry);
+    return newEntry;
+  }
+
+  async getProgressEntryById(id: string): Promise<ProgressEntry | null> {
+    return this.progressEntries.get(id) || null;
+  }
+
+  async getProgressEntriesByUserId(userId: string): Promise<ProgressEntry[]> {
+    return Array.from(this.progressEntries.values())
+      .filter(entry => entry.userId === userId)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
+
+  async updateProgressEntry(id: string, updates: Partial<ProgressEntry>): Promise<ProgressEntry> {
+    const entry = this.progressEntries.get(id);
+    if (!entry) throw new Error("Progress entry not found");
+    
+    const updatedEntry = { ...entry, ...updates };
+    this.progressEntries.set(id, updatedEntry);
+    return updatedEntry;
+  }
+
+  async deleteProgressEntry(id: string): Promise<boolean> {
+    return this.progressEntries.delete(id);
+  }
+
+  async generateAIInsights(entryId: string, photos: string[]): Promise<ProgressEntry> {
+    const entry = this.progressEntries.get(entryId);
+    if (!entry) throw new Error("Progress entry not found");
+
+    // Simulate AI analysis - in real implementation, this would call OpenAI API
+    const mockInsights = {
+      bodyComposition: "Based on the progress photos, there appears to be noticeable muscle definition improvement and reduction in body fat percentage.",
+      progressAnalysis: "Your transformation shows consistent progress over time. The changes in muscle tone and overall physique indicate your current routine is effective.",
+      recommendations: [
+        "Continue with current strength training routine",
+        "Consider increasing protein intake to support muscle growth",
+        "Maintain consistent sleep schedule for optimal recovery"
+      ],
+      confidenceScore: 0.85,
+      generatedAt: new Date(),
+    };
+
+    const updatedEntry = {
+      ...entry,
+      aiInsights: mockInsights,
+    };
+
+    this.progressEntries.set(entryId, updatedEntry);
+    return updatedEntry;
   }
 }
 

@@ -1,4 +1,4 @@
-import type { User, Post, Comment, Connection, ProgressEntry, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry } from "@shared/schema";
+import type { User, Post, Comment, Connection, ProgressEntry, Exercise, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise } from "@shared/schema";
 import { nanoid } from "nanoid";
 
 export interface IStorage {
@@ -45,6 +45,18 @@ export interface IStorage {
   updateProgressEntry(id: string, updates: Partial<ProgressEntry>): Promise<ProgressEntry>;
   deleteProgressEntry(id: string): Promise<boolean>;
   generateAIInsights(entryId: string, photos: string[]): Promise<ProgressEntry>;
+  
+  // Exercise library
+  createExercise(exercise: InsertExercise): Promise<Exercise>;
+  getExerciseById(id: string): Promise<Exercise | null>;
+  getAllExercises(): Promise<Exercise[]>;
+  getExercisesByCategory(category: string): Promise<Exercise[]>;
+  getExercisesByMuscleGroup(muscleGroup: string): Promise<Exercise[]>;
+  searchExercises(query: string): Promise<Exercise[]>;
+  updateExercise(id: string, updates: Partial<Exercise>): Promise<Exercise>;
+  deleteExercise(id: string): Promise<boolean>;
+  approveUserExercise(id: string): Promise<Exercise>;
+  getUserCreatedExercises(userId: string): Promise<Exercise[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -53,9 +65,140 @@ export class MemStorage implements IStorage {
   private comments: Map<string, Comment> = new Map();
   private connections: Map<string, Connection> = new Map();
   private progressEntries: Map<string, ProgressEntry> = new Map();
+  private exercises: Map<string, Exercise> = new Map();
 
   constructor() {
     this.seedData();
+    this.seedExercises();
+  }
+
+  private seedExercises() {
+    const basicExercises: Exercise[] = [
+      {
+        id: "bench-press",
+        name: "Bench Press",
+        category: "strength",
+        muscleGroups: ["chest", "triceps", "delts"],
+        equipment: ["barbell", "bench"],
+        difficulty: "intermediate",
+        description: "A compound upper body exercise that primarily targets the chest muscles.",
+        instructions: [
+          "Lie flat on the bench with feet firmly planted on the ground",
+          "Grip the barbell with hands slightly wider than shoulder width",
+          "Lower the bar to your chest in a controlled manner",
+          "Press the bar back up to starting position"
+        ],
+        tips: ["Keep shoulder blades retracted", "Don't bounce the bar off your chest"],
+        safetyNotes: ["Always use a spotter when lifting heavy"],
+        images: [],
+        videos: [],
+        variations: ["Incline Bench Press", "Decline Bench Press"],
+        tags: ["compound", "pushing"],
+        isUserCreated: false,
+        isApproved: true,
+        createdAt: new Date(),
+      },
+      {
+        id: "squats",
+        name: "Squats",
+        category: "strength",
+        muscleGroups: ["quadriceps", "glutes", "hamstrings"],
+        equipment: ["bodyweight", "barbell"],
+        difficulty: "beginner",
+        description: "A fundamental lower body exercise that builds strength and mobility.",
+        instructions: [
+          "Stand with feet shoulder-width apart",
+          "Lower your body by bending at hips and knees",
+          "Go down until thighs are parallel to ground",
+          "Drive through heels to return to standing"
+        ],
+        tips: ["Keep knees in line with toes", "Keep chest up"],
+        safetyNotes: ["Don't go deeper than mobility allows"],
+        images: [],
+        videos: [],
+        variations: ["Goblet Squats", "Front Squats"],
+        tags: ["compound", "lower-body"],
+        isUserCreated: false,
+        isApproved: true,
+        createdAt: new Date(),
+      },
+      {
+        id: "deadlift",
+        name: "Deadlift",
+        category: "strength",
+        muscleGroups: ["back", "glutes", "hamstrings"],
+        equipment: ["barbell"],
+        difficulty: "advanced",
+        description: "A full-body compound movement targeting multiple muscle groups.",
+        instructions: [
+          "Stand with feet hip-width apart, bar over mid-foot",
+          "Bend at hips and knees to grip the bar",
+          "Keep back straight and chest up",
+          "Drive through heels to lift the bar"
+        ],
+        tips: ["Keep bar close to body", "Focus on hip hinge"],
+        safetyNotes: ["Learn proper form before adding weight"],
+        images: [],
+        videos: [],
+        variations: ["Romanian Deadlift", "Sumo Deadlift"],
+        tags: ["compound", "full-body"],
+        isUserCreated: false,
+        isApproved: true,
+        createdAt: new Date(),
+      },
+      {
+        id: "push-ups",
+        name: "Push-ups",
+        category: "strength",
+        muscleGroups: ["chest", "triceps", "delts"],
+        equipment: ["bodyweight"],
+        difficulty: "beginner",
+        description: "A bodyweight exercise for upper body strength.",
+        instructions: [
+          "Start in plank position with hands shoulder-width apart",
+          "Lower body until chest nearly touches ground",
+          "Push back up to starting position",
+          "Keep body in straight line"
+        ],
+        tips: ["Engage core", "Focus on quality over quantity"],
+        safetyNotes: ["Modify on knees if needed"],
+        images: [],
+        videos: [],
+        variations: ["Diamond Push-ups", "Wide-grip Push-ups"],
+        tags: ["bodyweight", "compound"],
+        isUserCreated: false,
+        isApproved: true,
+        createdAt: new Date(),
+      },
+      {
+        id: "plank",
+        name: "Plank",
+        category: "strength",
+        muscleGroups: ["abs", "back"],
+        equipment: ["bodyweight"],
+        difficulty: "beginner",
+        description: "An isometric core exercise that builds stability.",
+        instructions: [
+          "Start in push-up position with forearms on ground",
+          "Keep body in straight line from head to heels",
+          "Hold position for desired time",
+          "Breathe normally throughout"
+        ],
+        tips: ["Don't let hips sag", "Keep core engaged"],
+        safetyNotes: ["Stop if lower back pain occurs"],
+        images: [],
+        videos: [],
+        variations: ["Side Plank", "Plank with Leg Lifts"],
+        tags: ["core", "isometric"],
+        isUserCreated: false,
+        isApproved: true,
+        createdAt: new Date(),
+      }
+    ];
+
+    basicExercises.forEach(exercise => {
+      this.exercises.set(exercise.id, exercise);
+    });
   }
 
   private seedData() {
@@ -507,6 +650,78 @@ export class MemStorage implements IStorage {
 
     this.progressEntries.set(entryId, updatedEntry);
     return updatedEntry;
+  }
+
+  // Exercise library methods
+  async createExercise(exercise: InsertExercise): Promise<Exercise> {
+    const newExercise: Exercise = {
+      id: nanoid(),
+      ...exercise,
+      createdAt: new Date(),
+    };
+    
+    this.exercises.set(newExercise.id, newExercise);
+    return newExercise;
+  }
+
+  async getExerciseById(id: string): Promise<Exercise | null> {
+    return this.exercises.get(id) || null;
+  }
+
+  async getAllExercises(): Promise<Exercise[]> {
+    return Array.from(this.exercises.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  async getExercisesByCategory(category: string): Promise<Exercise[]> {
+    return Array.from(this.exercises.values())
+      .filter(exercise => exercise.category === category)
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  async getExercisesByMuscleGroup(muscleGroup: string): Promise<Exercise[]> {
+    return Array.from(this.exercises.values())
+      .filter(exercise => exercise.muscleGroups.includes(muscleGroup as any))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  async searchExercises(query: string): Promise<Exercise[]> {
+    const lowercaseQuery = query.toLowerCase();
+    return Array.from(this.exercises.values())
+      .filter(exercise => 
+        exercise.name.toLowerCase().includes(lowercaseQuery) ||
+        exercise.description.toLowerCase().includes(lowercaseQuery) ||
+        exercise.muscleGroups.some(muscle => muscle.toLowerCase().includes(lowercaseQuery)) ||
+        exercise.tags.some(tag => tag.toLowerCase().includes(lowercaseQuery))
+      )
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  async updateExercise(id: string, updates: Partial<Exercise>): Promise<Exercise> {
+    const exercise = this.exercises.get(id);
+    if (!exercise) throw new Error("Exercise not found");
+    
+    const updatedExercise = { ...exercise, ...updates };
+    this.exercises.set(id, updatedExercise);
+    return updatedExercise;
+  }
+
+  async deleteExercise(id: string): Promise<boolean> {
+    return this.exercises.delete(id);
+  }
+
+  async approveUserExercise(id: string): Promise<Exercise> {
+    const exercise = this.exercises.get(id);
+    if (!exercise) throw new Error("Exercise not found");
+    
+    const updatedExercise = { ...exercise, isApproved: true };
+    this.exercises.set(id, updatedExercise);
+    return updatedExercise;
+  }
+
+  async getUserCreatedExercises(userId: string): Promise<Exercise[]> {
+    return Array.from(this.exercises.values())
+      .filter(exercise => exercise.createdBy === userId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 }
 

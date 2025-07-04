@@ -1,5 +1,5 @@
 import { apiRequest } from "./queryClient";
-import type { Post, User, Comment, Connection, ProgressEntry, InsertPost, InsertComment, InsertConnection, InsertProgressEntry } from "@shared/schema";
+import type { Post, User, Comment, Connection, ProgressEntry, Exercise, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise } from "@shared/schema";
 
 export const api = {
   // Posts
@@ -115,6 +115,49 @@ export const api = {
   },
   generateAIInsights: async (id: string, photos: string[]): Promise<ProgressEntry> => {
     const res = await apiRequest("POST", `/api/progress/${id}/ai-insights`, { photos });
+    return res.json();
+  },
+
+  // Exercise library
+  getExercises: async (params?: { category?: string; muscleGroup?: string; search?: string }): Promise<Exercise[]> => {
+    const searchParams = new URLSearchParams();
+    if (params?.category) searchParams.append("category", params.category);
+    if (params?.muscleGroup) searchParams.append("muscleGroup", params.muscleGroup);
+    if (params?.search) searchParams.append("search", params.search);
+    
+    const queryString = searchParams.toString();
+    const url = `/api/exercises${queryString ? `?${queryString}` : ""}`;
+    
+    const res = await apiRequest("GET", url);
+    return res.json();
+  },
+
+  getExerciseById: async (id: string): Promise<Exercise> => {
+    const res = await apiRequest("GET", `/api/exercises/${id}`);
+    return res.json();
+  },
+
+  createExercise: async (exercise: InsertExercise): Promise<Exercise> => {
+    const res = await apiRequest("POST", "/api/exercises", exercise);
+    return res.json();
+  },
+
+  updateExercise: async (id: string, updates: Partial<Exercise>): Promise<Exercise> => {
+    const res = await apiRequest("PUT", `/api/exercises/${id}`, updates);
+    return res.json();
+  },
+
+  deleteExercise: async (id: string): Promise<void> => {
+    await apiRequest("DELETE", `/api/exercises/${id}`);
+  },
+
+  approveExercise: async (id: string): Promise<Exercise> => {
+    const res = await apiRequest("POST", `/api/exercises/${id}/approve`);
+    return res.json();
+  },
+
+  getUserCreatedExercises: async (userId: string): Promise<Exercise[]> => {
+    const res = await apiRequest("GET", `/api/users/${userId}/exercises`);
     return res.json();
   },
 };

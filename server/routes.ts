@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { storage } from "./storage";
-import { insertUserSchema, insertPostSchema, insertCommentSchema, insertConnectionSchema, insertProgressEntrySchema } from "@shared/schema";
+import { insertUserSchema, insertPostSchema, insertCommentSchema, insertConnectionSchema, insertProgressEntrySchema, insertExerciseSchema } from "@shared/schema";
 
 const router = Router();
 
@@ -318,6 +318,116 @@ router.post("/api/progress/:id/ai-insights", async (req, res) => {
     res.json(entry);
   } catch (error) {
     res.status(500).json({ error: "Failed to generate AI insights" });
+  }
+});
+
+// Exercise library endpoints
+router.get("/api/exercises", async (req, res) => {
+  try {
+    const { category, muscleGroup, search } = req.query;
+    
+    let exercises;
+    if (search) {
+      exercises = await storage.searchExercises(search as string);
+    } else if (category) {
+      exercises = await storage.getExercisesByCategory(category as string);
+    } else if (muscleGroup) {
+      exercises = await storage.getExercisesByMuscleGroup(muscleGroup as string);
+    } else {
+      exercises = await storage.getAllExercises();
+    }
+    
+    res.json(exercises);
+  } catch (error) {
+    console.error("Error fetching exercises:", error);
+    res.status(500).json({ error: "Failed to fetch exercises" });
+  }
+});
+
+router.get("/api/exercises/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const exercise = await storage.getExerciseById(id);
+    
+    if (!exercise) {
+      return res.status(404).json({ error: "Exercise not found" });
+    }
+    
+    res.json(exercise);
+  } catch (error) {
+    console.error("Error fetching exercise:", error);
+    res.status(500).json({ error: "Failed to fetch exercise" });
+  }
+});
+
+router.post("/api/exercises", async (req, res) => {
+  try {
+    const validatedData = insertExerciseSchema.parse(req.body);
+    const exercise = await storage.createExercise(validatedData);
+    res.status(201).json(exercise);
+  } catch (error) {
+    console.error("Error creating exercise:", error);
+    if (error.name === "ZodError") {
+      return res.status(400).json({ error: "Invalid exercise data", details: error.errors });
+    }
+    res.status(500).json({ error: "Failed to create exercise" });
+  }
+});
+
+router.put("/api/exercises/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    
+    const exercise = await storage.updateExercise(id, updates);
+    res.json(exercise);
+  } catch (error) {
+    console.error("Error updating exercise:", error);
+    if (error.message === "Exercise not found") {
+      return res.status(404).json({ error: "Exercise not found" });
+    }
+    res.status(500).json({ error: "Failed to update exercise" });
+  }
+});
+
+router.delete("/api/exercises/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await storage.deleteExercise(id);
+    
+    if (!deleted) {
+      return res.status(404).json({ error: "Exercise not found" });
+    }
+    
+    res.status(204).send();
+  } catch (error) {
+    console.error("Error deleting exercise:", error);
+    res.status(500).json({ error: "Failed to delete exercise" });
+  }
+});
+
+router.post("/api/exercises/:id/approve", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const exercise = await storage.approveUserExercise(id);
+    res.json(exercise);
+  } catch (error) {
+    console.error("Error approving exercise:", error);
+    if (error.message === "Exercise not found") {
+      return res.status(404).json({ error: "Exercise not found" });
+    }
+    res.status(500).json({ error: "Failed to approve exercise" });
+  }
+});
+
+router.get("/api/users/:userId/exercises", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const exercises = await storage.getUserCreatedExercises(userId);
+    res.json(exercises);
+  } catch (error) {
+    console.error("Error fetching user exercises:", error);
+    res.status(500).json({ error: "Failed to fetch user exercises" });
   }
 });
 

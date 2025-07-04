@@ -1,254 +1,457 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Dumbbell, Clock, Flame, Target, Plus, TrendingUp } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Dumbbell, Clock, Flame, Target, Plus, TrendingUp, Search, Filter, Star, BookOpen, Play, Users } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 import { PostCard } from "@/components/post-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
 import { useLocation } from "wouter";
-import type { Post } from "@shared/schema";
+import type { Post, Exercise } from "@shared/schema";
 
 export default function Workouts() {
   const [location, setLocation] = useLocation();
   const [trendingPeriod, setTrendingPeriod] = useState(24);
-  
-  const { data: posts = [], isLoading } = useQuery<Post[]>({
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState("");
+  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
+
+  // Exercise library query
+  const { data: exercises, isLoading: exercisesLoading } = useQuery({
+    queryKey: ["/api/exercises", { search: searchQuery, category: selectedCategory, muscleGroup: selectedMuscleGroup }],
+    queryFn: () => api.getExercises({ 
+      search: searchQuery || undefined, 
+      category: selectedCategory || undefined, 
+      muscleGroup: selectedMuscleGroup || undefined 
+    }),
+  });
+
+  // Workout posts query
+  const { data: posts, isLoading: postsLoading } = useQuery({
     queryKey: ["/api/posts"],
+    queryFn: () => fetch("/api/posts").then(res => res.json()),
   });
 
-  const { data: trendingWorkouts = [], isLoading: loadingTrending } = useQuery<Post[]>({
-    queryKey: ["/api/workouts/trending", trendingPeriod],
-    queryFn: () => api.getTrendingWorkouts(trendingPeriod),
+  const { data: trendingWorkouts, isLoading: trendingLoading } = useQuery({
+    queryKey: ["/api/posts", "trending", trendingPeriod],
+    queryFn: () => fetch(`/api/posts/trending?hours=${trendingPeriod}`).then(res => res.json()),
   });
 
-  const workoutPosts = posts.filter(post => post.type === "workout");
+  const workoutPosts = posts?.filter((post: Post) => post.type === "workout") || [];
 
-  const workoutStats = {
-    totalWorkouts: workoutPosts.length,
-    totalCalories: workoutPosts.reduce((sum, post) => sum + (post.workoutData?.calories || 0), 0),
-    totalMinutes: workoutPosts.reduce((sum, post) => sum + (post.workoutData?.duration || 0), 0),
-    avgCaloriesPerWorkout: workoutPosts.length > 0 ? Math.round(workoutPosts.reduce((sum, post) => sum + (post.workoutData?.calories || 0), 0) / workoutPosts.length) : 0,
+  const muscleGroups = [
+    "chest", "back", "shoulders", "biceps", "triceps", "quadriceps", 
+    "hamstrings", "glutes", "calves", "abs", "obliques", "lats", "traps", "delts"
+  ];
+
+  const categories = ["strength", "cardio", "flexibility", "sports", "functional"];
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case "beginner": return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
+      case "intermediate": return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
+      case "advanced": return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
+      default: return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200";
+    }
   };
 
-  const workoutTypes = workoutPosts.reduce((acc, post) => {
-    const type = post.workoutData?.workoutType || "Other";
-    acc[type] = (acc[type] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
-        <div className="px-4 py-6">
-          <div className="flex items-center space-x-3 mb-6">
-            <Skeleton className="w-8 h-8 rounded-lg" />
-            <Skeleton className="w-32 h-8" />
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-24 rounded-lg" />
-            ))}
-          </div>
-          
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-96 rounded-lg" />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
-      <div className="px-4 py-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-6">
+      <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-fit-green rounded-lg flex items-center justify-center">
-              <Dumbbell className="w-4 h-4 text-white" />
+        <div className="text-center space-y-4">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-3 rounded-2xl">
+              <Dumbbell className="h-8 w-8 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Workouts</h1>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Exercise Library & Workouts
+            </h1>
           </div>
+          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+            Explore our comprehensive exercise database with detailed instructions, or discover trending workout routines from the community.
+          </p>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="flex flex-wrap justify-center gap-4">
           <Button 
             onClick={() => setLocation("/log-workout")}
-            className="bg-fit-green hover:bg-fit-green/90"
+            className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
           >
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="h-5 w-5 mr-2" />
             Log Workout
           </Button>
         </div>
 
-        {/* Workout Stats */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-fit-green/10 rounded-lg flex items-center justify-center">
-                  <Target className="w-5 h-5 text-fit-green" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{workoutStats.totalWorkouts}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Workouts</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-red-500/10 rounded-lg flex items-center justify-center">
-                  <Flame className="w-5 h-5 text-red-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{workoutStats.totalCalories}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Calories Burned</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-blue-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{workoutStats.totalMinutes}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Minutes</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center">
-                  <Target className="w-5 h-5 text-purple-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{workoutStats.avgCaloriesPerWorkout}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Avg Calories</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Main Content Tabs */}
+        <Tabs defaultValue="exercises" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-8">
+            <TabsTrigger value="exercises" className="text-lg py-3">
+              <BookOpen className="h-5 w-5 mr-2" />
+              Exercise Library
+            </TabsTrigger>
+            <TabsTrigger value="community" className="text-lg py-3">
+              <Users className="h-5 w-5 mr-2" />
+              Community Workouts
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Trending Workouts */}
-        <Card className="border-0 shadow-sm mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <TrendingUp className="h-5 w-5" />
-                <span>Trending Workouts</span>
-              </div>
-              <div className="flex space-x-2">
-                <Button
-                  variant={trendingPeriod === 24 ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setTrendingPeriod(24)}
-                  className={trendingPeriod === 24 ? "bg-fit-green hover:bg-fit-green/90" : ""}
-                >
-                  <Clock className="h-3 w-3 mr-1" />
-                  24h
-                </Button>
-                <Button
-                  variant={trendingPeriod === 168 ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setTrendingPeriod(168)}
-                  className={trendingPeriod === 168 ? "bg-fit-green hover:bg-fit-green/90" : ""}
-                >
-                  <Flame className="h-3 w-3 mr-1" />
-                  7d
-                </Button>
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loadingTrending ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-16 rounded" />
-                ))}
-              </div>
-            ) : trendingWorkouts.length > 0 ? (
-              <div className="space-y-3">
-                {trendingWorkouts.slice(0, 5).map((workout, index) => (
-                  <div key={workout.id} className="flex items-center space-x-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <div className="flex-shrink-0">
-                      <Badge className="bg-fit-gold text-white">
-                        #{index + 1}
-                      </Badge>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-gray-900 dark:text-white truncate">
-                        {workout.workoutData?.workoutType || "Workout"}
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {workout.likes.length} likes • {workout.comments.length} comments
-                      </p>
-                    </div>
-                    <div className="flex-shrink-0 text-right">
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">
-                        {workout.workoutData?.duration || 0} min
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {workout.workoutData?.calories || 0} cal
-                      </div>
+          {/* Exercise Library Tab */}
+          <TabsContent value="exercises" className="space-y-6">
+            {/* Search and Filter Controls */}
+            <Card className="border-0 shadow-lg bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm">
+              <CardContent className="p-6">
+                <div className="flex flex-col lg:flex-row gap-4">
+                  <div className="flex-1">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Input
+                        placeholder="Search exercises by name, muscle group, or keyword..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10"
+                      />
                     </div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-6 text-gray-500 dark:text-gray-400">
-                <TrendingUp className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No trending workouts in the last {trendingPeriod === 24 ? '24 hours' : '7 days'}</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <SelectTrigger className="w-full lg:w-[180px]">
+                      <SelectValue placeholder="Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Categories</SelectItem>
+                      {categories.map(category => (
+                        <SelectItem key={category} value={category}>
+                          {category.charAt(0).toUpperCase() + category.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={selectedMuscleGroup} onValueChange={setSelectedMuscleGroup}>
+                    <SelectTrigger className="w-full lg:w-[180px]">
+                      <SelectValue placeholder="Muscle Group" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Muscles</SelectItem>
+                      {muscleGroups.map(muscle => (
+                        <SelectItem key={muscle} value={muscle}>
+                          {muscle.charAt(0).toUpperCase() + muscle.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
 
-        {/* Workout Types */}
-        {Object.keys(workoutTypes).length > 0 && (
-          <Card className="border-0 shadow-sm mb-6">
-            <CardHeader>
-              <CardTitle className="text-lg">Workout Types</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(workoutTypes).map(([type, count]) => (
-                  <Badge key={type} variant="secondary" className="bg-fit-green/10 text-fit-green">
-                    {type} ({count})
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+            {/* Exercise Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {exercisesLoading ? (
+                Array.from({ length: 6 }).map((_, i) => (
+                  <Card key={i} className="border-0 shadow-lg">
+                    <CardContent className="p-6">
+                      <Skeleton className="h-6 w-3/4 mb-2" />
+                      <Skeleton className="h-4 w-full mb-4" />
+                      <div className="flex gap-2 mb-4">
+                        <Skeleton className="h-6 w-16" />
+                        <Skeleton className="h-6 w-20" />
+                      </div>
+                      <Skeleton className="h-10 w-full" />
+                    </CardContent>
+                  </Card>
+                ))
+              ) : exercises && exercises.length > 0 ? (
+                exercises.map((exercise) => (
+                  <Card key={exercise.id} className="border-0 shadow-lg hover:shadow-xl transition-shadow duration-200 cursor-pointer">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <CardTitle className="text-lg">{exercise.name}</CardTitle>
+                        <Badge className={getDifficultyColor(exercise.difficulty)}>
+                          {exercise.difficulty}
+                        </Badge>
+                      </div>
+                      <CardDescription className="text-sm line-clamp-2">
+                        {exercise.description}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex flex-wrap gap-1">
+                        {exercise.muscleGroups.slice(0, 3).map((muscle) => (
+                          <Badge key={muscle} variant="secondary" className="text-xs">
+                            {muscle}
+                          </Badge>
+                        ))}
+                        {exercise.muscleGroups.length > 3 && (
+                          <Badge variant="secondary" className="text-xs">
+                            +{exercise.muscleGroups.length - 3}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                          <Target className="h-4 w-4" />
+                          {exercise.category}
+                        </div>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button 
+                              size="sm" 
+                              onClick={() => setSelectedExercise(exercise)}
+                              className="bg-blue-500 hover:bg-blue-600"
+                            >
+                              View Details
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                            <DialogHeader>
+                              <DialogTitle className="flex items-center gap-2">
+                                <Dumbbell className="h-5 w-5" />
+                                {exercise.name}
+                              </DialogTitle>
+                              <DialogDescription>
+                                {exercise.description}
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-6">
+                              <div className="flex flex-wrap gap-2">
+                                <Badge className={getDifficultyColor(exercise.difficulty)}>
+                                  {exercise.difficulty}
+                                </Badge>
+                                <Badge variant="outline">{exercise.category}</Badge>
+                                {exercise.muscleGroups.map((muscle) => (
+                                  <Badge key={muscle} variant="secondary">{muscle}</Badge>
+                                ))}
+                              </div>
 
-        {/* Recent Workouts */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Workouts</h2>
-          
-          {workoutPosts.length === 0 ? (
-            <div className="text-center py-8">
-              <Dumbbell className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 dark:text-gray-400">No workouts shared yet</p>
+                              {exercise.instructions.length > 0 && (
+                                <div>
+                                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                                    <BookOpen className="h-4 w-4" />
+                                    Instructions
+                                  </h4>
+                                  <ol className="space-y-2">
+                                    {exercise.instructions.map((instruction, index) => (
+                                      <li key={index} className="flex gap-3">
+                                        <span className="bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                          {index + 1}
+                                        </span>
+                                        <span className="text-sm">{instruction}</span>
+                                      </li>
+                                    ))}
+                                  </ol>
+                                </div>
+                              )}
+
+                              {exercise.tips.length > 0 && (
+                                <div>
+                                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                                    <Star className="h-4 w-4" />
+                                    Tips
+                                  </h4>
+                                  <ul className="space-y-1">
+                                    {exercise.tips.map((tip, index) => (
+                                      <li key={index} className="text-sm text-gray-600 dark:text-gray-400">
+                                        • {tip}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+
+                              {exercise.safetyNotes.length > 0 && (
+                                <div>
+                                  <h4 className="font-semibold mb-2 text-orange-600 dark:text-orange-400">
+                                    ⚠️ Safety Notes
+                                  </h4>
+                                  <ul className="space-y-1">
+                                    {exercise.safetyNotes.map((note, index) => (
+                                      <li key={index} className="text-sm text-orange-600 dark:text-orange-400">
+                                        • {note}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+
+                              {exercise.variations.length > 0 && (
+                                <div>
+                                  <h4 className="font-semibold mb-2">Variations</h4>
+                                  <div className="flex flex-wrap gap-2">
+                                    {exercise.variations.map((variation, index) => (
+                                      <Badge key={index} variant="outline" className="text-xs">
+                                        {variation}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {exercise.equipment.length > 0 && (
+                                <div>
+                                  <h4 className="font-semibold mb-2">Equipment Needed</h4>
+                                  <div className="flex flex-wrap gap-2">
+                                    {exercise.equipment.map((item, index) => (
+                                      <Badge key={index} variant="outline" className="text-xs">
+                                        {item}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <div className="col-span-full text-center py-12">
+                  <Dumbbell className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                    No exercises found
+                  </h3>
+                  <p className="text-gray-500 dark:text-gray-500">
+                    Try adjusting your search criteria or browse all exercises.
+                  </p>
+                </div>
+              )}
             </div>
-          ) : (
-            workoutPosts.map((post) => (
-              <PostCard key={post.id} post={post} />
-            ))
-          )}
-        </div>
+          </TabsContent>
+
+          {/* Community Workouts Tab */}
+          <TabsContent value="community" className="space-y-6">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
+                    <Flame className="h-5 w-5" />
+                    Total Workouts
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-orange-800 dark:text-orange-200">
+                    {workoutPosts.length}
+                  </div>
+                  <p className="text-sm text-orange-600 dark:text-orange-400 mt-1">
+                    Shared by community
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-300">
+                    <Clock className="h-5 w-5" />
+                    Avg Duration
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-green-800 dark:text-green-200">45m</div>
+                  <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                    Per workout session
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
+                    <Target className="h-5 w-5" />
+                    Active Users
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-purple-800 dark:text-purple-200">1.2k</div>
+                  <p className="text-sm text-purple-600 dark:text-purple-400 mt-1">
+                    This week
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Trending Workouts */}
+            <Card className="border-0 shadow-xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <TrendingUp className="h-6 w-6 text-blue-500" />
+                    Trending Workouts
+                  </CardTitle>
+                  <Select value={trendingPeriod.toString()} onValueChange={(value) => setTrendingPeriod(Number(value))}>
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="24">Last 24h</SelectItem>
+                      <SelectItem value="168">Last week</SelectItem>
+                      <SelectItem value="720">Last month</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {trendingLoading ? (
+                  <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="space-y-2">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-3/4" />
+                      </div>
+                    ))}
+                  </div>
+                ) : trendingWorkouts && trendingWorkouts.length > 0 ? (
+                  <div className="space-y-4">
+                    {trendingWorkouts.slice(0, 5).map((post: Post) => (
+                      <PostCard key={post.id} post={post} />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                    No trending workouts found for this period.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Recent Workouts */}
+            <Card className="border-0 shadow-xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-xl">Recent Workouts</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {postsLoading ? (
+                  <div className="space-y-4">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="space-y-2">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-3/4" />
+                      </div>
+                    ))}
+                  </div>
+                ) : workoutPosts.length > 0 ? (
+                  <div className="space-y-4">
+                    {workoutPosts.map((post: Post) => (
+                      <PostCard key={post.id} post={post} />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                    No workouts shared yet. Be the first to log a workout!
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

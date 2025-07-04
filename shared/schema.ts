@@ -133,15 +133,45 @@ export const progressEntrySchema = z.object({
 
 export type ProgressEntry = z.infer<typeof progressEntrySchema>;
 
+// Exercise Library schema
+export const exerciseSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  category: z.enum(["strength", "cardio", "flexibility", "sports", "functional"]),
+  muscleGroups: z.array(z.enum([
+    "chest", "back", "shoulders", "biceps", "triceps", "forearms",
+    "abs", "obliques", "lower_back", "glutes", "quadriceps", 
+    "hamstrings", "calves", "traps", "lats", "delts"
+  ])),
+  equipment: z.array(z.string()).default([]), // barbell, dumbbell, bodyweight, etc.
+  difficulty: z.enum(["beginner", "intermediate", "advanced"]),
+  description: z.string(),
+  instructions: z.array(z.string()), // step-by-step instructions
+  tips: z.array(z.string()).default([]),
+  safetyNotes: z.array(z.string()).default([]),
+  images: z.array(z.string()).default([]), // exercise demonstration images
+  videos: z.array(z.string()).default([]), // exercise demonstration videos
+  variations: z.array(z.string()).default([]), // exercise variations
+  isUserCreated: z.boolean().default(false),
+  createdBy: z.string().optional(), // user ID if user-created
+  isApproved: z.boolean().default(true), // for user-created exercises
+  tags: z.array(z.string()).default([]),
+  createdAt: z.date().default(() => new Date()),
+});
+
+export type Exercise = z.infer<typeof exerciseSchema>;
+
 // Insert schemas
 export const insertUserSchema = userSchema.omit({ id: true, createdAt: true });
 export const insertPostSchema = postSchema.omit({ id: true, createdAt: true, likes: true, comments: true });
 export const insertCommentSchema = commentSchema.omit({ id: true, createdAt: true });
 export const insertConnectionSchema = connectionSchema.omit({ id: true, createdAt: true });
 export const insertProgressEntrySchema = progressEntrySchema.omit({ id: true, createdAt: true });
+export const insertExerciseSchema = exerciseSchema.omit({ id: true, createdAt: true });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertPost = z.infer<typeof insertPostSchema>;
 export type InsertComment = z.infer<typeof insertCommentSchema>;
 export type InsertConnection = z.infer<typeof insertConnectionSchema>;
 export type InsertProgressEntry = z.infer<typeof insertProgressEntrySchema>;
+export type InsertExercise = z.infer<typeof insertExerciseSchema>;

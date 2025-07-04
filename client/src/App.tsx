@@ -1,0 +1,94 @@
+import { Route, Switch } from "wouter";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
+import { Home, Search, Dumbbell, TrendingUp, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Link, useLocation } from "wouter";
+import Feed from "./pages/feed";
+import Profile from "./pages/profile";
+import CreatePost from "./pages/create-post";
+import NotFound from "./pages/not-found";
+
+const queryClient = new QueryClient();
+
+function BottomNavigation() {
+  const [location] = useLocation();
+  
+  const navItems = [
+    { path: "/", icon: Home, label: "Home" },
+    { path: "/search", icon: Search, label: "Search" },
+    { path: "/workouts", icon: Dumbbell, label: "Workouts" },
+    { path: "/progress", icon: TrendingUp, label: "Progress" },
+    { path: "/profile", icon: User, label: "Profile" },
+  ];
+
+  return (
+    <nav className="fixed bottom-0 w-full bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-50">
+      <div className="flex items-center justify-around py-2">
+        {navItems.map(({ path, icon: Icon, label }) => {
+          const isActive = location === path;
+          return (
+            <Link key={path} href={path} asChild>
+              <Button
+                variant="ghost"
+                className={`flex flex-col items-center py-2 px-4 h-auto ${
+                  isActive
+                    ? "text-fit-green"
+                    : "text-gray-600 dark:text-gray-400 hover:text-fit-green"
+                }`}
+              >
+                <Icon className="w-5 h-5 mb-1" />
+                <span className="text-xs font-medium">{label}</span>
+              </Button>
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <Switch>
+          <Route path="/" component={Feed} />
+          <Route path="/profile" component={Profile} />
+          <Route path="/create-post" component={CreatePost} />
+          <Route path="/search">
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center pb-20">
+              <div className="text-center">
+                <Search className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Search</h2>
+                <p className="text-gray-600 dark:text-gray-400">Find users and posts</p>
+              </div>
+            </div>
+          </Route>
+          <Route path="/workouts">
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center pb-20">
+              <div className="text-center">
+                <Dumbbell className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Workouts</h2>
+                <p className="text-gray-600 dark:text-gray-400">Browse workout routines</p>
+              </div>
+            </div>
+          </Route>
+          <Route path="/progress">
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center pb-20">
+              <div className="text-center">
+                <TrendingUp className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Progress</h2>
+                <p className="text-gray-600 dark:text-gray-400">Track your fitness journey</p>
+              </div>
+            </div>
+          </Route>
+          <Route component={NotFound} />
+        </Switch>
+        
+        <BottomNavigation />
+        <Toaster />
+      </div>
+    </QueryClientProvider>
+  );
+}

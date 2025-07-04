@@ -3,31 +3,66 @@ import type { Post, User, Comment, InsertPost, InsertComment } from "@shared/sch
 
 export const api = {
   // Posts
-  getPosts: (): Promise<Post[]> => apiRequest("/api/posts"),
-  getPost: (id: string): Promise<Post> => apiRequest(`/api/posts/${id}`),
-  getUserPosts: (userId: string): Promise<Post[]> => apiRequest(`/api/users/${userId}/posts`),
-  createPost: (post: InsertPost): Promise<Post> => 
-    apiRequest("/api/posts", { method: "POST", body: post }),
-  deletePost: (id: string): Promise<{ success: boolean }> => 
-    apiRequest(`/api/posts/${id}`, { method: "DELETE" }),
+  getPosts: async (): Promise<Post[]> => {
+    const res = await apiRequest("GET", "/api/posts");
+    return res.json();
+  },
+  getPost: async (id: string): Promise<Post> => {
+    const res = await apiRequest("GET", `/api/posts/${id}`);
+    return res.json();
+  },
+  getUserPosts: async (userId: string): Promise<Post[]> => {
+    const res = await apiRequest("GET", `/api/users/${userId}/posts`);
+    return res.json();
+  },
+  createPost: async (post: InsertPost): Promise<Post> => {
+    const res = await apiRequest("POST", "/api/posts", post);
+    return res.json();
+  },
+  deletePost: async (id: string): Promise<{ success: boolean }> => {
+    const res = await apiRequest("DELETE", `/api/posts/${id}`);
+    return res.json();
+  },
+  getTrendingWorkouts: async (hours?: number): Promise<Post[]> => {
+    const res = await apiRequest("GET", `/api/workouts/trending${hours ? `?hours=${hours}` : ""}`);
+    return res.json();
+  },
   
   // Users
-  getUsers: (): Promise<User[]> => apiRequest("/api/users"),
-  getUser: (id: string): Promise<User> => apiRequest(`/api/users/${id}`),
+  getUsers: async (): Promise<User[]> => {
+    const res = await apiRequest("GET", "/api/users");
+    return res.json();
+  },
+  getUser: async (id: string): Promise<User> => {
+    const res = await apiRequest("GET", `/api/users/${id}`);
+    return res.json();
+  },
   
   // Comments
-  getComments: (postId: string): Promise<Comment[]> => 
-    apiRequest(`/api/posts/${postId}/comments`),
-  createComment: (postId: string, comment: InsertComment): Promise<Comment> => 
-    apiRequest(`/api/posts/${postId}/comments`, { method: "POST", body: comment }),
+  getComments: async (postId: string): Promise<Comment[]> => {
+    const res = await apiRequest("GET", `/api/posts/${postId}/comments`);
+    return res.json();
+  },
+  createComment: async (postId: string, comment: InsertComment): Promise<Comment> => {
+    const res = await apiRequest("POST", `/api/posts/${postId}/comments`, { ...comment, postId });
+    return res.json();
+  },
   
   // Social actions
-  likePost: (postId: string, userId: string): Promise<Post> => 
-    apiRequest(`/api/posts/${postId}/like`, { method: "POST", body: { userId } }),
-  unlikePost: (postId: string, userId: string): Promise<Post> => 
-    apiRequest(`/api/posts/${postId}/unlike`, { method: "POST", body: { userId } }),
-  followUser: (userId: string, followerId: string): Promise<{ success: boolean }> => 
-    apiRequest(`/api/users/${userId}/follow`, { method: "POST", body: { followerId } }),
-  unfollowUser: (userId: string, followerId: string): Promise<{ success: boolean }> => 
-    apiRequest(`/api/users/${userId}/unfollow`, { method: "POST", body: { followerId } }),
+  likePost: async (postId: string, userId: string): Promise<Post> => {
+    const res = await apiRequest("POST", `/api/posts/${postId}/like`, { userId });
+    return res.json();
+  },
+  unlikePost: async (postId: string, userId: string): Promise<Post> => {
+    const res = await apiRequest("POST", `/api/posts/${postId}/unlike`, { userId });
+    return res.json();
+  },
+  followUser: async (userId: string, followerId: string): Promise<{ success: boolean }> => {
+    const res = await apiRequest("POST", `/api/users/${userId}/follow`, { followerId });
+    return res.json();
+  },
+  unfollowUser: async (userId: string, followerId: string): Promise<{ success: boolean }> => {
+    const res = await apiRequest("POST", `/api/users/${userId}/unfollow`, { followerId });
+    return res.json();
+  },
 };

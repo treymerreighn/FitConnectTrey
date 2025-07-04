@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { api } from "@/lib/api";
 import { CURRENT_USER_ID } from "@/lib/constants";
 import type { Post, User } from "@shared/schema";
 
@@ -29,11 +29,11 @@ export function PostCard({ post }: PostCardProps) {
   const likeMutation = useMutation({
     mutationFn: async () => {
       const isLiked = post.likes.includes(CURRENT_USER_ID);
-      const endpoint = isLiked ? "unlike" : "like";
-      return apiRequest(`/api/posts/${post.id}/${endpoint}`, {
-        method: "POST",
-        body: { userId: CURRENT_USER_ID },
-      });
+      if (isLiked) {
+        return api.unlikePost(post.id, CURRENT_USER_ID);
+      } else {
+        return api.likePost(post.id, CURRENT_USER_ID);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
@@ -137,13 +137,32 @@ export function PostCard({ post }: PostCardProps) {
         </div>
       </CardHeader>
       
-      {post.image && (
+      {post.images && post.images.length > 0 && (
         <div className="px-0">
-          <img 
-            src={post.image} 
-            alt="Post content" 
-            className="w-full h-80 object-cover"
-          />
+          {post.images.length === 1 ? (
+            <img 
+              src={post.images[0]} 
+              alt="Post content" 
+              className="w-full h-80 object-cover"
+            />
+          ) : (
+            <div className="grid grid-cols-2 gap-1">
+              {post.images.slice(0, 4).map((image, index) => (
+                <div key={index} className="relative">
+                  <img 
+                    src={image} 
+                    alt={`Post content ${index + 1}`} 
+                    className="w-full h-40 object-cover"
+                  />
+                  {index === 3 && post.images.length > 4 && (
+                    <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center">
+                      <span className="text-white font-semibold">+{post.images.length - 4}</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
       
@@ -205,81 +224,114 @@ export function PostCard({ post }: PostCardProps) {
                     <span className="text-gray-600 dark:text-gray-400">Calories:</span>
                     <span className="font-medium ml-1">{post.workoutData.calories}</span>
                   </div>
-                  {post.workoutData.sets && (
-                    <div>
-                      <span className="text-gray-600 dark:text-gray-400">Sets:</span>
-                      <span className="font-medium ml-1">{post.workoutData.sets}</span>
-                    </div>
-                  )}
-                  {post.workoutData.reps && (
-                    <div>
-                      <span className="text-gray-600 dark:text-gray-400">Reps:</span>
-                      <span className="font-medium ml-1">{post.workoutData.reps}</span>
-                    </div>
-                  )}
-                  {post.workoutData.intervals && (
-                    <div>
-                      <span className="text-gray-600 dark:text-gray-400">Intervals:</span>
-                      <span className="font-medium ml-1">{post.workoutData.intervals}</span>
-                    </div>
-                  )}
-                  {post.workoutData.rest && (
-                    <div>
-                      <span className="text-gray-600 dark:text-gray-400">Rest:</span>
-                      <span className="font-medium ml-1">{post.workoutData.rest}</span>
-                    </div>
-                  )}
-                </>
-              )}
-              
-              {post.nutritionData && (
-                <>
-                  <div>
-                    <span className="text-gray-600 dark:text-gray-400">Calories:</span>
-                    <span className="font-medium ml-1">{post.nutritionData.calories}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600 dark:text-gray-400">Protein:</span>
-                    <span className="font-medium ml-1">{post.nutritionData.protein}g</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600 dark:text-gray-400">Carbs:</span>
-                    <span className="font-medium ml-1">{post.nutritionData.carbs}g</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600 dark:text-gray-400">Fat:</span>
-                    <span className="font-medium ml-1">{post.nutritionData.fat}g</span>
-                  </div>
-                </>
-              )}
-              
-              {post.progressData && (
-                <>
-                  {post.progressData.weightLost && (
-                    <div>
-                      <span className="text-gray-600 dark:text-gray-400">Weight Lost:</span>
-                      <span className="font-medium ml-1 text-fit-green">{post.progressData.weightLost}</span>
-                    </div>
-                  )}
-                  {post.progressData.bodyFat && (
-                    <div>
-                      <span className="text-gray-600 dark:text-gray-400">Body Fat:</span>
-                      <span className="font-medium ml-1 text-fit-green">{post.progressData.bodyFat}</span>
-                    </div>
-                  )}
-                  {post.progressData.muscleGain && (
-                    <div>
-                      <span className="text-gray-600 dark:text-gray-400">Muscle Gain:</span>
-                      <span className="font-medium ml-1 text-fit-green">{post.progressData.muscleGain}</span>
-                    </div>
-                  )}
-                  <div>
-                    <span className="text-gray-600 dark:text-gray-400">Time Frame:</span>
-                    <span className="font-medium ml-1">{post.progressData.duration}</span>
-                  </div>
                 </>
               )}
             </div>
+            
+            {/* Detailed Exercise Logging */}
+            {post.workoutData?.exercises && post.workoutData.exercises.length > 0 && (
+              <div className="mt-4 space-y-3">
+                <h5 className="font-semibold text-gray-900 dark:text-gray-100 text-sm">Exercises</h5>
+                {post.workoutData.exercises.map((exercise, index) => (
+                  <div key={index} className="border-l-2 border-fit-green pl-3">
+                    <h6 className="font-medium text-gray-900 dark:text-gray-100 text-sm">{exercise.name}</h6>
+                    <div className="grid grid-cols-4 gap-2 mt-2 text-xs">
+                      {exercise.sets.map((set, setIndex) => (
+                        <div key={setIndex} className="bg-gray-100 dark:bg-gray-700 rounded px-2 py-1">
+                          <div className="text-center">
+                            <div className="font-medium">{set.reps} reps</div>
+                            {set.weight && <div className="text-gray-600 dark:text-gray-400">{set.weight} lbs</div>}
+                            {set.duration && <div className="text-gray-600 dark:text-gray-400">{set.duration}s</div>}
+                            {set.distance && <div className="text-gray-600 dark:text-gray-400">{set.distance}m</div>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {exercise.notes && (
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 italic">{exercise.notes}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {/* Legacy workout data display */}
+            {post.workoutData && !post.workoutData.exercises && (
+              <div className="grid grid-cols-2 gap-3 text-sm mt-3">
+                {post.workoutData.sets && (
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">Sets:</span>
+                    <span className="font-medium ml-1">{post.workoutData.sets}</span>
+                  </div>
+                )}
+                {post.workoutData.reps && (
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">Reps:</span>
+                    <span className="font-medium ml-1">{post.workoutData.reps}</span>
+                  </div>
+                )}
+                {post.workoutData.intervals && (
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">Intervals:</span>
+                    <span className="font-medium ml-1">{post.workoutData.intervals}</span>
+                  </div>
+                )}
+                {post.workoutData.rest && (
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">Rest:</span>
+                    <span className="font-medium ml-1">{post.workoutData.rest}</span>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {post.nutritionData && (
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <span className="text-gray-600 dark:text-gray-400">Calories:</span>
+                  <span className="font-medium ml-1">{post.nutritionData.calories}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600 dark:text-gray-400">Protein:</span>
+                  <span className="font-medium ml-1">{post.nutritionData.protein}g</span>
+                </div>
+                <div>
+                  <span className="text-gray-600 dark:text-gray-400">Carbs:</span>
+                  <span className="font-medium ml-1">{post.nutritionData.carbs}g</span>
+                </div>
+                <div>
+                  <span className="text-gray-600 dark:text-gray-400">Fat:</span>
+                  <span className="font-medium ml-1">{post.nutritionData.fat}g</span>
+                </div>
+              </div>
+            )}
+            
+            {post.progressData && (
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                {post.progressData.weightLost && (
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">Weight Lost:</span>
+                    <span className="font-medium ml-1 text-fit-green">{post.progressData.weightLost}</span>
+                  </div>
+                )}
+                {post.progressData.bodyFat && (
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">Body Fat:</span>
+                    <span className="font-medium ml-1 text-fit-green">{post.progressData.bodyFat}</span>
+                  </div>
+                )}
+                {post.progressData.muscleGain && (
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">Muscle Gain:</span>
+                    <span className="font-medium ml-1 text-fit-green">{post.progressData.muscleGain}</span>
+                  </div>
+                )}
+                <div>
+                  <span className="text-gray-600 dark:text-gray-400">Time Frame:</span>
+                  <span className="font-medium ml-1">{post.progressData.duration}</span>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </CardContent>

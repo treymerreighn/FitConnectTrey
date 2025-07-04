@@ -8,6 +8,9 @@ import Feed from "./pages/feed";
 import Profile from "./pages/profile";
 import CreatePost from "./pages/create-post";
 import NotFound from "./pages/not-found";
+import LogWorkout from "./pages/log-workout";
+import Workouts from "./pages/workouts";
+import Progress from "./pages/progress";
 
 const queryClient = new QueryClient();
 
@@ -56,30 +59,15 @@ export default function App() {
           <Route path="/" component={Feed} />
           <Route path="/profile" component={Profile} />
           <Route path="/create-post" component={CreatePost} />
+          <Route path="/log-workout" component={LogWorkout} />
+          <Route path="/workouts" component={Workouts} />
+          <Route path="/progress" component={Progress} />
           <Route path="/search">
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center pb-20">
               <div className="text-center">
                 <Search className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Search</h2>
                 <p className="text-gray-600 dark:text-gray-400">Find users and posts</p>
-              </div>
-            </div>
-          </Route>
-          <Route path="/workouts">
-            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center pb-20">
-              <div className="text-center">
-                <Dumbbell className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Workouts</h2>
-                <p className="text-gray-600 dark:text-gray-400">Browse workout routines</p>
-              </div>
-            </div>
-          </Route>
-          <Route path="/progress">
-            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center pb-20">
-              <div className="text-center">
-                <TrendingUp className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Progress</h2>
-                <p className="text-gray-600 dark:text-gray-400">Track your fitness journey</p>
               </div>
             </div>
           </Route>

@@ -22,7 +22,7 @@ export const postSchema = z.object({
   userId: z.string(),
   type: z.enum(["workout", "nutrition", "progress"]),
   caption: z.string(),
-  image: z.string().optional(),
+  images: z.array(z.string()).default([]),
   likes: z.array(z.string()).default([]),
   comments: z.array(z.string()).default([]),
   createdAt: z.date().default(() => new Date()),
@@ -31,6 +31,18 @@ export const postSchema = z.object({
     workoutType: z.string(),
     duration: z.number(),
     calories: z.number(),
+    exercises: z.array(z.object({
+      name: z.string(),
+      sets: z.array(z.object({
+        reps: z.number(),
+        weight: z.number().optional(),
+        duration: z.number().optional(), // for time-based exercises
+        distance: z.number().optional(), // for cardio
+        rest: z.number().optional(), // rest time in seconds
+      })),
+      notes: z.string().optional(),
+    })).optional(),
+    // Legacy fields for backward compatibility
     sets: z.number().optional(),
     reps: z.string().optional(),
     intervals: z.number().optional(),

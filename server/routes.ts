@@ -96,6 +96,17 @@ router.delete("/api/posts/:id", async (req, res) => {
   }
 });
 
+// Trending workouts
+router.get("/api/workouts/trending", async (req, res) => {
+  try {
+    const hours = req.query.hours ? parseInt(req.query.hours as string) : 24;
+    const trendingWorkouts = await storage.getTrendingWorkouts(hours);
+    res.json(trendingWorkouts);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch trending workouts" });
+  }
+});
+
 // Comments
 router.get("/api/posts/:postId/comments", async (req, res) => {
   try {

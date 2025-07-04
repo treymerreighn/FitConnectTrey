@@ -16,6 +16,7 @@ export interface IStorage {
   getPostsByUserId(userId: string): Promise<Post[]>;
   updatePost(id: string, updates: Partial<Post>): Promise<Post>;
   deletePost(id: string): Promise<boolean>;
+  getTrendingWorkouts(hours?: number): Promise<Post[]>;
   
   // Comments
   createComment(comment: InsertComment): Promise<Comment>;
@@ -98,13 +99,43 @@ export class MemStorage implements IStorage {
         userId: "user1",
         type: "workout",
         caption: "Crushed today's upper body session! 💪 Feeling stronger every day. Who's joining me tomorrow for legs?",
-        image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop",
+        images: ["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop"],
         likes: ["user2", "user3", "user4"],
         comments: ["comment1", "comment2"],
         workoutData: {
           workoutType: "Upper Body Strength",
           duration: 45,
           calories: 320,
+          exercises: [
+            {
+              name: "Bench Press",
+              sets: [
+                { reps: 12, weight: 185 },
+                { reps: 10, weight: 205 },
+                { reps: 8, weight: 225 },
+                { reps: 6, weight: 245 }
+              ],
+              notes: "Felt strong today, increased weight from last week"
+            },
+            {
+              name: "Pull-ups",
+              sets: [
+                { reps: 12 },
+                { reps: 10 },
+                { reps: 8 },
+                { reps: 6 }
+              ]
+            },
+            {
+              name: "Dumbbell Rows",
+              sets: [
+                { reps: 12, weight: 80 },
+                { reps: 12, weight: 80 },
+                { reps: 12, weight: 80 }
+              ]
+            }
+          ],
+          // Legacy fields for backward compatibility
           sets: 4,
           reps: "12-15",
         },
@@ -115,7 +146,7 @@ export class MemStorage implements IStorage {
         userId: "user2",
         type: "nutrition",
         caption: "Perfect post-workout fuel! 🥗 Grilled chicken, quinoa, and fresh veggies. Simple, clean, effective.",
-        image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&h=600&fit=crop",
+        images: ["https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&h=600&fit=crop"],
         likes: ["user1", "user3"],
         comments: ["comment3"],
         nutritionData: {
@@ -132,7 +163,7 @@ export class MemStorage implements IStorage {
         userId: "user3",
         type: "progress",
         caption: "3 months of consistency! 💯 Down 15lbs and feeling incredible. Thank you to everyone for the support! 🙏",
-        image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop",
+        images: ["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop"],
         likes: ["user1", "user2", "user4"],
         comments: ["comment4", "comment5"],
         progressData: {
@@ -168,12 +199,8 @@ export class MemStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User | null> {
-    for (const user of this.users.values()) {
-      if (user.username === username) {
-        return user;
-      }
-    }
-    return null;
+    const users = Array.from(this.users.values());
+    return users.find(user => user.username === username) || null;
   }
 
   async updateUser(id: string, updates: Partial<User>): Promise<User> {
@@ -308,6 +335,23 @@ export class MemStorage implements IStorage {
     
     this.users.set(followerId, follower);
     this.users.set(followingId, following);
+  }
+
+  async getTrendingWorkouts(hours: number = 24): Promise<Post[]> {
+    const cutoffTime = new Date(Date.now() - hours * 60 * 60 * 1000);
+    
+    return Array.from(this.posts.values())
+      .filter(post => 
+        post.type === "workout" && 
+        new Date(post.createdAt) >= cutoffTime
+      )
+      .sort((a, b) => {
+        // Sort by engagement score (likes + comments)
+        const aScore = a.likes.length + a.comments.length;
+        const bScore = b.likes.length + b.comments.length;
+        return bScore - aScore;
+      })
+      .slice(0, 10); // Return top 10 trending workouts
   }
 }
 

@@ -1,20 +1,22 @@
 import { useState } from "react";
-import { Plus, Trash2, Save, Camera, Timer, Zap, Dumbbell } from "lucide-react";
+import { Plus, Trash2, Save, Camera, Timer, Zap, Dumbbell, Search, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { CURRENT_USER_ID } from "@/lib/constants";
 import { useLocation } from "wouter";
-import type { InsertPost } from "@shared/schema";
+import type { InsertPost, Exercise as ExerciseType } from "@shared/schema";
 
 interface WorkoutSet {
-  reps: number;
+  reps?: number;
   weight?: number;
   duration?: number;
   distance?: number;
@@ -39,9 +41,56 @@ export default function LogWorkout() {
   const [startTime] = useState(new Date());
   const [duration, setDuration] = useState(0);
   const [calories, setCalories] = useState(0);
+  const [exerciseSearchOpen, setExerciseSearchOpen] = useState<number | null>(null);
+
+  // Fetch exercise library for autocomplete
+  const { data: exerciseLibrary } = useQuery({
+    queryKey: ["/api/exercises"],
+    queryFn: () => api.getExercises({}),
+  });
 
   const addExercise = () => {
-    setExercises([...exercises, { name: "", sets: [{ reps: 0 }], notes: "" }]);
+    setExercises([...exercises, { name: "", sets: [{ reps: 1 }], notes: "" }]);
+  };
+
+  const selectExerciseFromLibrary = (exerciseIndex: number, libraryExercise: ExerciseType) => {
+    const updated = [...exercises];
+    updated[exerciseIndex] = { 
+      ...updated[exerciseIndex], 
+      name: libraryExercise.name 
+    };
+    setExercises(updated);
+    setExerciseSearchOpen(null);
+  };
+
+  const workoutTemplates = {
+    "Upper Body": [
+      { name: "Bench Press", sets: [{ reps: 8 }, { reps: 8 }, { reps: 8 }] },
+      { name: "Push-ups", sets: [{ reps: 15 }, { reps: 12 }, { reps: 10 }] },
+      { name: "Pull-ups", sets: [{ reps: 8 }, { reps: 6 }, { reps: 5 }] },
+    ],
+    "Lower Body": [
+      { name: "Squats", sets: [{ reps: 12 }, { reps: 10 }, { reps: 8 }] },
+      { name: "Deadlift", sets: [{ reps: 8 }, { reps: 6 }, { reps: 5 }] },
+      { name: "Lunges", sets: [{ reps: 12 }, { reps: 12 }] },
+    ],
+    "Full Body": [
+      { name: "Squats", sets: [{ reps: 12 }, { reps: 10 }] },
+      { name: "Push-ups", sets: [{ reps: 15 }, { reps: 12 }] },
+      { name: "Deadlift", sets: [{ reps: 8 }, { reps: 6 }] },
+      { name: "Plank", sets: [{ reps: 1, duration: 30 }, { reps: 1, duration: 45 }] },
+    ]
+  };
+
+  const applyWorkoutTemplate = (templateName: string) => {
+    const template = workoutTemplates[templateName as keyof typeof workoutTemplates];
+    if (template) {
+      setExercises(template.map(ex => ({ ...ex, notes: "" })));
+      toast({
+        title: "Template applied!",
+        description: `${templateName} workout template has been loaded.`,
+      });
+    }
   };
 
   const removeExercise = (index: number) => {
@@ -56,7 +105,7 @@ export default function LogWorkout() {
 
   const addSet = (exerciseIndex: number) => {
     const updated = [...exercises];
-    updated[exerciseIndex].sets.push({ reps: 0 });
+    updated[exerciseIndex].sets.push({ reps: 1 });
     setExercises(updated);
   };
 
@@ -70,7 +119,7 @@ export default function LogWorkout() {
     const updated = [...exercises];
     updated[exerciseIndex].sets[setIndex] = { 
       ...updated[exerciseIndex].sets[setIndex], 
-      [field]: value 
+      [field]: value || (field === 'reps' ? 1 : undefined)
     };
     setExercises(updated);
   };
@@ -131,7 +180,15 @@ export default function LogWorkout() {
         workoutType: workoutName,
         duration,
         calories,
-        exercises: exercises.filter(ex => ex.name && ex.sets.length > 0),
+        exercises: exercises
+          .filter(ex => ex.name && ex.sets.length > 0)
+          .map(ex => ({
+            ...ex,
+            sets: ex.sets.map(set => ({
+              ...set,
+              reps: set.reps || 1 // Ensure reps is always defined
+            }))
+          })),
       },
     };
 
@@ -281,11 +338,26 @@ export default function LogWorkout() {
               <div className="flex items-center space-x-2">
                 <Zap className="h-5 w-5" />
                 <span>Exercises</span>
+                <Badge variant="secondary" className="ml-2">
+                  {exercises.length} {exercises.length === 1 ? 'exercise' : 'exercises'}
+                </Badge>
               </div>
-              <Button onClick={addExercise} className="bg-fit-green hover:bg-fit-green/90">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Exercise
-              </Button>
+              <div className="flex gap-2">
+                <Select onValueChange={(value) => value && applyWorkoutTemplate(value)}>
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue placeholder="Use Template" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Upper Body">Upper Body</SelectItem>
+                    <SelectItem value="Lower Body">Lower Body</SelectItem>
+                    <SelectItem value="Full Body">Full Body</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button onClick={addExercise} className="bg-fit-green hover:bg-fit-green/90">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Exercise
+                </Button>
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -297,19 +369,76 @@ export default function LogWorkout() {
               </div>
             ) : (
               exercises.map((exercise, exerciseIndex) => (
-                <div key={exerciseIndex} className="border rounded-lg p-4 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Input
-                      value={exercise.name}
-                      onChange={(e) => updateExercise(exerciseIndex, "name", e.target.value)}
-                      placeholder="Exercise name (e.g., Bench Press)"
-                      className="font-medium"
-                    />
+                <div key={exerciseIndex} className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 space-y-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1">
+                      <Popover 
+                        open={exerciseSearchOpen === exerciseIndex} 
+                        onOpenChange={(open) => setExerciseSearchOpen(open ? exerciseIndex : null)}
+                      >
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={exerciseSearchOpen === exerciseIndex}
+                            className="w-full justify-between font-medium"
+                          >
+                            {exercise.name || "Select or type exercise name..."}
+                            <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full p-0" align="start">
+                          <Command>
+                            <CommandInput 
+                              placeholder="Search exercises..." 
+                              value={exercise.name}
+                              onValueChange={(value) => updateExercise(exerciseIndex, "name", value)}
+                            />
+                            <CommandList>
+                              <CommandEmpty>
+                                <div className="p-4 text-center">
+                                  <p className="text-sm text-gray-500">No exercises found.</p>
+                                  <p className="text-xs text-gray-400 mt-1">Keep typing to create a custom exercise</p>
+                                </div>
+                              </CommandEmpty>
+                              {exerciseLibrary && exerciseLibrary.length > 0 && (
+                                <CommandGroup heading="Exercise Library">
+                                  {exerciseLibrary
+                                    .filter(ex => ex.name.toLowerCase().includes(exercise.name.toLowerCase()))
+                                    .slice(0, 8)
+                                    .map((libraryExercise) => (
+                                    <CommandItem
+                                      key={libraryExercise.id}
+                                      value={libraryExercise.name}
+                                      onSelect={() => selectExerciseFromLibrary(exerciseIndex, libraryExercise)}
+                                      className="flex items-center justify-between"
+                                    >
+                                      <div>
+                                        <span className="font-medium">{libraryExercise.name}</span>
+                                        <div className="flex gap-1 mt-1">
+                                          <Badge variant="secondary" className="text-xs">
+                                            {libraryExercise.category}
+                                          </Badge>
+                                          <Badge variant="outline" className="text-xs">
+                                            {libraryExercise.difficulty}
+                                          </Badge>
+                                        </div>
+                                      </div>
+                                      <Check className="h-4 w-4" />
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              )}
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
                     <Button
                       onClick={() => removeExercise(exerciseIndex)}
                       variant="ghost"
                       size="sm"
-                      className="text-red-500 hover:text-red-700"
+                      className="text-red-500 hover:text-red-700 flex-shrink-0"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -329,62 +458,73 @@ export default function LogWorkout() {
                       </Button>
                     </div>
                     
-                    <div className="grid gap-2">
+                    <div className="space-y-3">
                       {exercise.sets.map((set, setIndex) => (
-                        <div key={setIndex} className="flex items-center space-x-2 bg-gray-50 dark:bg-gray-800 p-3 rounded">
-                          <span className="text-sm font-medium w-8">#{setIndex + 1}</span>
+                        <div key={setIndex} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                              Set #{setIndex + 1}
+                            </span>
+                            <Button
+                              onClick={() => removeSet(exerciseIndex, setIndex)}
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-500 hover:text-red-700 h-8 w-8 p-0"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
                           
-                          <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-2">
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                             <div>
-                              <label className="text-xs text-gray-500">Reps</label>
+                              <label className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 block">
+                                Reps
+                              </label>
                               <Input
                                 type="number"
                                 value={set.reps || ""}
                                 onChange={(e) => updateSet(exerciseIndex, setIndex, "reps", Number(e.target.value))}
                                 placeholder="12"
-                                className="h-8"
+                                className="h-9 text-center"
                               />
                             </div>
                             <div>
-                              <label className="text-xs text-gray-500">Weight (lbs)</label>
+                              <label className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 block">
+                                Weight (lbs)
+                              </label>
                               <Input
                                 type="number"
                                 value={set.weight || ""}
                                 onChange={(e) => updateSet(exerciseIndex, setIndex, "weight", Number(e.target.value))}
                                 placeholder="185"
-                                className="h-8"
+                                className="h-9 text-center"
                               />
                             </div>
                             <div>
-                              <label className="text-xs text-gray-500">Duration (s)</label>
+                              <label className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 block">
+                                Duration (s)
+                              </label>
                               <Input
                                 type="number"
                                 value={set.duration || ""}
                                 onChange={(e) => updateSet(exerciseIndex, setIndex, "duration", Number(e.target.value))}
                                 placeholder="30"
-                                className="h-8"
+                                className="h-9 text-center"
                               />
                             </div>
                             <div>
-                              <label className="text-xs text-gray-500">Rest (s)</label>
+                              <label className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 block">
+                                Rest (s)
+                              </label>
                               <Input
                                 type="number"
                                 value={set.rest || ""}
                                 onChange={(e) => updateSet(exerciseIndex, setIndex, "rest", Number(e.target.value))}
                                 placeholder="60"
-                                className="h-8"
+                                className="h-9 text-center"
                               />
                             </div>
                           </div>
-                          
-                          <Button
-                            onClick={() => removeSet(exerciseIndex, setIndex)}
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
                         </div>
                       ))}
                     </div>

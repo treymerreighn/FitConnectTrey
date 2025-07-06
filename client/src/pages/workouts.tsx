@@ -28,8 +28,8 @@ export default function Workouts() {
     queryKey: ["/api/exercises", { search: searchQuery, category: selectedCategory, muscleGroup: selectedMuscleGroup }],
     queryFn: () => api.getExercises({ 
       search: searchQuery || undefined, 
-      category: selectedCategory || undefined, 
-      muscleGroup: selectedMuscleGroup || undefined 
+      category: selectedCategory && selectedCategory !== "all" ? selectedCategory : undefined, 
+      muscleGroup: selectedMuscleGroup && selectedMuscleGroup !== "all" ? selectedMuscleGroup : undefined 
     }),
   });
 
@@ -126,7 +126,7 @@ export default function Workouts() {
                       <SelectValue placeholder="Category" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Categories</SelectItem>
+                      <SelectItem value="all">All Categories</SelectItem>
                       {categories.map(category => (
                         <SelectItem key={category} value={category}>
                           {category.charAt(0).toUpperCase() + category.slice(1)}
@@ -139,7 +139,7 @@ export default function Workouts() {
                       <SelectValue placeholder="Muscle Group" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Muscles</SelectItem>
+                      <SelectItem value="all">All Muscles</SelectItem>
                       {muscleGroups.map(muscle => (
                         <SelectItem key={muscle} value={muscle}>
                           {muscle.charAt(0).toUpperCase() + muscle.slice(1)}

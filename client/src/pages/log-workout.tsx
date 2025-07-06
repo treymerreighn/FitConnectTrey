@@ -404,7 +404,7 @@ export default function LogWorkout() {
                               {exerciseLibrary && exerciseLibrary.length > 0 && (
                                 <CommandGroup heading="Exercise Library">
                                   {exerciseLibrary
-                                    .filter(ex => ex.name.toLowerCase().includes(exercise.name.toLowerCase()))
+                                    .filter(ex => ex.name && ex.name.toLowerCase().includes(exercise.name.toLowerCase()))
                                     .slice(0, 8)
                                     .map((libraryExercise) => (
                                     <CommandItem

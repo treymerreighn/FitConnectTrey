@@ -2,6 +2,74 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mobile-first optimizations for app store deployment */
+@layer base {
+  /* Enhanced touch targets for mobile */
+  button, [role="button"], input[type="submit"] {
+    min-height: 44px; /* iOS recommended touch target size */
+    min-width: 44px;
+  }
+  
+  /* Prevent zoom on input focus (mobile Safari) */
+  input, select, textarea {
+    font-size: 16px;
+  }
+  
+  /* Smooth scrolling for better mobile UX */
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+  
+  /* Remove tap highlight on mobile */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Better mobile viewport handling */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior: none; /* Prevent pull-to-refresh */
+    position: relative;
+    min-height: 100vh;
+    min-height: -webkit-fill-available; /* iOS Safari support */
+  }
+  
+  /* PWA safe area support for notched devices */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Touch-friendly navigation */
+  nav button {
+    touch-action: manipulation; /* Faster touch response */
+  }
+}
+
+/* Enhanced mobile components */
+@layer components {
+  .mobile-touch-target {
+    @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
+  }
+  
+  .mobile-card {
+    @apply bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700;
+    /* Enhanced shadow for depth on mobile */
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  }
+  
+  .mobile-input {
+    @apply w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg;
+    @apply focus:ring-2 focus:ring-fit-green focus:border-transparent;
+    @apply bg-white dark:bg-gray-800 text-gray-900 dark:text-white;
+  }
+}
+
 @layer base {
   :root {
     --background: hsl(0, 0%, 100%);

@@ -3,16 +3,21 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { PostCard } from "@/components/ui/post-card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CURRENT_USER_ID } from "@/lib/constants";
+import { useAuth } from "@/hooks/useAuth";
+import { LogOut } from "lucide-react";
 import type { Post, User } from "@shared/schema";
 
 export default function Profile() {
+  const { user: authUser, isLoading: authLoading } = useAuth();
+  
   const { data: user, isLoading: userLoading } = useQuery<User>({
-    queryKey: [`/api/users/${CURRENT_USER_ID}`],
+    queryKey: [`/api/users/${authUser?.id}`],
+    enabled: !!authUser?.id,
   });
 
   const { data: posts = [], isLoading: postsLoading } = useQuery<Post[]>({
-    queryKey: [`/api/users/${CURRENT_USER_ID}/posts`],
+    queryKey: [`/api/users/${authUser?.id}/posts`],
+    enabled: !!authUser?.id,
   });
 
   if (userLoading) {
@@ -59,9 +64,19 @@ export default function Profile() {
                   <h1 className="text-xl font-bold text-gray-900 dark:text-white">{user.name}</h1>
                   <p className="text-gray-600 dark:text-gray-400">@{user.username}</p>
                 </div>
-                <Button variant="outline" size="sm">
-                  Edit Profile
-                </Button>
+                <div className="flex space-x-2">
+                  <Button variant="outline" size="sm">
+                    Edit Profile
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => window.location.href = '/api/logout'}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
               
               <div className="mt-3 flex space-x-6">

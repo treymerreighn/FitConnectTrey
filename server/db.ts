@@ -12,6 +12,20 @@ export const db = drizzle(sql, { schema });
 // Create tables if they don't exist
 export async function initializeDatabase() {
   try {
+    // Create sessions table for authentication
+    await sql`
+      CREATE TABLE IF NOT EXISTS sessions (
+        sid VARCHAR PRIMARY KEY,
+        sess JSON NOT NULL,
+        expire TIMESTAMP NOT NULL
+      )
+    `;
+
+    // Create index on sessions expire column for cleanup
+    await sql`
+      CREATE INDEX IF NOT EXISTS IDX_session_expire ON sessions(expire)
+    `;
+
     // Create users table
     await sql`
       CREATE TABLE IF NOT EXISTS users (

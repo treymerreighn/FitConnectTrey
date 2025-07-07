@@ -8,6 +8,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | null>;
   updateUser(id: string, updates: Partial<User>): Promise<User>;
   getAllUsers(): Promise<User[]>;
+  upsertUser(user: { id: string; email: string | null; firstName: string | null; lastName: string | null; profileImageUrl: string | null; }): Promise<User>;
   
   // Posts
   createPost(post: InsertPost): Promise<Post>;
@@ -402,6 +403,46 @@ export class MemStorage implements IStorage {
 
   async getAllUsers(): Promise<User[]> {
     return Array.from(this.users.values());
+  }
+
+  async upsertUser(userData: { id: string; email: string | null; firstName: string | null; lastName: string | null; profileImageUrl: string | null; }): Promise<User> {
+    const existingUser = this.users.get(userData.id);
+    
+    if (existingUser) {
+      // Update existing user
+      const updatedUser = {
+        ...existingUser,
+        email: userData.email || existingUser.email,
+        name: userData.firstName && userData.lastName 
+          ? `${userData.firstName} ${userData.lastName}`
+          : existingUser.name,
+        avatar: userData.profileImageUrl || existingUser.avatar,
+      };
+      this.users.set(userData.id, updatedUser);
+      return updatedUser;
+    } else {
+      // Create new user
+      const newUser: User = {
+        id: userData.id,
+        username: userData.email?.split('@')[0] || `user${userData.id.slice(-4)}`,
+        email: userData.email || '',
+        name: userData.firstName && userData.lastName 
+          ? `${userData.firstName} ${userData.lastName}`
+          : userData.firstName || userData.lastName || 'Anonymous User',
+        bio: "New to FitConnect! 💪",
+        avatar: userData.profileImageUrl,
+        isVerified: false,
+        followers: [],
+        following: [],
+        certifications: [],
+        specialties: [],
+        clients: [],
+        trainers: [],
+        createdAt: new Date(),
+      };
+      this.users.set(userData.id, newUser);
+      return newUser;
+    }
   }
 
   async createPost(post: InsertPost): Promise<Post> {

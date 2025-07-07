@@ -2,18 +2,14 @@ import express from "express";
 import cors from "cors";
 import { createServer } from "http";
 import { setupVite, serveStatic, log } from "./vite";
-import routes from "./routes";
+import { registerRoutes } from "./authRoutes";
 import { initializeDatabase } from "./db";
 
 const app = express();
-const server = createServer(app);
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
-
-// API routes
-app.use(routes);
 
 // Error handling middleware
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -28,10 +24,13 @@ async function startServer() {
     // Initialize database
     await initializeDatabase();
     
-    if (process.env.NODE_ENV === "development") {
-      await setupVite(app, server);
-    } else {
+    // Register routes with authentication
+    const server = await registerRoutes(app);
+    
+    if (process.env.NODE_ENV === "production") {
       serveStatic(app);
+    } else {
+      await setupVite(app, server);
     }
 
     server.listen(PORT, "0.0.0.0", () => {

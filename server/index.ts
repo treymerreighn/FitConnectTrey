@@ -3,6 +3,7 @@ import cors from "cors";
 import { createServer } from "http";
 import { setupVite, serveStatic, log } from "./vite";
 import routes from "./routes";
+import { initializeDatabase } from "./db";
 
 const app = express();
 const server = createServer(app);
@@ -24,6 +25,9 @@ const PORT = process.env.PORT || 5000;
 
 async function startServer() {
   try {
+    // Initialize database
+    await initializeDatabase();
+    
     if (process.env.NODE_ENV === "development") {
       await setupVite(app, server);
     } else {

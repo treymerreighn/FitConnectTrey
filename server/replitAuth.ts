@@ -45,15 +45,15 @@ export function getSession() {
   }
   
   return session({
-    secret: process.env.SESSION_SECRET!,
+    secret: process.env.SESSION_SECRET || 'development-secret-change-in-production',
     store: sessionStore,
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true, // Changed to true for auth flows
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: sessionTtl,
-      sameSite: 'lax', // Important for authentication flows
+      sameSite: 'lax',
     },
   });
 }
@@ -115,8 +115,14 @@ export async function setupAuth(app: Express) {
     passport.use(strategy);
   }
 
-  passport.serializeUser((user: Express.User, cb) => cb(null, user));
-  passport.deserializeUser((user: Express.User, cb) => cb(null, user));
+  passport.serializeUser((user: Express.User, cb) => {
+    console.log("Serializing user:", JSON.stringify(user, null, 2));
+    cb(null, user);
+  });
+  passport.deserializeUser((user: Express.User, cb) => {
+    console.log("Deserializing user:", JSON.stringify(user, null, 2));
+    cb(null, user);
+  });
 
   app.get("/api/login", (req, res, next) => {
     passport.authenticate(`replitauth:${req.hostname}`, {

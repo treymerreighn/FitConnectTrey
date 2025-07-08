@@ -250,7 +250,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Error uploading image:", error);
-      res.status(500).json({ message: "Failed to upload image" });
+      res.status(500).json({ 
+        message: "Failed to upload image",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 

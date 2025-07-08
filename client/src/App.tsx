@@ -14,6 +14,7 @@ import NotFound from "./pages/not-found";
 import LogWorkout from "./pages/log-workout";
 import Workouts from "./pages/workouts";
 import Progress from "./pages/progress";
+import TestUpload from "./pages/test-upload";
 import Landing from "./pages/landing";
 
 const queryClient = new QueryClient();
@@ -74,6 +75,7 @@ function Router() {
           <Route path="/log-workout" component={LogWorkout} />
           <Route path="/workouts" component={Workouts} />
           <Route path="/progress" component={Progress} />
+          <Route path="/test-upload" component={TestUpload} />
           <Route path="/search">
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center pb-20">
               <div className="text-center">

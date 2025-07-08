@@ -3,10 +3,27 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupSimpleAuth, isAuthenticated } from "./simpleAuth";
 import { insertPostSchema, insertCommentSchema, insertConnectionSchema, insertProgressEntrySchema, insertExerciseSchema } from "@shared/schema";
+import multer from "multer";
+import { AWSImageService } from "./aws-config";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupSimpleAuth(app);
+
+  // Configure multer for file uploads
+  const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+      fileSize: 5 * 1024 * 1024, // 5MB limit
+    },
+    fileFilter: (req, file, cb) => {
+      if (file.mimetype.startsWith('image/')) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only image files are allowed'));
+      }
+    },
+  });
 
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
@@ -210,6 +227,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(exercise);
     } catch (error) {
       res.status(400).json({ error: "Invalid exercise data" });
+    }
+  });
+
+  // Image upload endpoint
+  app.post('/api/upload', isAuthenticated, upload.single('image'), async (req: any, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const result = await AWSImageService.uploadImage(
+        req.file.buffer,
+        req.file.originalname,
+        req.file.mimetype
+      );
+
+      res.json({
+        success: true,
+        url: result.publicUrl,
+        key: result.key,
+      });
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      res.status(500).json({ message: "Failed to upload image" });
+    }
+  });
+
+  // Multiple images upload endpoint
+  app.post('/api/upload-multiple', isAuthenticated, upload.array('images', 5), async (req: any, res) => {
+    try {
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ message: "No files uploaded" });
+      }
+
+      const uploadPromises = req.files.map((file: any) =>
+        AWSImageService.uploadImage(file.buffer, file.originalname, file.mimetype)
+      );
+
+      const results = await Promise.all(uploadPromises);
+
+      res.json({
+        success: true,
+        urls: results.map(r => r.publicUrl),
+        keys: results.map(r => r.key),
+      });
+    } catch (error) {
+      console.error("Error uploading images:", error);
+      res.status(500).json({ message: "Failed to upload images" });
     }
   });
 

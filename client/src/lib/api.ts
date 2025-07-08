@@ -1,4 +1,5 @@
 import { apiRequest } from "./queryClient";
+import { uploadImage, uploadMultipleImages } from "./imageUpload";
 import type { Post, User, Comment, Connection, ProgressEntry, Exercise, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise } from "@shared/schema";
 
 export const api = {
@@ -159,5 +160,14 @@ export const api = {
   getUserCreatedExercises: async (userId: string): Promise<Exercise[]> => {
     const res = await apiRequest("GET", `/api/users/${userId}/exercises`);
     return res.json();
+  },
+
+  // Image uploads
+  uploadImage: async (file: File) => {
+    return await uploadImage(file);
+  },
+  
+  uploadMultipleImages: async (files: File[]) => {
+    return await uploadMultipleImages(files);
   },
 };

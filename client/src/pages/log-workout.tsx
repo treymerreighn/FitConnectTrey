@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Trash2, Save, Camera, Timer, Zap, Dumbbell, Search, Check } from "lucide-react";
+import { Plus, Trash2, Save, Camera, Timer, Zap, Dumbbell, Search, Check, X, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,6 +13,7 @@ import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { CURRENT_USER_ID } from "@/lib/constants";
 import { useLocation } from "wouter";
+import { ImageUpload } from "@/components/image-upload";
 import type { InsertPost, Exercise as ExerciseType } from "@shared/schema";
 
 interface WorkoutSet {
@@ -124,16 +125,12 @@ export default function LogWorkout() {
     setExercises(updated);
   };
 
-  const addImage = () => {
-    // For demo purposes, adding placeholder images
-    const demoImages = [
-      "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop",
-      "https://images.unsplash.com/photo-1583500178690-f7fbd652937f?w=800&h=600&fit=crop",
-      "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?w=800&h=600&fit=crop"
-    ];
-    if (images.length < 4) {
-      setImages([...images, demoImages[images.length % demoImages.length]]);
-    }
+  const addImage = (imageUrl: string) => {
+    setImages([...images, imageUrl]);
+    toast({
+      title: "Photo added!",
+      description: "Workout photo uploaded successfully.",
+    });
   };
 
   const removeImage = (index: number) => {
@@ -289,43 +286,60 @@ export default function LogWorkout() {
         {/* Photos */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Camera className="h-5 w-5" />
-                <span>Photos</span>
-              </div>
-              <Button onClick={addImage} variant="outline" size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Photo
-              </Button>
+            <CardTitle className="flex items-center space-x-2">
+              <Camera className="h-5 w-5" />
+              <span>Workout Photos</span>
+              <Badge variant="secondary" className="ml-2">
+                {images.length}/4
+              </Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            {images.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <CardContent className="space-y-4">
+            {/* Image Upload Component */}
+            {images.length < 4 && (
+              <ImageUpload 
+                onImageUploaded={addImage}
+                label="Upload workout photo"
+                className="w-full"
+              />
+            )}
+            
+            {/* Uploaded Images Grid */}
+            {images.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                 {images.map((image, index) => (
                   <div key={index} className="relative group">
                     <img
                       src={image}
                       alt={`Workout photo ${index + 1}`}
-                      className="w-full h-32 object-cover rounded-lg"
+                      className="w-full h-32 object-cover rounded-lg border-2 border-gray-200 dark:border-gray-700"
                     />
                     <Button
                       onClick={() => removeImage(index)}
                       variant="destructive"
                       size="sm"
-                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0"
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <X className="h-3 w-3" />
                     </Button>
                   </div>
                 ))}
               </div>
-            ) : (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                <Camera className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>No photos added yet</p>
-                <p className="text-sm">Add photos to share your workout progress</p>
+            )}
+            
+            {/* Empty State */}
+            {images.length === 0 && (
+              <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+                <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Upload photos to document your workout</p>
+                <p className="text-xs">Share your form, setup, or progress</p>
+              </div>
+            )}
+            
+            {/* Max Photos Notice */}
+            {images.length >= 4 && (
+              <div className="text-center py-2 text-sm text-gray-500 dark:text-gray-400">
+                Maximum of 4 photos reached
               </div>
             )}
           </CardContent>

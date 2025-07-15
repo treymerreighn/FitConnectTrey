@@ -210,6 +210,8 @@ The application is mobile app store ready with PWA capabilities and can be deplo
 
 ```
 Changelog:
+- July 15, 2025: Enhanced workout creation with comprehensive exercise library modal interface
+- July 15, 2025: Migrated from in-memory to PostgreSQL database with production-ready persistence
 - July 09, 2025: Enhanced workout logging with AWS S3 cloud image upload integration
 - July 08, 2025: Implemented AWS S3 cloud storage with real image upload functionality
 - July 06, 2025: Enhanced workout creation form with exercise library integration

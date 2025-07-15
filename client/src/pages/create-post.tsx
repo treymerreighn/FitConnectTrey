@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Plus, Trash2, Camera, Upload, X, Dumbbell, Clock, Flame, Target, Search, ChevronDown, ChevronUp, Save, Check } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Camera, Upload, X, Dumbbell, Clock, Flame, Target, Search, ChevronDown, ChevronUp, Save, Check, Filter, Book } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,6 +10,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -52,6 +53,9 @@ export default function CreatePost() {
   const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
   const [exerciseSearchOpen, setExerciseSearchOpen] = useState<number | null>(null);
   const [expandedExercises, setExpandedExercises] = useState<Set<number>>(new Set());
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [librarySearch, setLibrarySearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   
   // Nutrition specific
   const [mealType, setMealType] = useState("");
@@ -87,8 +91,25 @@ export default function CreatePost() {
   };
 
   const addExercise = () => {
+    setLibraryOpen(true);
+  };
+
+  const addExerciseFromLibrary = (libraryExercise: ExerciseType) => {
+    const newExercise: WorkoutExercise = {
+      id: libraryExercise.id,
+      name: libraryExercise.name,
+      sets: [{ reps: 12, weight: 0 }],
+      notes: ""
+    };
+    setExercises([...exercises, newExercise]);
+    setExpandedExercises(new Set([...expandedExercises, exercises.length]));
+    setLibraryOpen(false);
+  };
+
+  const addBlankExercise = () => {
     setExercises([...exercises, { name: "", sets: [{ reps: 12, weight: 0 }], notes: "" }]);
     setExpandedExercises(new Set([...expandedExercises, exercises.length]));
+    setLibraryOpen(false);
   };
 
   const removeExercise = (index: number) => {
@@ -411,8 +432,8 @@ export default function CreatePost() {
                     <Badge variant="outline">{totalSets} sets</Badge>
                   </div>
                   <Button onClick={addExercise} className="bg-fit-green hover:bg-fit-green/90">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Exercise
+                    <Book className="h-4 w-4 mr-2" />
+                    Exercise Library
                   </Button>
                 </CardTitle>
               </CardHeader>
@@ -421,7 +442,14 @@ export default function CreatePost() {
                   <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                     <Dumbbell className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p className="font-medium">No exercises added yet</p>
-                    <p className="text-sm">Start building your workout</p>
+                    <p className="text-sm">Browse the exercise library to get started</p>
+                    <Button 
+                      onClick={addExercise} 
+                      className="mt-4 bg-fit-green hover:bg-fit-green/90"
+                    >
+                      <Book className="h-4 w-4 mr-2" />
+                      Browse Exercise Library
+                    </Button>
                   </div>
                 ) : (
                   exercises.map((exercise, exerciseIndex) => (
@@ -804,6 +832,129 @@ export default function CreatePost() {
             </CardContent>
           </Card>
         )}
+
+        {/* Exercise Library Modal */}
+        <Dialog open={libraryOpen} onOpenChange={setLibraryOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+            <DialogHeader>
+              <DialogTitle className="flex items-center space-x-2">
+                <Book className="h-5 w-5" />
+                <span>Exercise Library</span>
+              </DialogTitle>
+              <DialogDescription>
+                Browse and add exercises to your workout
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="flex flex-col h-full">
+              {/* Search and Filter */}
+              <div className="flex gap-4 mb-4">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search exercises..."
+                    value={librarySearch}
+                    onChange={(e) => setLibrarySearch(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="w-48">
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    <SelectItem value="strength">Strength</SelectItem>
+                    <SelectItem value="cardio">Cardio</SelectItem>
+                    <SelectItem value="core">Core</SelectItem>
+                    <SelectItem value="flexibility">Flexibility</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Exercise Grid */}
+              <div className="flex-1 overflow-y-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {exerciseLibrary
+                    .filter(ex => {
+                      const matchesSearch = librarySearch === "" || 
+                        ex.name.toLowerCase().includes(librarySearch.toLowerCase()) ||
+                        (ex.description && ex.description.toLowerCase().includes(librarySearch.toLowerCase()));
+                      const matchesCategory = selectedCategory === "all" || ex.category === selectedCategory;
+                      return matchesSearch && matchesCategory;
+                    })
+                    .map((exercise) => (
+                      <Card key={exercise.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <h3 className="font-semibold text-lg">{exercise.name}</h3>
+                              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                                {exercise.description}
+                              </p>
+                            </div>
+                            <Button
+                              onClick={() => addExerciseFromLibrary(exercise)}
+                              size="sm"
+                              className="bg-fit-green hover:bg-fit-green/90"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          
+                          <div className="flex flex-wrap gap-1 mb-3">
+                            <Badge variant="secondary" className="text-xs">
+                              {exercise.category}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {exercise.difficulty}
+                            </Badge>
+                            {exercise.muscleGroups && exercise.muscleGroups.slice(0, 2).map((muscle, idx) => (
+                              <Badge key={idx} variant="outline" className="text-xs">
+                                {muscle}
+                              </Badge>
+                            ))}
+                          </div>
+                          
+                          {exercise.equipment && exercise.equipment.length > 0 && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              Equipment: {exercise.equipment.join(", ")}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                </div>
+                
+                {exerciseLibrary.length === 0 && (
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    <Dumbbell className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p className="font-medium">No exercises found</p>
+                    <p className="text-sm">Try adjusting your search or category filter</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer Actions */}
+              <div className="flex justify-between items-center pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={addBlankExercise}
+                  className="flex items-center space-x-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Add Custom Exercise</span>
+                </Button>
+                <div className="flex space-x-2">
+                  <Button variant="outline" onClick={() => setLibraryOpen(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

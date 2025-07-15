@@ -200,6 +200,38 @@ export class PgStorage implements IStorage {
     return await db.select().from(users);
   }
 
+  async upsertUser(userData: { id: string; email: string | null; firstName: string | null; lastName: string | null; profileImageUrl: string | null; }): Promise<User> {
+    const fullName = [userData.firstName, userData.lastName].filter(Boolean).join(' ') || 'User';
+    const username = userData.email?.split('@')[0] || `user_${userData.id}`;
+    
+    const [user] = await db
+      .insert(users)
+      .values({
+        id: userData.id,
+        username: username,
+        email: userData.email || '',
+        fullName: fullName,
+        avatar: userData.profileImageUrl,
+        bio: 'New to FitConnect! 💪',
+        isVerified: false,
+        accountType: 'user',
+        fitnessGoals: [],
+        followers: [],
+        following: [],
+      })
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          email: userData.email || '',
+          fullName: fullName,
+          avatar: userData.profileImageUrl,
+        },
+      })
+      .returning();
+    
+    return user;
+  }
+
   // Posts
   async createPost(post: InsertPost): Promise<Post> {
     const newPost = {

@@ -1,5 +1,6 @@
 import type { User, Post, Comment, Connection, ProgressEntry, Exercise, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise } from "@shared/schema";
 import { nanoid } from "nanoid";
+import { PgStorage } from "./pg-storage";
 
 export interface IStorage {
   // Users
@@ -766,4 +767,5 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Switch between development (MemStorage) and production (PgStorage)
+export const storage = new PgStorage();

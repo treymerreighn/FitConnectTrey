@@ -216,6 +216,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Exercise library API
+  app.get("/api/exercises", async (req, res) => {
+    try {
+      const { category, muscleGroup, search } = req.query;
+      let exercises = await storage.getAllExercises();
+      
+      // Filter by category
+      if (category && typeof category === 'string') {
+        exercises = exercises.filter(ex => ex.category === category);
+      }
+      
+      // Filter by muscle group
+      if (muscleGroup && typeof muscleGroup === 'string') {
+        exercises = exercises.filter(ex => 
+          ex.muscleGroups && ex.muscleGroups.includes(muscleGroup)
+        );
+      }
+      
+      // Search by name
+      if (search && typeof search === 'string') {
+        const searchLower = search.toLowerCase();
+        exercises = exercises.filter(ex => 
+          ex.name.toLowerCase().includes(searchLower) ||
+          (ex.description && ex.description.toLowerCase().includes(searchLower))
+        );
+      }
+      
+      res.json(exercises);
+    } catch (error) {
+      console.error("Error fetching exercises:", error);
+      res.status(500).json({ error: "Failed to fetch exercises" });
+    }
+  });
+
+  app.get("/api/exercises/:id", async (req, res) => {
+    try {
+      const exercise = await storage.getExerciseById(req.params.id);
+      if (!exercise) {
+        return res.status(404).json({ error: "Exercise not found" });
+      }
+      res.json(exercise);
+    } catch (error) {
+      console.error("Error fetching exercise:", error);
+      res.status(500).json({ error: "Failed to fetch exercise" });
+    }
+  });
+
   app.post("/api/exercises", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;

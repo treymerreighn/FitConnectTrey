@@ -38,6 +38,18 @@ export const api = {
     const res = await apiRequest("GET", `/api/users/${id}`);
     return res.json();
   },
+  getUserById: async (id: string): Promise<User> => {
+    const res = await apiRequest("GET", `/api/users/${id}`);
+    return res.json();
+  },
+  updateUser: async (id: string, updates: Partial<User>): Promise<User> => {
+    const res = await apiRequest("PUT", `/api/users/${id}`, updates);
+    return res.json();
+  },
+  getPostsByUserId: async (userId: string): Promise<Post[]> => {
+    const res = await apiRequest("GET", `/api/posts/user/${userId}`);
+    return res.json();
+  },
   
   // Comments
   getComments: async (postId: string): Promise<Comment[]> => {

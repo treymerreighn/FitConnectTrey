@@ -59,6 +59,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/users/:id", async (req, res) => {
+    try {
+      const user = await storage.updateUser(req.params.id, req.body);
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update user" });
+    }
+  });
+
+  app.get("/api/posts/user/:userId", async (req, res) => {
+    try {
+      const posts = await storage.getPostsByUserId(req.params.userId);
+      res.json(posts);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch user posts" });
+    }
+  });
+
   app.get("/api/posts", async (req, res) => {
     try {
       const posts = await storage.getAllPosts();

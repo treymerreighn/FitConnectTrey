@@ -196,6 +196,11 @@ export class PgStorage implements IStorage {
     return updated;
   }
 
+  async getPostsByUserId(userId: string): Promise<Post[]> {
+    const userPosts = await db.select().from(posts).where(eq(posts.userId, userId));
+    return userPosts;
+  }
+
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(users);
   }

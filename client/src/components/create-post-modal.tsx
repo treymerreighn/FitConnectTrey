@@ -12,6 +12,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { CURRENT_USER_ID, WORKOUT_TYPES, MEAL_TYPES, PROGRESS_TYPES } from "@/lib/constants";
 import { useToast } from "@/hooks/use-toast";
+import { ImageUpload } from "@/components/image-upload";
 import { Dumbbell, Apple, TrendingUp } from "lucide-react";
 
 interface CreatePostModalProps {
@@ -60,6 +61,7 @@ type PostFormData = z.infer<typeof postSchema>;
 
 export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
   const [selectedType, setSelectedType] = useState<"workout" | "nutrition" | "progress" | null>(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -71,6 +73,11 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
       type: "workout",
     },
   });
+
+  const handleImageUploaded = (imageUrl: string) => {
+    setUploadedImageUrl(imageUrl);
+    form.setValue("image", imageUrl);
+  };
 
   const createPostMutation = useMutation({
     mutationFn: async (data: PostFormData) => {
@@ -129,6 +136,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
   const handleClose = () => {
     form.reset();
     setSelectedType(null);
+    setUploadedImageUrl("");
     onClose();
   };
 
@@ -203,19 +211,15 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="image"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Image URL (optional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="https://example.com/image.jpg" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div>
+              <FormLabel>Upload Photo (optional)</FormLabel>
+              <ImageUpload
+                onImageUploaded={handleImageUploaded}
+                currentImageUrl={uploadedImageUrl}
+                label="Upload post photo"
+                className="mt-2"
+              />
+            </div>
 
             {selectedType === "workout" && (
               <>

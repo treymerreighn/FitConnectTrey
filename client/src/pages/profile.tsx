@@ -17,6 +17,7 @@ import { api } from "@/lib/api";
 import { CURRENT_USER_ID } from "@/lib/constants";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { uploadImage } from "@/lib/imageUpload";
 import type { User as UserType, Post } from "@shared/schema";
 
 const editProfileSchema = z.object({
@@ -62,6 +63,15 @@ export default function Profile() {
     },
   });
 
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<UserType> }) => {
+      return api.updateUser(id, updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
+    },
+  });
+
   const updateProfileMutation = useMutation({
     mutationFn: async (data: EditProfileData) => {
       return api.updateUser(CURRENT_USER_ID, data);
@@ -82,6 +92,31 @@ export default function Profile() {
       });
     },
   });
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const result = await uploadImage(file);
+      if (result.success) {
+        await updateUserMutation.mutateAsync({ 
+          id: currentUser.id, 
+          updates: { avatar: result.url }
+        });
+        toast({
+          title: "Avatar updated",
+          description: "Your profile picture has been updated.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload profile picture.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const onSubmit = (data: EditProfileData) => {
     updateProfileMutation.mutate(data);
@@ -128,12 +163,15 @@ export default function Profile() {
                     {currentUser.name?.charAt(0).toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
-                <Button
-                  size="sm"
-                  className="absolute -bottom-2 -right-2 rounded-full w-8 h-8 p-0 bg-fit-green hover:bg-fit-green/90"
-                >
-                  <Camera className="h-4 w-4" />
-                </Button>
+                <label className="absolute -bottom-2 -right-2 rounded-full w-8 h-8 p-0 bg-fit-green hover:bg-fit-green/90 cursor-pointer flex items-center justify-center">
+                  <Camera className="h-4 w-4 text-white" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    className="hidden"
+                  />
+                </label>
               </div>
 
               {/* Profile Info */}

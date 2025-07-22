@@ -5,6 +5,7 @@ import { insertUserSchema, insertPostSchema, insertCommentSchema, insertConnecti
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { generateAIWorkout } from "./ai-workout";
 import { generateExerciseDatabase, generateWorkoutTemplates } from "./ai-exercise-generator";
+import { seedExerciseDatabase } from "./seed-exercises";
 
 const router = Router();
 
@@ -460,6 +461,18 @@ router.post("/api/generate-workout", isAuthenticated, async (req, res) => {
 });
 
 // AI Database Generation (Admin endpoints)
+router.post("/api/admin/seed-exercise-database", isAuthenticated, async (req, res) => {
+  try {
+    // Seed basic comprehensive exercise library
+    await seedExerciseDatabase();
+    
+    res.json({ message: "Exercise database seeded successfully", count: 20 });
+  } catch (error) {
+    console.error("Database seeding error:", error);
+    res.status(500).json({ error: "Failed to seed exercise database" });
+  }
+});
+
 router.post("/api/admin/generate-exercise-database", isAuthenticated, async (req, res) => {
   try {
     // Only allow admin users to generate database

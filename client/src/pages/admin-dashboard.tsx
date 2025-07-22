@@ -16,7 +16,56 @@ export default function AdminDashboard() {
   const [isGeneratingTemplates, setIsGeneratingTemplates] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
 
-  const generateExerciseDatabase = async () => {
+  const seedExerciseDatabase = async () => {
+    setIsGeneratingExercises(true);
+    setGenerationProgress(0);
+
+    try {
+      const response = await fetch("/api/admin/seed-exercise-database", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to seed database");
+      }
+
+      // Simulate quick progress for seeding
+      const progressInterval = setInterval(() => {
+        setGenerationProgress(prev => {
+          if (prev >= 100) {
+            clearInterval(progressInterval);
+            return 100;
+          }
+          return prev + 20;
+        });
+      }, 200);
+
+      // Complete after 2 seconds
+      setTimeout(() => {
+        setGenerationProgress(100);
+        setIsGeneratingExercises(false);
+        clearInterval(progressInterval);
+        
+        toast({
+          title: "Exercise Library Populated!",
+          description: "20 comprehensive exercises added to your library"
+        });
+      }, 2000);
+
+    } catch (error) {
+      setIsGeneratingExercises(false);
+      toast({
+        title: "Seeding Failed",
+        description: "Failed to populate exercise database",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const generateAIExercises = async () => {
     setIsGeneratingExercises(true);
     setGenerationProgress(0);
 
@@ -51,7 +100,7 @@ export default function AdminDashboard() {
         clearInterval(progressInterval);
         
         toast({
-          title: "Exercise Database Generated!",
+          title: "AI Exercise Database Generated!",
           description: "500+ AI-generated exercises have been added to the database"
         });
       }, 30000);
@@ -154,23 +203,35 @@ export default function AdminDashboard() {
                 </div>
               )}
 
-              <Button
-                onClick={generateExerciseDatabase}
-                disabled={isGeneratingExercises}
-                className="w-full bg-blue-600 hover:bg-blue-700"
-              >
-                {isGeneratingExercises ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Generating... ({Math.round(generationProgress)}%)
-                  </>
-                ) : (
-                  <>
-                    <Zap className="h-4 w-4 mr-2" />
-                    Generate Exercise Database
-                  </>
-                )}
-              </Button>
+              <div className="space-y-3">
+                <Button
+                  onClick={seedExerciseDatabase}
+                  disabled={isGeneratingExercises}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                >
+                  {isGeneratingExercises ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Seeding... ({Math.round(generationProgress)}%)
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-4 w-4 mr-2" />
+                      Quick Seed (20 Exercises)
+                    </>
+                  )}
+                </Button>
+                
+                <Button
+                  onClick={generateAIExercises}
+                  disabled={isGeneratingExercises}
+                  variant="outline"
+                  className="w-full border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white"
+                >
+                  <Zap className="h-4 w-4 mr-2" />
+                  AI Generate (500+ Exercises)
+                </Button>
+              </div>
             </CardContent>
           </Card>
 

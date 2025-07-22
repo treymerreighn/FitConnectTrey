@@ -124,6 +124,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/exercises', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const exerciseData = {
+        ...req.body,
+        createdBy: userId,
+        isUserCreated: true,
+        isApproved: false // User-created exercises need approval
+      };
+      
+      const exercise = await storage.createExercise(exerciseData);
+      res.json(exercise);
+    } catch (error) {
+      console.error('Error creating exercise:', error);
+      res.status(500).json({ message: 'Failed to create exercise' });
+    }
+  });
+
   // Protected routes (require authentication)
   app.post("/api/posts", isAuthenticated, async (req: any, res) => {
     try {

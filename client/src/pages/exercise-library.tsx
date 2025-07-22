@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Search, Plus, Play, X, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,8 +7,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { api } from "@/lib/api";
 import { useLocation, Link } from "wouter";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 interface Exercise {
   id: string;
@@ -92,10 +97,18 @@ export default function ExerciseLibrary() {
   const [selectedExercises, setSelectedExercises] = useState<Exercise[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [showExerciseDetail, setShowExerciseDetail] = useState<Exercise | null>(null);
+  const [showCreateExercise, setShowCreateExercise] = useState(false);
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  // Mock data for now - replace with real API call
-  const exercises = MOCK_EXERCISES;
+  // Fetch exercises from database
+  const { data: exercisesData = [] } = useQuery({
+    queryKey: ["/api/exercises"],
+    queryFn: () => fetch("/api/exercises").then(res => res.json()),
+  });
+
+  const exercises = exercisesData.length > 0 ? exercisesData : MOCK_EXERCISES;
 
   const categories = ["All", "Strength", "Cardio", "Flexibility", "Sports"];
   const muscleGroups = ["Chest", "Back", "Shoulders", "Arms", "Legs", "Core"];
@@ -150,16 +163,27 @@ export default function ExerciseLibrary() {
             </Button>
             <h1 className="text-xl font-bold">All Exercises</h1>
           </div>
-          <Button
-            variant={isSelectionMode ? "destructive" : "outline"}
-            size="sm"
-            onClick={() => {
-              setIsSelectionMode(!isSelectionMode);
-              setSelectedExercises([]);
-            }}
-          >
-            {isSelectionMode ? "Cancel" : "Select"}
-          </Button>
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowCreateExercise(true)}
+              className="text-green-400 border-green-400 hover:bg-green-400/10"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Exercise
+            </Button>
+            <Button
+              variant={isSelectionMode ? "destructive" : "outline"}
+              size="sm"
+              onClick={() => {
+                setIsSelectionMode(!isSelectionMode);
+                setSelectedExercises([]);
+              }}
+            >
+              {isSelectionMode ? "Cancel" : "Select"}
+            </Button>
+          </div>
         </div>
 
         {/* Search */}
@@ -335,6 +359,332 @@ export default function ExerciseLibrary() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Create Exercise Modal */}
+      {showCreateExercise && (
+        <CreateExerciseModal 
+          isOpen={showCreateExercise}
+          onClose={() => setShowCreateExercise(false)}
+          onExerciseCreated={() => {
+            queryClient.invalidateQueries({ queryKey: ["/api/exercises"] });
+            setShowCreateExercise(false);
+            toast({
+              title: "Exercise Created",
+              description: "Your new exercise has been added to the library.",
+            });
+          }}
+        />
+      )}
     </div>
+  );
+}
+
+// Create Exercise Modal Component
+interface CreateExerciseModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onExerciseCreated: () => void;
+}
+
+function CreateExerciseModal({ isOpen, onClose, onExerciseCreated }: CreateExerciseModalProps) {
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    category: "strength",
+    muscleGroups: [] as string[],
+    equipment: [] as string[],
+    difficulty: "beginner",
+    instructions: [""],
+    tips: [""],
+    variations: [""],
+    safetyNotes: [""]
+  });
+  const { toast } = useToast();
+
+  const createExerciseMutation = useMutation({
+    mutationFn: async (exerciseData: any) => {
+      return apiRequest("/api/exercises", {
+        method: "POST",
+        body: JSON.stringify(exerciseData),
+        headers: { "Content-Type": "application/json" }
+      });
+    },
+    onSuccess: onExerciseCreated,
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create exercise",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name.trim()) {
+      toast({
+        title: "Error",
+        description: "Exercise name is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const exerciseData = {
+      ...formData,
+      instructions: formData.instructions.filter(i => i.trim()),
+      tips: formData.tips.filter(t => t.trim()),
+      variations: formData.variations.filter(v => v.trim()),
+      safetyNotes: formData.safetyNotes.filter(s => s.trim()),
+      images: [],
+      videos: [],
+      tags: [],
+      isApproved: false, // Requires approval for user-created exercises
+      isUserCreated: true
+    };
+
+    createExerciseMutation.mutate(exerciseData);
+  };
+
+  const addArrayField = (field: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: [...prev[field as keyof typeof prev] as string[], ""]
+    }));
+  };
+
+  const updateArrayField = (field: string, index: number, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: (prev[field as keyof typeof prev] as string[]).map((item, i) => 
+        i === index ? value : item
+      )
+    }));
+  };
+
+  const removeArrayField = (field: string, index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: (prev[field as keyof typeof prev] as string[]).filter((_, i) => i !== index)
+    }));
+  };
+
+  const toggleMuscleGroup = (muscle: string) => {
+    setFormData(prev => ({
+      ...prev,
+      muscleGroups: prev.muscleGroups.includes(muscle)
+        ? prev.muscleGroups.filter(m => m !== muscle)
+        : [...prev.muscleGroups, muscle]
+    }));
+  };
+
+  const toggleEquipment = (equip: string) => {
+    setFormData(prev => ({
+      ...prev,
+      equipment: prev.equipment.includes(equip)
+        ? prev.equipment.filter(e => e !== equip)
+        : [...prev.equipment, equip]
+    }));
+  };
+
+  const muscleGroupOptions = ["chest", "back", "shoulders", "biceps", "triceps", "forearms", "abs", "obliques", "lower_back", "glutes", "quadriceps", "hamstrings", "calves", "traps", "lats", "delts"];
+  const equipmentOptions = ["bodyweight", "barbell", "dumbbell", "kettlebell", "resistance-band", "pull-up-bar", "bench", "machine", "cable", "medicine-ball"];
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-2xl bg-gray-800 border-gray-700 text-white max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Create New Exercise</DialogTitle>
+        </DialogHeader>
+        
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Basic Info */}
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="name">Exercise Name *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                className="bg-gray-700 border-gray-600 text-white"
+                placeholder="e.g., Push-ups"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                className="bg-gray-700 border-gray-600 text-white"
+                placeholder="Brief description of the exercise"
+                rows={2}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="category">Category</Label>
+                <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+                  <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="strength">Strength</SelectItem>
+                    <SelectItem value="cardio">Cardio</SelectItem>
+                    <SelectItem value="flexibility">Flexibility</SelectItem>
+                    <SelectItem value="sports">Sports</SelectItem>
+                    <SelectItem value="functional">Functional</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="difficulty">Difficulty</Label>
+                <Select value={formData.difficulty} onValueChange={(value) => setFormData(prev => ({ ...prev, difficulty: value }))}>
+                  <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="beginner">Beginner</SelectItem>
+                    <SelectItem value="intermediate">Intermediate</SelectItem>
+                    <SelectItem value="advanced">Advanced</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          {/* Muscle Groups */}
+          <div>
+            <Label>Muscle Groups Targeted</Label>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {muscleGroupOptions.map(muscle => (
+                <Button
+                  key={muscle}
+                  type="button"
+                  variant={formData.muscleGroups.includes(muscle) ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => toggleMuscleGroup(muscle)}
+                  className="text-xs"
+                >
+                  {muscle.replace("_", " ")}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Equipment */}
+          <div>
+            <Label>Equipment Needed</Label>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {equipmentOptions.map(equip => (
+                <Button
+                  key={equip}
+                  type="button"
+                  variant={formData.equipment.includes(equip) ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => toggleEquipment(equip)}
+                  className="text-xs"
+                >
+                  {equip.replace("-", " ")}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Instructions */}
+          <div>
+            <Label>Instructions</Label>
+            {formData.instructions.map((instruction, index) => (
+              <div key={index} className="flex gap-2 mt-2">
+                <Input
+                  value={instruction}
+                  onChange={(e) => updateArrayField("instructions", index, e.target.value)}
+                  className="bg-gray-700 border-gray-600 text-white"
+                  placeholder={`Step ${index + 1}`}
+                />
+                {formData.instructions.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeArrayField("instructions", index)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => addArrayField("instructions")}
+              className="mt-2"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Step
+            </Button>
+          </div>
+
+          {/* Tips */}
+          <div>
+            <Label>Tips</Label>
+            {formData.tips.map((tip, index) => (
+              <div key={index} className="flex gap-2 mt-2">
+                <Input
+                  value={tip}
+                  onChange={(e) => updateArrayField("tips", index, e.target.value)}
+                  className="bg-gray-700 border-gray-600 text-white"
+                  placeholder={`Tip ${index + 1}`}
+                />
+                {formData.tips.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeArrayField("tips", index)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => addArrayField("tips")}
+              className="mt-2"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Tip
+            </Button>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              className="flex-1 bg-green-600 hover:bg-green-700"
+              disabled={createExerciseMutation.isPending}
+            >
+              {createExerciseMutation.isPending ? "Creating..." : "Create Exercise"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -15,14 +15,9 @@ const COMPREHENSIVE_EXERCISES = [
       "Keep your core tight throughout the movement"
     ],
     tips: ["Keep your body in a straight line", "Don't let hips sag or pike up"],
-    targetSets: 3,
-    targetReps: "8-12",
-    restTime: 60,
-    isApproved: true,
-    createdBy: "system",
     description: "Classic bodyweight exercise targeting chest, shoulders, and triceps",
     tags: ["bodyweight", "beginner", "chest"],
-    imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images: ["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"]
   },
   {
     name: "Bench Press",
@@ -37,14 +32,14 @@ const COMPREHENSIVE_EXERCISES = [
       "Press bar up until arms are fully extended"
     ],
     tips: ["Keep shoulder blades retracted", "Don't bounce bar off chest"],
-    targetSets: 4,
-    targetReps: "6-10",
-    restTime: 120,
+    
+    
+    
     isApproved: true,
     createdBy: "system",
     description: "Fundamental compound exercise for chest development",
     tags: ["barbell", "compound", "strength"],
-    imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
   },
   {
     name: "Dumbbell Flyes",
@@ -59,14 +54,14 @@ const COMPREHENSIVE_EXERCISES = [
       "Squeeze chest muscles at top"
     ],
     tips: ["Don't go too heavy", "Focus on controlled movement"],
-    targetSets: 3,
-    targetReps: "10-15",
-    restTime: 90,
+    
+    
+    
     isApproved: true,
     createdBy: "system",
     description: "Isolation exercise for chest muscle development",
     tags: ["dumbbells", "isolation", "chest"],
-    imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
   },
 
   // BACK EXERCISES
@@ -83,14 +78,14 @@ const COMPREHENSIVE_EXERCISES = [
       "Engage lats and squeeze shoulder blades"
     ],
     tips: ["Don't swing or use momentum", "Focus on pulling with back muscles"],
-    targetSets: 3,
-    targetReps: "5-10",
-    restTime: 120,
+    
+    
+    
     isApproved: true,
     createdBy: "system",
     description: "Compound bodyweight exercise for back and biceps",
     tags: ["bodyweight", "compound", "back"],
-    imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
   },
   {
     name: "Bent-over Row",
@@ -105,14 +100,14 @@ const COMPREHENSIVE_EXERCISES = [
       "Lower with control"
     ],
     tips: ["Keep core engaged", "Don't round your back"],
-    targetSets: 4,
-    targetReps: "6-10",
-    restTime: 120,
+    
+    
+    
     isApproved: true,
     createdBy: "system",
     description: "Compound rowing exercise for back development",
     tags: ["barbell", "compound", "back"],
-    imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
   },
   {
     name: "Lat Pulldown",
@@ -127,14 +122,14 @@ const COMPREHENSIVE_EXERCISES = [
       "Control the weight back up"
     ],
     tips: ["Don't lean back excessively", "Focus on lat engagement"],
-    targetSets: 3,
-    targetReps: "8-12",
-    restTime: 90,
+    
+    
+    
     isApproved: true,
     createdBy: "system",
     description: "Machine exercise targeting latissimus dorsi",
     tags: ["cable", "machine", "back"],
-    imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
   },
 
   // LEG EXERCISES
@@ -151,14 +146,14 @@ const COMPREHENSIVE_EXERCISES = [
       "Return to standing position"
     ],
     tips: ["Don't let knees cave inward", "Go down until thighs parallel to floor"],
-    targetSets: 3,
-    targetReps: "10-15",
-    restTime: 90,
+    
+    
+    
     isApproved: true,
     createdBy: "system",
     description: "Fundamental lower body compound movement",
     tags: ["bodyweight", "compound", "legs"],
-    imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
   },
   {
     name: "Deadlift",
@@ -173,14 +168,14 @@ const COMPREHENSIVE_EXERCISES = [
       "Lower bar with control"
     ],
     tips: ["Keep bar close to body", "Don't round your back"],
-    targetSets: 4,
-    targetReps: "5-8",
-    restTime: 180,
+    
+    
+    
     isApproved: true,
     createdBy: "system",
     description: "King of compound exercises targeting posterior chain",
     tags: ["barbell", "compound", "full-body"],
-    imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
   },
   {
     name: "Lunges",
@@ -195,14 +190,14 @@ const COMPREHENSIVE_EXERCISES = [
       "Alternate legs or complete one side first"
     ],
     tips: ["Keep front knee over ankle", "Don't let back knee touch ground"],
-    targetSets: 3,
-    targetReps: "10-12 each leg",
-    restTime: 60,
+    
+    
+    
     isApproved: true,
     createdBy: "system",
     description: "Unilateral leg exercise for strength and balance",
     tags: ["bodyweight", "unilateral", "legs"],
-    imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
   },
 
   // SHOULDER EXERCISES
@@ -219,14 +214,14 @@ const COMPREHENSIVE_EXERCISES = [
       "Keep core engaged throughout"
     ],
     tips: ["Don't arch back excessively", "Press in straight line"],
-    targetSets: 3,
-    targetReps: "8-12",
-    restTime: 90,
+    
+    
+    
     isApproved: true,
     createdBy: "system",
     description: "Compound exercise for shoulder development",
     tags: ["dumbbells", "compound", "shoulders"],
-    imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
   },
   {
     name: "Lateral Raises",
@@ -241,14 +236,14 @@ const COMPREHENSIVE_EXERCISES = [
       "Focus on deltoid muscles lifting the weight"
     ],
     tips: ["Don't use momentum", "Lead with pinkies on the way up"],
-    targetSets: 3,
-    targetReps: "12-15",
-    restTime: 60,
+    
+    
+    
     isApproved: true,
     createdBy: "system",
     description: "Isolation exercise for side deltoids",
     tags: ["dumbbells", "isolation", "shoulders"],
-    imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
   },
 
   // ARM EXERCISES
@@ -265,14 +260,14 @@ const COMPREHENSIVE_EXERCISES = [
       "Lower with control"
     ],
     tips: ["Don't swing the weights", "Keep elbows stationary"],
-    targetSets: 3,
-    targetReps: "10-15",
-    restTime: 60,
+    
+    
+    
     isApproved: true,
     createdBy: "system",
     description: "Classic isolation exercise for biceps",
     tags: ["dumbbells", "isolation", "arms"],
-    imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
   },
   {
     name: "Tricep Dips",
@@ -287,14 +282,14 @@ const COMPREHENSIVE_EXERCISES = [
       "Push back up to starting position"
     ],
     tips: ["Keep elbows close to body", "Don't go too low"],
-    targetSets: 3,
-    targetReps: "8-12",
-    restTime: 60,
+    
+    
+    
     isApproved: true,
     createdBy: "system",
     description: "Bodyweight exercise for triceps development",
     tags: ["bodyweight", "triceps", "arms"],
-    imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
   },
 
   // CORE EXERCISES
@@ -311,14 +306,14 @@ const COMPREHENSIVE_EXERCISES = [
       "Engage core muscles throughout"
     ],
     tips: ["Don't let hips sag or pike up", "Keep neck in neutral position"],
-    targetSets: 3,
-    targetReps: "30-60 seconds",
-    restTime: 60,
+    
+    
+    
     isApproved: true,
     createdBy: "system",
     description: "Isometric core strengthening exercise",
     tags: ["bodyweight", "isometric", "core"],
-    imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
   },
   {
     name: "Crunches",
@@ -333,14 +328,14 @@ const COMPREHENSIVE_EXERCISES = [
       "Lower with control"
     ],
     tips: ["Don't pull on neck", "Focus on ab contraction"],
-    targetSets: 3,
-    targetReps: "15-25",
-    restTime: 45,
+    
+    
+    
     isApproved: true,
     createdBy: "system",
     description: "Traditional abdominal strengthening exercise",
     tags: ["bodyweight", "abs", "core"],
-    imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
   },
 
   // CARDIO EXERCISES
@@ -357,14 +352,14 @@ const COMPREHENSIVE_EXERCISES = [
       "Maintain steady rhythm"
     ],
     tips: ["Land softly on balls of feet", "Keep core engaged"],
-    targetSets: 3,
-    targetReps: "30-60 seconds",
-    restTime: 30,
+    
+    
+    
     isApproved: true,
     createdBy: "system",
     description: "Classic cardio exercise for full body activation",
     tags: ["cardio", "bodyweight", "full-body"],
-    imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
   },
   {
     name: "Burpees",
@@ -379,14 +374,14 @@ const COMPREHENSIVE_EXERCISES = [
       "Explode up with arms overhead"
     ],
     tips: ["Maintain form even when tired", "Modify by stepping instead of jumping"],
-    targetSets: 3,
-    targetReps: "5-10",
-    restTime: 90,
+    
+    
+    
     isApproved: true,
     createdBy: "system",
     description: "High-intensity full body exercise",
     tags: ["cardio", "full-body", "high-intensity"],
-    imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
   },
 
   // FUNCTIONAL EXERCISES
@@ -403,14 +398,14 @@ const COMPREHENSIVE_EXERCISES = [
       "Keep hips level and core engaged"
     ],
     tips: ["Don't let hips bounce up and down", "Maintain plank position"],
-    targetSets: 3,
-    targetReps: "30 seconds",
-    restTime: 60,
+    
+    
+    
     isApproved: true,
     createdBy: "system",
     description: "Dynamic core and cardio exercise",
     tags: ["functional", "cardio", "core"],
-    imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
   },
   {
     name: "Bear Crawl",
@@ -425,14 +420,14 @@ const COMPREHENSIVE_EXERCISES = [
       "Move in controlled manner"
     ],
     tips: ["Don't let knees touch ground", "Keep movements small and controlled"],
-    targetSets: 3,
-    targetReps: "20 steps forward",
-    restTime: 60,
+    
+    
+    
     isApproved: true,
     createdBy: "system",
     description: "Full body functional movement pattern",
     tags: ["functional", "full-body", "crawling"],
-    imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
   }
 ];
 
@@ -440,6 +435,13 @@ export async function seedExerciseDatabase(): Promise<void> {
   console.log("Seeding exercise database with comprehensive exercises...");
   
   try {
+    // Check if exercises already exist
+    const existingExercises = await storage.getAllExercises();
+    if (existingExercises.length > 0) {
+      console.log(`Database already has ${existingExercises.length} exercises, skipping seed.`);
+      return;
+    }
+
     for (const exercise of COMPREHENSIVE_EXERCISES) {
       const exerciseData = {
         ...exercise,
@@ -460,5 +462,6 @@ export async function seedExerciseDatabase(): Promise<void> {
     console.log(`Successfully seeded ${COMPREHENSIVE_EXERCISES.length} exercises to the database!`);
   } catch (error) {
     console.error("Error seeding exercises:", error);
+    console.log("Falling back to showing mock exercises in the UI...");
   }
 }

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Plus, Trash2, Play, Share, Sparkles, Target, Clock, Dumbbell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -93,6 +94,12 @@ export default function BuildWorkout() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   
+  // Fetch exercises from the database
+  const { data: exercises = [] } = useQuery({
+    queryKey: ["/api/exercises"],
+    queryFn: () => fetch("/api/exercises").then(res => res.json()),
+  });
+  
   const [selectedBodyParts, setSelectedBodyParts] = useState<string[]>([]);
   const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlan>({
     name: "",
@@ -108,7 +115,7 @@ export default function BuildWorkout() {
   const [aiPrompt, setAiPrompt] = useState("");
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
-  const filteredExercises = MOCK_EXERCISES.filter(exercise => {
+  const filteredExercises = (exercises.length > 0 ? exercises : MOCK_EXERCISES).filter(exercise => {
     if (selectedBodyParts.length === 0) return true;
     return exercise.muscleGroups.some(muscle => 
       selectedBodyParts.some(bodyPart => 

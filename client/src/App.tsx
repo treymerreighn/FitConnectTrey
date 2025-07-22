@@ -81,7 +81,7 @@ function Router() {
           <Route path="/exercise-library" component={ExerciseLibrary} />
           <Route path="/workout-session" component={WorkoutSession} />
           <Route path="/build-workout" component={BuildWorkout} />
-          <Route path="/admin" component={AdminDashboard} />
+
           <Route path="/progress" component={Progress} />
           <Route path="/test-upload" component={TestUpload} />
           <Route path="/search">

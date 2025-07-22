@@ -98,6 +98,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/exercises", async (req, res) => {
     try {
+      console.log("Fetching exercises...");
       const { search, category, muscleGroup } = req.query;
       let exercises;
       
@@ -111,8 +112,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         exercises = await storage.getAllExercises();
       }
       
+      console.log(`Found ${exercises.length} exercises`);
       res.json(exercises);
     } catch (error) {
+      console.error("Error fetching exercises:", error);
       res.status(500).json({ error: "Failed to fetch exercises" });
     }
   });

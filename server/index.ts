@@ -4,6 +4,7 @@ import { createServer } from "http";
 import { setupVite, serveStatic, log } from "./vite";
 import { registerRoutes } from "./authRoutes";
 import { initializeDatabase } from "./db";
+import { seedBasicExercises } from "./seed-exercises-simple";
 
 const app = express();
 
@@ -23,6 +24,9 @@ async function startServer() {
   try {
     // Initialize database
     await initializeDatabase();
+    
+    // Seed basic exercises on startup
+    await seedBasicExercises();
     
     // Register routes with authentication
     const server = await registerRoutes(app);

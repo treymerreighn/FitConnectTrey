@@ -496,9 +496,10 @@ export class PgStorage implements IStorage {
       muscleGroups: newExercise.muscleGroups,
       equipment: newExercise.equipment,
       difficulty: newExercise.difficulty,
-      imageUrl: newExercise.imageUrl,
-      videoUrl: newExercise.videoUrl,
-      tips: newExercise.tips,
+      images: newExercise.images || [],
+      videos: newExercise.videos || [],
+      tips: newExercise.tips || [],
+      tags: newExercise.tags || [],
       createdBy: newExercise.createdBy,
       isApproved: newExercise.isApproved
     });

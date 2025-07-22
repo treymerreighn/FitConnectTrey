@@ -111,15 +111,7 @@ export default function Workouts() {
             <Plus className="h-5 w-5 mr-2" />
             Log Workout
           </Button>
-          <Button 
-            onClick={() => setLocation("/admin")}
-            variant="outline"
-            size="lg"
-            className="px-6 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white"
-          >
-            <Database className="h-5 w-5 mr-2" />
-            AI Database
-          </Button>
+
         </div>
 
         {/* Main Content Tabs */}

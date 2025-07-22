@@ -288,20 +288,7 @@ export default function Workouts() {
                                 </div>
                               )}
 
-                              {exercise.safetyNotes.length > 0 && (
-                                <div>
-                                  <h4 className="font-semibold mb-2 text-orange-600 dark:text-orange-400">
-                                    ⚠️ Safety Notes
-                                  </h4>
-                                  <ul className="space-y-1">
-                                    {exercise.safetyNotes.map((note, index) => (
-                                      <li key={index} className="text-sm text-orange-600 dark:text-orange-400">
-                                        • {note}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
+
 
                               {exercise.variations.length > 0 && (
                                 <div>

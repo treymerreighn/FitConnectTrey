@@ -150,6 +150,24 @@ export default function BuildWorkout() {
     }));
   };
 
+  const updateExerciseSets = (exerciseId: string, newSets: number) => {
+    setWorkoutPlan(prev => ({
+      ...prev,
+      exercises: prev.exercises.map(ex => 
+        ex.id === exerciseId ? { ...ex, targetSets: newSets } : ex
+      )
+    }));
+  };
+
+  const updateExerciseReps = (exerciseId: string, newReps: number) => {
+    setWorkoutPlan(prev => ({
+      ...prev,
+      exercises: prev.exercises.map(ex => 
+        ex.id === exerciseId ? { ...ex, targetReps: newReps } : ex
+      )
+    }));
+  };
+
   const generateAIWorkout = async () => {
     setIsGeneratingAI(true);
     
@@ -385,10 +403,59 @@ export default function BuildWorkout() {
                           </Button>
                         </div>
                         
-                        <div className="flex items-center space-x-4 mt-1">
-                          <span className="text-sm text-gray-400">
-                            {exercise.targetSets || 3} sets × {exercise.targetReps || 10} reps
-                          </span>
+                        <div className="flex items-center space-x-4 mt-2">
+                          {/* Sets Control */}
+                          <div className="flex items-center space-x-2">
+                            <label className="text-xs text-gray-400">Sets:</label>
+                            <div className="flex items-center space-x-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => updateExerciseSets(exercise.id, Math.max(1, (exercise.targetSets || 3) - 1))}
+                                className="h-6 w-6 p-0 text-gray-400 hover:text-white"
+                              >
+                                -
+                              </Button>
+                              <span className="text-sm text-white min-w-[20px] text-center">
+                                {exercise.targetSets || 3}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => updateExerciseSets(exercise.id, Math.min(10, (exercise.targetSets || 3) + 1))}
+                                className="h-6 w-6 p-0 text-gray-400 hover:text-white"
+                              >
+                                +
+                              </Button>
+                            </div>
+                          </div>
+
+                          {/* Reps Control */}
+                          <div className="flex items-center space-x-2">
+                            <label className="text-xs text-gray-400">Reps:</label>
+                            <div className="flex items-center space-x-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => updateExerciseReps(exercise.id, Math.max(1, (exercise.targetReps || 10) - 1))}
+                                className="h-6 w-6 p-0 text-gray-400 hover:text-white"
+                              >
+                                -
+                              </Button>
+                              <span className="text-sm text-white min-w-[20px] text-center">
+                                {exercise.targetReps || 10}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => updateExerciseReps(exercise.id, Math.min(50, (exercise.targetReps || 10) + 1))}
+                                className="h-6 w-6 p-0 text-gray-400 hover:text-white"
+                              >
+                                +
+                              </Button>
+                            </div>
+                          </div>
+
                           <Badge variant="secondary" className="text-xs">
                             {exercise.difficulty}
                           </Badge>

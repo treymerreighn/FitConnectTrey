@@ -25,8 +25,8 @@ async function startServer() {
     // Initialize database
     await initializeDatabase();
     
-    // Skip seeding - exercises already exist
-    // await seedBasicExercises();
+    // Seed expanded exercise library
+    await seedBasicExercises();
     
     // Register routes with authentication
     const server = await registerRoutes(app);

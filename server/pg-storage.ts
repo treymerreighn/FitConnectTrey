@@ -555,4 +555,16 @@ export class PgStorage implements IStorage {
   async getUserCreatedExercises(userId: string): Promise<Exercise[]> {
     return await db.select().from(exercises).where(eq(exercises.createdBy, userId));
   }
+
+  async getWorkoutTemplates(filters?: { category?: string; difficulty?: string; bodyPart?: string }): Promise<Post[]> {
+    const result = await db.select()
+      .from(posts)
+      .where(eq(posts.type, "workout"))
+      .orderBy(desc(posts.createdAt));
+    
+    // Filter for templates (posts with workoutData that are templates)
+    return result.filter(post => 
+      post.workoutData && (post.workoutData as any).isTemplate
+    );
+  }
 }

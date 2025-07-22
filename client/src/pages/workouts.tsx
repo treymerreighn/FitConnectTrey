@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Dumbbell, Clock, Flame, Target, Plus, TrendingUp, Search, Filter, Star, BookOpen, Play, Users } from "lucide-react";
+import { Dumbbell, Clock, Flame, Target, Plus, TrendingUp, Search, Filter, Star, BookOpen, Play, Users, Database } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -110,6 +110,15 @@ export default function Workouts() {
           >
             <Plus className="h-5 w-5 mr-2" />
             Log Workout
+          </Button>
+          <Button 
+            onClick={() => setLocation("/admin")}
+            variant="outline"
+            size="lg"
+            className="px-6 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white"
+          >
+            <Database className="h-5 w-5 mr-2" />
+            AI Database
           </Button>
         </div>
 

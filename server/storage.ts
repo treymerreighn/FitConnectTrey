@@ -59,6 +59,9 @@ export interface IStorage {
   deleteExercise(id: string): Promise<boolean>;
   approveUserExercise(id: string): Promise<Exercise>;
   getUserCreatedExercises(userId: string): Promise<Exercise[]>;
+  
+  // Workout template operations
+  getWorkoutTemplates(filters?: { category?: string; difficulty?: string; bodyPart?: string }): Promise<Post[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -764,6 +767,14 @@ export class MemStorage implements IStorage {
     return Array.from(this.exercises.values())
       .filter(exercise => exercise.createdBy === userId)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async getWorkoutTemplates(filters?: { category?: string; difficulty?: string; bodyPart?: string }): Promise<Post[]> {
+    const allPosts = Array.from(this.posts.values());
+    return allPosts.filter(post => 
+      post.type === "workout_template" || 
+      (post.workoutData && post.isTemplate)
+    );
   }
 }
 

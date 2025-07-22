@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { insertUserSchema, insertPostSchema, insertCommentSchema, insertConnectionSchema, insertProgressEntrySchema, insertExerciseSchema } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { generateAIWorkout } from "./ai-workout";
+import { generateExerciseDatabase, generateWorkoutTemplates } from "./ai-exercise-generator";
 
 const router = Router();
 
@@ -455,6 +456,60 @@ router.post("/api/generate-workout", isAuthenticated, async (req, res) => {
       return res.status(400).json({ error: error.errors });
     }
     res.status(500).json({ error: "Failed to generate workout plan" });
+  }
+});
+
+// AI Database Generation (Admin endpoints)
+router.post("/api/admin/generate-exercise-database", isAuthenticated, async (req, res) => {
+  try {
+    // Only allow admin users to generate database
+    const { isAdmin } = req.body;
+    if (!isAdmin) {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    // Start database generation in background
+    generateExerciseDatabase().catch(console.error);
+    
+    res.json({ message: "Exercise database generation started" });
+  } catch (error) {
+    console.error("Database generation error:", error);
+    res.status(500).json({ error: "Failed to start database generation" });
+  }
+});
+
+router.post("/api/admin/generate-workout-templates", isAuthenticated, async (req, res) => {
+  try {
+    const { isAdmin } = req.body;
+    if (!isAdmin) {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    generateWorkoutTemplates().catch(console.error);
+    
+    res.json({ message: "Workout template generation started" });
+  } catch (error) {
+    console.error("Template generation error:", error);
+    res.status(500).json({ error: "Failed to start template generation" });
+  }
+});
+
+// Get workout templates
+router.get("/api/workout-templates", async (req, res) => {
+  try {
+    const { category, difficulty, bodyPart } = req.query;
+    
+    // Get workout templates from posts
+    const templates = await storage.getWorkoutTemplates({
+      category: category as string,
+      difficulty: difficulty as string,
+      bodyPart: bodyPart as string
+    });
+    
+    res.json(templates);
+  } catch (error) {
+    console.error("Error fetching workout templates:", error);
+    res.status(500).json({ error: "Failed to fetch workout templates" });
   }
 });
 

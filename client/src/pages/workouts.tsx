@@ -87,6 +87,14 @@ export default function Workouts() {
         {/* Quick Actions */}
         <div className="flex flex-wrap justify-center gap-4">
           <Button 
+            onClick={() => setLocation("/build-workout")}
+            size="lg"
+            className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 text-lg font-semibold"
+          >
+            <Target className="h-6 w-6 mr-2" />
+            Build Workout
+          </Button>
+          <Button 
             onClick={startWorkout}
             size="lg"
             className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 text-lg font-semibold"

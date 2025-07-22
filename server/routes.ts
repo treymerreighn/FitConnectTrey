@@ -3,6 +3,7 @@ import { z } from "zod";
 import { storage } from "./storage";
 import { insertUserSchema, insertPostSchema, insertCommentSchema, insertConnectionSchema, insertProgressEntrySchema, insertExerciseSchema } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { generateAIWorkout } from "./ai-workout";
 
 const router = Router();
 
@@ -429,6 +430,31 @@ router.get("/api/users/:userId/exercises", async (req, res) => {
   } catch (error) {
     console.error("Error fetching user exercises:", error);
     res.status(500).json({ error: "Failed to fetch user exercises" });
+  }
+});
+
+// AI Workout Generation
+router.post("/api/generate-workout", isAuthenticated, async (req, res) => {
+  try {
+    const workoutRequestSchema = z.object({
+      bodyParts: z.array(z.string()),
+      fitnessLevel: z.enum(["beginner", "intermediate", "advanced"]),
+      duration: z.number().min(15).max(120),
+      equipment: z.array(z.string()).default([]),
+      goals: z.string(),
+      userPrompt: z.string().optional()
+    });
+
+    const workoutRequest = workoutRequestSchema.parse(req.body);
+    const workout = await generateAIWorkout(workoutRequest);
+    
+    res.json(workout);
+  } catch (error) {
+    console.error("AI workout generation error:", error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors });
+    }
+    res.status(500).json({ error: "Failed to generate workout plan" });
   }
 });
 

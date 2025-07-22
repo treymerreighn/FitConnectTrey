@@ -53,6 +53,10 @@ export default function Workouts() {
 
   const categories = ["strength", "cardio", "flexibility", "sports", "functional"];
 
+  const startWorkout = () => {
+    setLocation("/exercise-library");
+  };
+
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "beginner": return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
@@ -83,8 +87,18 @@ export default function Workouts() {
         {/* Quick Actions */}
         <div className="flex flex-wrap justify-center gap-4">
           <Button 
+            onClick={startWorkout}
+            size="lg"
+            className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 text-lg font-semibold"
+          >
+            <Play className="h-6 w-6 mr-2" />
+            Start Workout
+          </Button>
+          <Button 
             onClick={() => setLocation("/log-workout")}
-            className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+            variant="outline"
+            size="lg"
+            className="px-6 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
           >
             <Plus className="h-5 w-5 mr-2" />
             Log Workout

@@ -5,6 +5,8 @@ import { setupSimpleAuth, isAuthenticated } from "./simpleAuth";
 import { insertPostSchema, insertCommentSchema, insertConnectionSchema, insertProgressEntrySchema, insertExerciseSchema } from "@shared/schema";
 import multer from "multer";
 import { AWSImageService } from "./aws-config";
+import { db } from "./db";
+import { eq, sql } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -102,15 +104,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { search, category, muscleGroup } = req.query;
       let exercises;
       
-      if (search) {
-        exercises = await storage.searchExercises(search as string);
-      } else if (category) {
-        exercises = await storage.getExercisesByCategory(category as string);
-      } else if (muscleGroup) {
-        exercises = await storage.getExercisesByMuscleGroup(muscleGroup as string);
-      } else {
-        exercises = await storage.getAllExercises();
-      }
+      // Direct SQL query to get exercises from database
+      const exerciseResults = await db.execute(sql`
+        SELECT id, name, category, muscle_groups as "muscleGroups", equipment, difficulty, 
+               description, instructions, tips, images, videos, variations, tags, 
+               is_approved as "isApproved", created_by as "createdBy", created_at as "createdAt"
+        FROM exercises 
+        WHERE is_approved = true
+      `);
+      exercises = exerciseResults.rows;
       
       console.log(`Found ${exercises.length} exercises`);
       res.json(exercises);

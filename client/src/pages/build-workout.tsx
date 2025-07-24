@@ -142,6 +142,11 @@ export default function BuildWorkout() {
       exercises: [...prev.exercises, exercise],
       estimatedDuration: prev.estimatedDuration + (exercise.targetSets || 3) * 2 // 2 min per set estimate
     }));
+    setShowExerciseLibrary(false); // Close modal after adding
+    toast({
+      title: "Exercise Added!",
+      description: `${exercise.name} has been added to your workout`
+    });
   };
 
   const removeExerciseFromWorkout = (exerciseId: string) => {
@@ -477,7 +482,41 @@ export default function BuildWorkout() {
               ))}
 
               {/* Action Buttons */}
-              <div className="flex space-x-3 pt-4">
+              <div className="sticky bottom-0 bg-gray-900 pt-4 pb-4 mt-6 border-t border-gray-700">
+                <div className="flex space-x-3">
+                  <Button
+                    onClick={startWorkout}
+                    className="flex-1 bg-red-600 hover:bg-red-700"
+                    size="lg"
+                  >
+                    <Play className="h-5 w-5 mr-2" />
+                    Start Workout
+                  </Button>
+                  <Button
+                    onClick={() => setShowSaveOptions(true)}
+                    className="bg-green-600 hover:bg-green-700"
+                    size="lg"
+                  >
+                    Save
+                  </Button>
+                  <Button
+                    onClick={() => setShowPostOptions(true)}
+                    variant="outline"
+                    className="border-blue-500 text-blue-400 hover:bg-blue-500/10"
+                    size="lg"
+                  >
+                    <Share className="h-5 w-5 mr-2" />
+                    Share
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Always visible action buttons when exercises exist */}
+          {workoutPlan.exercises.length > 0 && (
+            <div className="fixed bottom-20 left-0 right-0 bg-gray-900/95 backdrop-blur-sm border-t border-gray-700 p-4 z-40">
+              <div className="max-w-4xl mx-auto flex space-x-3">
                 <Button
                   onClick={startWorkout}
                   className="flex-1 bg-red-600 hover:bg-red-700"

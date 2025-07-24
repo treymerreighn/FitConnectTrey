@@ -5,7 +5,7 @@ import { Home, Search, Dumbbell, TrendingUp, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "wouter";
 import { ThemeProvider } from "@/contexts/theme-context";
-import { ThemeToggle } from "@/components/theme-toggle";
+
 import { useAuth } from "@/hooks/useAuth";
 import Feed from "./pages/feed";
 import Profile from "./pages/profile";
@@ -50,7 +50,7 @@ function BottomNavigation() {
                 className={`flex flex-col items-center py-2 px-4 h-auto ${
                   isActive
                     ? "text-fit-green"
-                    : "text-gray-600 dark:text-gray-400 hover:text-fit-green"
+                    : "text-gray-600 dark:text-gray-300 hover:text-fit-green"
                 }`}
               >
                 <Icon className="w-5 h-5 mb-1" />
@@ -106,11 +106,6 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
           <Router />
-          
-          <div className="fixed top-4 right-4 z-50">
-            <ThemeToggle />
-          </div>
-          
           <BottomNavigation />
           <Toaster />
         </div>

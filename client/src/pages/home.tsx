@@ -97,13 +97,13 @@ export default function Home() {
           </div>
           <div className="flex items-center space-x-4">
             <Button variant="ghost" size="sm" className="relative">
-              <Heart className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <Heart className="w-5 h-5 text-gray-600 dark:text-gray-300" />
               <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
                 3
               </span>
             </Button>
             <Button variant="ghost" size="sm" className="relative">
-              <MessageCircle className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <MessageCircle className="w-5 h-5 text-gray-600 dark:text-gray-300" />
               <span className="absolute -top-1 -right-1 w-4 h-4 bg-fit-blue rounded-full text-xs text-white flex items-center justify-center">
                 5
               </span>

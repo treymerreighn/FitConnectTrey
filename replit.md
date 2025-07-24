@@ -210,6 +210,8 @@ The application is mobile app store ready with PWA capabilities and can be deplo
 
 ```
 Changelog:
+- July 24, 2025: Fixed dark mode text readability with improved contrast and better color hierarchy throughout the app
+- July 24, 2025: Enhanced home page layout with professional post cards, improved typography, and better visual hierarchy
 - July 24, 2025: Renamed "Search" to "Discover" with enhanced content discovery for users, workout tips, and healthy meals
 - July 24, 2025: Improved dark mode styling with better contrast and removed theme toggle button
 - July 24, 2025: Implemented workout history in Profile Workouts tab with filtering and detailed workout cards

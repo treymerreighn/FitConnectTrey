@@ -12,9 +12,13 @@ import type { Post, User } from "@shared/schema";
 export default function Home() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   
-  const { data: posts = [], isLoading: postsLoading } = useQuery<Post[]>({
+  const { data: posts = [], isLoading: postsLoading, error: postsError } = useQuery<Post[]>({
     queryKey: ["/api/posts"],
+    retry: 2,
+    refetchOnWindowFocus: true,
   });
+  
+  console.log("Posts data:", posts, "Loading:", postsLoading, "Error:", postsError);
 
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ["/api/users"],
@@ -119,18 +123,36 @@ export default function Home() {
 
         {/* Feed Posts */}
         <div className="space-y-6 py-4">
-          {posts.length === 0 ? (
+          {postsLoading ? (
+            <div className="space-y-4 px-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-4 space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <Skeleton className="w-10 h-10 rounded-full" />
+                    <div className="space-y-1">
+                      <Skeleton className="w-24 h-4" />
+                      <Skeleton className="w-16 h-3" />
+                    </div>
+                  </div>
+                  <Skeleton className="w-full h-20" />
+                </div>
+              ))}
+            </div>
+          ) : posts.length === 0 ? (
             <div className="text-center py-12 px-4">
               <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
                 <MessageCircle className="w-8 h-8 text-gray-400" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                 Your feed is empty
               </h3>
-              <p className="text-gray-500 dark:text-gray-300 mb-6 max-w-sm mx-auto">
+              <p className="text-gray-500 dark:text-gray-200 mb-6 max-w-sm mx-auto">
                 Follow some users or create your first post to get started with your fitness journey!
               </p>
-              <Button className="bg-fit-green hover:bg-fit-green/90 text-white">
+              <Button 
+                className="bg-fit-green hover:bg-fit-green/90 text-white"
+                onClick={() => setShowCreateModal(true)}
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Create Your First Post
               </Button>

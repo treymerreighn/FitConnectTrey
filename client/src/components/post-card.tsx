@@ -103,7 +103,7 @@ export function PostCard({ post }: PostCardProps) {
             />
             <div className="flex-1 min-w-0">
               <div className="flex items-center space-x-2 mb-1">
-                <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">
+                <h3 className="font-bold text-gray-900 dark:text-white text-base truncate">
                   {user?.name || "Loading..."}
                 </h3>
                 <Badge className={`${typeConfig.color} text-white text-xs px-2 py-1 flex-shrink-0`}>
@@ -111,7 +111,7 @@ export function PostCard({ post }: PostCardProps) {
                   {typeConfig.label}
                 </Badge>
               </div>
-              <p className="text-sm text-gray-500 dark:text-gray-200">
+              <p className="text-sm text-gray-500 dark:text-gray-100 font-medium">
                 {formatTimeAgo(post.createdAt)}
               </p>
             </div>
@@ -123,7 +123,7 @@ export function PostCard({ post }: PostCardProps) {
         
         <div className="mt-3">
           {post.caption && (
-            <p className="text-gray-900 dark:text-white text-sm leading-relaxed mb-3">
+            <p className="text-gray-900 dark:text-white text-base leading-relaxed mb-3 font-medium">
               {post.caption}
             </p>
           )}
@@ -210,7 +210,7 @@ export function PostCard({ post }: PostCardProps) {
             <Button
               variant="ghost"
               size="sm"
-              className={`p-0 h-auto ${isLiked ? 'text-red-500' : 'text-gray-600 dark:text-gray-100'} hover:text-red-500`}
+              className={`p-0 h-auto ${isLiked ? 'text-red-500' : 'text-gray-600 dark:text-white'} hover:text-red-500 font-medium`}
               onClick={() => likeMutation.mutate()}
               disabled={likeMutation.isPending}
             >
@@ -220,7 +220,7 @@ export function PostCard({ post }: PostCardProps) {
             <Button
               variant="ghost"
               size="sm"
-              className="p-0 h-auto text-gray-600 dark:text-gray-100 hover:text-gray-800 dark:hover:text-white"
+              className="p-0 h-auto text-gray-600 dark:text-white hover:text-gray-800 dark:hover:text-gray-200 font-medium"
               onClick={() => setShowComments(!showComments)}
             >
               <MessageCircle className="h-5 w-5 mr-1" />
@@ -229,7 +229,7 @@ export function PostCard({ post }: PostCardProps) {
             <Button
               variant="ghost"
               size="sm"
-              className="p-0 h-auto text-gray-600 dark:text-gray-100 hover:text-gray-800 dark:hover:text-white"
+              className="p-0 h-auto text-gray-600 dark:text-white hover:text-gray-800 dark:hover:text-gray-200 font-medium"
             >
               <Share2 className="h-5 w-5" />
             </Button>
@@ -237,7 +237,7 @@ export function PostCard({ post }: PostCardProps) {
           <Button
             variant="ghost"
             size="sm"
-            className="p-0 h-auto text-gray-600 dark:text-gray-100 hover:text-gray-800 dark:hover:text-white"
+            className="p-0 h-auto text-gray-600 dark:text-white hover:text-gray-800 dark:hover:text-gray-200 font-medium"
           >
             <Bookmark className="h-5 w-5" />
           </Button>

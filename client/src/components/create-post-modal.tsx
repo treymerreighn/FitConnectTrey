@@ -35,6 +35,13 @@ const workoutSchema = basePostSchema.extend({
   reps: z.string().optional(),
   intervals: z.number().optional(),
   rest: z.string().optional(),
+  exercises: z.array(z.object({
+    name: z.string(),
+    sets: z.number(),
+    reps: z.number(),
+    muscleGroups: z.array(z.string())
+  })).optional(),
+  workoutName: z.string().optional(),
 });
 
 const nutritionSchema = basePostSchema.extend({

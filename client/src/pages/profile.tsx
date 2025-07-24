@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { User, Settings, Camera, Edit3, MapPin, Calendar, Trophy, Users, Heart, MessageCircle, Share2, MoreHorizontal, Plus, Dumbbell, TrendingUp, Target } from "lucide-react";
+import { User, Settings, Camera, Edit3, MapPin, Calendar, Trophy, Users, Heart, MessageCircle, Share2, MoreHorizontal, Plus, Dumbbell, TrendingUp, Target, Clock, Flame, BarChart3, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -383,14 +383,82 @@ export default function Profile() {
           </TabsContent>
 
           <TabsContent value="workouts" className="space-y-4">
-            <div className="text-center py-12">
-              <Dumbbell className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                Workout history coming soon
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400">
-                View and manage all your workout posts
-              </p>
+            <div className="space-y-4">
+              {/* Workout filter tabs */}
+              <div className="flex space-x-2">
+                <Button variant="outline" size="sm" className="bg-fit-green text-white border-fit-green">
+                  All Workouts
+                </Button>
+                <Button variant="outline" size="sm">This Week</Button>
+                <Button variant="outline" size="sm">This Month</Button>
+              </div>
+
+              {/* Sample workout history */}
+              <div className="space-y-3">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-fit-green rounded-lg flex items-center justify-center">
+                          <Dumbbell className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-gray-900 dark:text-white">
+                            Afternoon Chest & Triceps Workout
+                          </h4>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {format(new Date(Date.now() - 86400000), "MMM d, yyyy")}
+                          </p>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm">
+                        <BarChart3 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-4 mb-3">
+                      <div className="text-center">
+                        <div className="flex items-center justify-center space-x-1">
+                          <Clock className="w-4 h-4 text-blue-500" />
+                          <span className="text-lg font-semibold text-gray-900 dark:text-white">45:30</span>
+                        </div>
+                        <div className="text-xs text-gray-500">Duration</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="flex items-center justify-center space-x-1">
+                          <Flame className="w-4 h-4 text-orange-500" />
+                          <span className="text-lg font-semibold text-gray-900 dark:text-white">380</span>
+                        </div>
+                        <div className="text-xs text-gray-500">Calories</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="flex items-center justify-center space-x-1">
+                          <Dumbbell className="w-4 h-4 text-green-500" />
+                          <span className="text-lg font-semibold text-gray-900 dark:text-white">15/18</span>
+                        </div>
+                        <div className="text-xs text-gray-500">Sets</div>
+                      </div>
+                    </div>
+                    
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      <span className="font-medium">Exercises:</span> Bench Press, Incline Dumbbell Press, Tricep Dips, Close-Grip Push-ups
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Placeholder for when workout is shared to feed */}
+                <Card className="border-dashed border-2 border-gray-200 dark:border-gray-700">
+                  <CardContent className="p-6 text-center">
+                    <Dumbbell className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Your completed workouts will appear here
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                      Complete a workout session to see your history
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </TabsContent>
 

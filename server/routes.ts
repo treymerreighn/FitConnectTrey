@@ -75,6 +75,40 @@ router.get("/api/users/:id/posts", async (req, res) => {
   }
 });
 
+// Completed Workouts
+router.post("/api/workouts/completed", async (req, res) => {
+  try {
+    // For now, just return success - can be enhanced with actual database storage
+    res.status(201).json({ success: true, id: Date.now().toString() });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to save completed workout" });
+  }
+});
+
+router.get("/api/workouts/completed/:userId", async (req, res) => {
+  try {
+    // Mock data for now - replace with actual database query
+    const workouts = [
+      {
+        id: "1",
+        name: "Morning Push Workout",
+        duration: 2400, // 40 minutes in seconds
+        calories: 320,
+        completedSets: 12,
+        totalSets: 15,
+        exercises: [
+          { name: "Push-ups", sets: [{ reps: 15, weight: 0 }, { reps: 12, weight: 0 }] },
+          { name: "Bench Press", sets: [{ reps: 8, weight: 135 }, { reps: 6, weight: 145 }] }
+        ],
+        createdAt: new Date(Date.now() - 86400000) // Yesterday
+      }
+    ];
+    res.json(workouts);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch completed workouts" });
+  }
+});
+
 router.post("/api/posts", async (req, res) => {
   try {
     const postData = insertPostSchema.parse(req.body);

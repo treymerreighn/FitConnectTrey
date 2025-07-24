@@ -277,10 +277,28 @@ export default function WorkoutSession() {
 
   const saveWorkoutMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest("POST", "/api/posts", data);
+      if (data.shouldPost) {
+        // Save as a post to the feed
+        return apiRequest("POST", "/api/posts", {
+          userId: data.userId,
+          caption: data.caption,
+          type: "workout",
+          workoutType: data.workoutType,
+          duration: data.duration,
+          calories: data.calories,
+          sets: data.sets,
+          reps: data.reps,
+          intervals: data.intervals,
+          rest: data.rest
+        });
+      } else {
+        // Save as a completed workout (private)
+        return apiRequest("POST", "/api/workouts/completed", data);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/workouts/completed"] });
       toast({
         title: "Workout Saved!",
         description: shouldPostToFeed ? "Workout saved and shared to feed" : "Workout saved to your library"
@@ -305,30 +323,32 @@ export default function WorkoutSession() {
       return total + exercise.sets.length;
     }, 0);
 
-    if (shouldPostToFeed) {
-      // Create a workout post
-      const postData = {
-        userId: "44595091", // Current user ID - should be dynamic
-        caption: workoutNotes || `Completed ${workoutName} in ${formatTime(elapsedTime)}! 💪`,
-        type: "workout",
-        workoutType: workoutName,
-        duration: Math.floor(elapsedTime / 60), // Convert to minutes
-        calories: estimatedCalories,
-        sets: completedSets,
-        reps: `${workoutExercises.length} exercises`,
-        intervals: workoutExercises.length,
-        rest: "90s avg"
-      };
+    const workoutData = {
+      userId: "44595091", // Current user ID - should be dynamic
+      name: workoutName,
+      duration: elapsedTime,
+      calories: estimatedCalories,
+      completedSets,
+      totalSets,
+      exercises: workoutExercises.map(exercise => ({
+        exerciseId: exercise.id,
+        name: exercise.name,
+        sets: exercise.sets.filter(set => set.isCompleted).map(set => ({
+          reps: set.completedReps || set.targetReps,
+          weight: set.weight || 0
+        }))
+      })),
+      notes: workoutNotes,
+      shouldPost: shouldPostToFeed,
+      caption: workoutNotes || `Completed ${workoutName} in ${formatTime(elapsedTime)}! 💪`,
+      workoutType: workoutName,
+      sets: completedSets,
+      reps: `${workoutExercises.length} exercises`,
+      intervals: workoutExercises.length,
+      rest: "90s avg"
+    };
 
-      saveWorkoutMutation.mutate(postData);
-    } else {
-      // Just save locally and return
-      toast({
-        title: "Workout Saved!",
-        description: "Workout saved to your library"
-      });
-      setLocation("/");
-    }
+    saveWorkoutMutation.mutate(workoutData);
   };
 
   // Group exercises by superset

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { 
   X, 
   Play, 
@@ -11,12 +11,21 @@ import {
   User,
   MoreHorizontal,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Save,
+  Share2,
+  Trophy
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface Exercise {
   id: string;
@@ -62,6 +71,13 @@ export default function WorkoutSession() {
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
   const [workoutExercises, setWorkoutExercises] = useState<WorkoutExercise[]>([]);
+  
+  // Finish workout modal state
+  const [showFinishModal, setShowFinishModal] = useState(false);
+  const [workoutName, setWorkoutName] = useState("");
+  const [workoutNotes, setWorkoutNotes] = useState("");
+  const [estimatedCalories, setEstimatedCalories] = useState(0);
+  const [shouldPostToFeed, setShouldPostToFeed] = useState(true);
   
   // Mock workout data - replace with actual data from URL params
   const mockWorkout: WorkoutExercise[] = [
@@ -237,12 +253,82 @@ export default function WorkoutSession() {
     });
   };
 
-  const finishWorkout = () => {
-    toast({
-      title: "Workout Complete!",
-      description: `Great job! You worked out for ${formatTime(elapsedTime)}`
-    });
-    setLocation("/");
+  const calculateEstimatedCalories = () => {
+    // Basic calorie calculation: 5 calories per minute + 2 calories per set completed
+    const timeCalories = Math.floor(elapsedTime / 60) * 5;
+    const setCalories = workoutExercises.reduce((total, exercise) => {
+      return total + exercise.sets.filter(set => set.isCompleted).length * 2;
+    }, 0);
+    return timeCalories + setCalories;
+  };
+
+  const generateWorkoutName = () => {
+    const muscleGroups = [...new Set(workoutExercises.flatMap(ex => ex.muscleGroups))];
+    const primaryMuscles = muscleGroups.slice(0, 2).join(" & ");
+    const timeOfDay = new Date().getHours() < 12 ? "Morning" : new Date().getHours() < 17 ? "Afternoon" : "Evening";
+    return `${timeOfDay} ${primaryMuscles} Workout`;
+  };
+
+  const openFinishModal = () => {
+    setEstimatedCalories(calculateEstimatedCalories());
+    setWorkoutName(generateWorkoutName());
+    setShowFinishModal(true);
+  };
+
+  const saveWorkoutMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return apiRequest("POST", "/api/posts", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+      toast({
+        title: "Workout Saved!",
+        description: shouldPostToFeed ? "Workout saved and shared to feed" : "Workout saved to your library"
+      });
+      setLocation("/");
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to save workout",
+        variant: "destructive"
+      });
+    },
+  });
+
+  const handleFinishWorkout = () => {
+    const completedSets = workoutExercises.reduce((total, exercise) => {
+      return total + exercise.sets.filter(set => set.isCompleted).length;
+    }, 0);
+
+    const totalSets = workoutExercises.reduce((total, exercise) => {
+      return total + exercise.sets.length;
+    }, 0);
+
+    if (shouldPostToFeed) {
+      // Create a workout post
+      const postData = {
+        userId: "44595091", // Current user ID - should be dynamic
+        caption: workoutNotes || `Completed ${workoutName} in ${formatTime(elapsedTime)}! 💪`,
+        type: "workout",
+        workoutData: {
+          workoutType: workoutName,
+          duration: Math.floor(elapsedTime / 60), // Convert to minutes
+          calories: estimatedCalories,
+          sets: completedSets,
+          exercises: workoutExercises.length
+        }
+      };
+
+      saveWorkoutMutation.mutate(postData);
+    } else {
+      // Just save locally and return
+      toast({
+        title: "Workout Saved!",
+        description: "Workout saved to your library"
+      });
+      setLocation("/");
+    }
   };
 
   // Group exercises by superset
@@ -426,7 +512,7 @@ export default function WorkoutSession() {
       <div className="fixed bottom-0 left-0 right-0 bg-gray-900/95 backdrop-blur-sm border-t border-gray-800 p-4">
         <div className="flex items-center justify-center">
           <Button
-            onClick={finishWorkout}
+            onClick={openFinishModal}
             className="w-16 h-16 bg-red-600 hover:bg-red-700 rounded-full"
             size="lg"
           >
@@ -434,6 +520,116 @@ export default function WorkoutSession() {
           </Button>
         </div>
       </div>
+
+      {/* Finish Workout Modal */}
+      <Dialog open={showFinishModal} onOpenChange={setShowFinishModal}>
+        <DialogContent className="sm:max-w-md bg-gray-800 border-gray-700 text-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Trophy className="h-5 w-5 text-yellow-500" />
+              <span>Workout Complete!</span>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Workout Stats */}
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <div className="text-2xl font-bold text-green-400">{formatTime(elapsedTime)}</div>
+                <div className="text-xs text-gray-400">Duration</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-blue-400">
+                  {workoutExercises.reduce((total, ex) => total + ex.sets.filter(s => s.isCompleted).length, 0)}
+                </div>
+                <div className="text-xs text-gray-400">Sets Completed</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-orange-400">{estimatedCalories}</div>
+                <div className="text-xs text-gray-400">Est. Calories</div>
+              </div>
+            </div>
+
+            {/* Workout Name */}
+            <div className="space-y-2">
+              <Label htmlFor="workout-name">Workout Name</Label>
+              <Input
+                id="workout-name"
+                value={workoutName}
+                onChange={(e) => setWorkoutName(e.target.value)}
+                placeholder="Name your workout..."
+                className="bg-gray-700 border-gray-600 text-white"
+              />
+            </div>
+
+            {/* Calories (Editable) */}
+            <div className="space-y-2">
+              <Label htmlFor="calories">Estimated Calories Burned</Label>
+              <Input
+                id="calories"
+                type="number"
+                value={estimatedCalories}
+                onChange={(e) => setEstimatedCalories(Number(e.target.value))}
+                className="bg-gray-700 border-gray-600 text-white"
+              />
+            </div>
+
+            {/* Notes */}
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes (Optional)</Label>
+              <Textarea
+                id="notes"
+                value={workoutNotes}
+                onChange={(e) => setWorkoutNotes(e.target.value)}
+                placeholder="How did the workout feel? Any observations..."
+                className="bg-gray-700 border-gray-600 text-white"
+                rows={3}
+              />
+            </div>
+
+            {/* Post to Feed Toggle */}
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Share to Feed</Label>
+                <div className="text-sm text-gray-400">
+                  Let others see your workout
+                </div>
+              </div>
+              <Switch
+                checked={shouldPostToFeed}
+                onCheckedChange={setShouldPostToFeed}
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex space-x-3 pt-4">
+              <Button
+                onClick={() => {
+                  setShouldPostToFeed(false);
+                  handleFinishWorkout();
+                }}
+                variant="outline"
+                className="flex-1 border-gray-600 text-gray-300"
+                disabled={saveWorkoutMutation.isPending}
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save Only
+              </Button>
+              <Button
+                onClick={() => {
+                  setShouldPostToFeed(true);
+                  handleFinishWorkout();
+                }}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+                disabled={saveWorkoutMutation.isPending}
+              >
+                <Share2 className="h-4 w-4 mr-2" />
+                Save & Share
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Rest Timer Overlay */}
       {isResting && (

@@ -92,48 +92,86 @@ export function PostCard({ post }: PostCardProps) {
   const typeConfig = getPostTypeConfig(post.type);
 
   return (
-    <Card className="w-full border-0 shadow-sm">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+    <Card className="w-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+      <CardHeader className="pb-4">
+        <div className="flex items-start justify-between">
+          <div className="flex items-start space-x-3 flex-1 min-w-0">
             <UserAvatar
               src={user?.avatar}
               name={user?.name}
               alt={`${user?.name}'s avatar`}
             />
-            <div>
-              <p className="font-semibold text-sm text-gray-900 dark:text-white">{user?.name}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{formatTimeAgo(post.createdAt)}</p>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center space-x-2 mb-1">
+                <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">
+                  {user?.name || "Loading..."}
+                </h3>
+                <Badge className={`${typeConfig.color} text-white text-xs px-2 py-1 flex-shrink-0`}>
+                  <span className="mr-1">{typeConfig.icon}</span>
+                  {typeConfig.label}
+                </Badge>
+              </div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {formatTimeAgo(post.createdAt)}
+              </p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 flex-shrink-0">
             <MoreHorizontal className="h-4 w-4 text-gray-400" />
           </Button>
         </div>
         
-        <div className="space-y-2">
-          <div className="flex items-center space-x-2">
-            <Badge className={`${typeConfig.color} text-white text-xs px-2 py-1`}>
-              <span className="mr-1">{typeConfig.icon}</span>
-              {typeConfig.label}
-            </Badge>
-            {post.workoutData && (
-              <span className={`text-sm font-medium ${typeConfig.textColor}`}>
-                {post.workoutData.workoutType}
-              </span>
-            )}
-            {post.nutritionData && (
-              <span className={`text-sm font-medium ${typeConfig.textColor}`}>
-                {post.nutritionData.mealType}
-              </span>
-            )}
-            {post.progressData && (
-              <span className={`text-sm font-medium ${typeConfig.textColor}`}>
+        <div className="mt-3">
+          {post.caption && (
+            <p className="text-gray-900 dark:text-white text-sm leading-relaxed mb-3">
+              {post.caption}
+            </p>
+          )}
+          
+          {/* Workout Details */}
+          {post.workoutData && (
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <h4 className="font-medium text-gray-900 dark:text-white text-sm">
+                  {post.workoutData.workoutType}
+                </h4>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {post.workoutData.duration} min
+                </span>
+              </div>
+              {post.workoutData.exercises && post.workoutData.exercises.length > 0 && (
+                <div className="text-xs text-gray-600 dark:text-gray-300">
+                  {post.workoutData.exercises.length} exercises
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Nutrition Details */}
+          {post.nutritionData && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <h4 className="font-medium text-gray-900 dark:text-white text-sm">
+                  {post.nutritionData.mealType}
+                </h4>
+                <span className="text-xs text-blue-600 dark:text-blue-400">
+                  {post.nutritionData.calories} cal
+                </span>
+              </div>
+            </div>
+          )}
+          
+          {/* Progress Details */}
+          {post.progressData && (
+            <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3 space-y-2">
+              <h4 className="font-medium text-gray-900 dark:text-white text-sm">
                 {post.progressData.progressType}
-              </span>
-            )}
-          </div>
-          <p className="text-gray-900 dark:text-white text-sm">{post.caption}</p>
+              </h4>
+              <div className="text-xs text-orange-600 dark:text-orange-400">
+                Progress update
+              </div>
+            </div>
+          )}
         </div>
       </CardHeader>
       

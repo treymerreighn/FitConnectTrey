@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Heart, MessageCircle, Dumbbell, Plus } from "lucide-react";
+import { Heart, MessageCircle, Dumbbell, Plus, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -24,24 +24,24 @@ export default function Home() {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Header */}
-        <header className="fixed top-0 w-full bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-50">
-          <div className="flex items-center justify-between px-4 py-3">
+        <header className="fixed top-0 w-full bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-50 backdrop-blur-md bg-opacity-95 dark:bg-opacity-95">
+          <div className="flex items-center justify-between px-4 py-4">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-fit-green rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-fit-green rounded-lg flex items-center justify-center shadow-sm">
                 <Dumbbell className="w-4 h-4 text-white" />
               </div>
               <h1 className="text-xl font-bold text-gray-900 dark:text-white">FitConnect</h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm" className="relative">
-                <Heart className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
+            <div className="flex items-center space-x-3">
+              <Button variant="ghost" size="sm" className="relative hover:bg-gray-100 dark:hover:bg-gray-700">
+                <Heart className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center font-medium">
                   3
                 </span>
               </Button>
-              <Button variant="ghost" size="sm" className="relative">
-                <MessageCircle className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-fit-blue rounded-full text-xs text-white flex items-center justify-center">
+              <Button variant="ghost" size="sm" className="relative hover:bg-gray-100 dark:hover:bg-gray-700">
+                <MessageCircle className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-fit-blue rounded-full text-xs text-white flex items-center justify-center font-medium">
                   5
                 </span>
               </Button>
@@ -118,15 +118,29 @@ export default function Home() {
         <Stories users={users} posts={posts} />
 
         {/* Feed Posts */}
-        <div className="space-y-4 py-4 px-4">
+        <div className="space-y-6 py-4">
           {posts.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500 dark:text-gray-400">No posts yet. Be the first to share your fitness journey!</p>
+            <div className="text-center py-12 px-4">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                <MessageCircle className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                Your feed is empty
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-sm mx-auto">
+                Follow some users or create your first post to get started with your fitness journey!
+              </p>
+              <Button className="bg-fit-green hover:bg-fit-green/90 text-white">
+                <Plus className="w-4 h-4 mr-2" />
+                Create Your First Post
+              </Button>
             </div>
           ) : (
-            posts.map((post) => (
-              <PostCard key={post.id} post={post} />
-            ))
+            <div className="px-4 space-y-6">
+              {posts.map((post) => (
+                <PostCard key={post.id} post={post} />
+              ))}
+            </div>
           )}
         </div>
       </main>

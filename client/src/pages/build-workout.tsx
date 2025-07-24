@@ -568,52 +568,68 @@ export default function BuildWorkout() {
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               )}
-              {selectedCategory ? `${selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)} Exercises` : "Choose Exercise Category"}
+              {selectedCategory ? `${selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1).replace('_', ' ')} Exercises` : "By Muscle Groups"}
             </DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4 overflow-y-auto max-h-[60vh]">
             {!selectedCategory ? (
-              // Show Categories
-              <div className="grid grid-cols-1 gap-3">
-                {[
-                  { id: "strength", name: "Strength Training", icon: "💪", description: "Build muscle and power", color: "bg-red-600/20 border-red-500" },
-                  { id: "cardio", name: "Cardio", icon: "❤️", description: "Improve cardiovascular fitness", color: "bg-blue-600/20 border-blue-500" },
-                  { id: "flexibility", name: "Flexibility", icon: "🧘", description: "Improve mobility and stretch", color: "bg-green-600/20 border-green-500" },
-                  { id: "functional", name: "Functional", icon: "⚡", description: "Real-world movement patterns", color: "bg-yellow-600/20 border-yellow-500" },
-                  { id: "sports", name: "Sports", icon: "⚽", description: "Sport-specific training", color: "bg-purple-600/20 border-purple-500" }
-                ].map(category => {
-                  const categoryExercises = exercises.filter(ex => ex.category === category.id);
-                  return (
-                    <Card 
-                      key={category.id} 
-                      className={`cursor-pointer transition-all hover:scale-[1.02] ${category.color} border-2`}
-                      onClick={() => setSelectedCategory(category.id)}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <div className="text-2xl">{category.icon}</div>
-                            <div>
-                              <h3 className="font-semibold text-white">{category.name}</h3>
-                              <p className="text-sm text-gray-300">{category.description}</p>
+              // Show Muscle Groups
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-200 mb-4">By Muscle Groups</h3>
+                <div className="space-y-2">
+                  {[
+                    { id: "chest", name: "Chest", icon: "🫁", description: "Pectorals and upper body" },
+                    { id: "abs", name: "Abs", icon: "🎯", description: "Core and abdominals" },
+                    { id: "back", name: "Back", icon: "🪃", description: "Lats, rhomboids, traps" },
+                    { id: "lower_back", name: "Lower Back", icon: "🔙", description: "Spinal erectors" },
+                    { id: "shoulders", name: "Shoulders", icon: "🏔️", description: "Deltoids and rotator cuff" },
+                    { id: "biceps", name: "Biceps", icon: "💪", description: "Front arm muscles" },
+                    { id: "triceps", name: "Triceps", icon: "🔧", description: "Back arm muscles" },
+                    { id: "quadriceps", name: "Quadriceps", icon: "🦵", description: "Front thigh muscles" },
+                    { id: "hamstrings", name: "Hamstrings", icon: "🦵", description: "Back thigh muscles" },
+                    { id: "glutes", name: "Glutes", icon: "🍑", description: "Hip and buttock muscles" },
+                    { id: "calves", name: "Calves", icon: "🦵", description: "Lower leg muscles" }
+                  ].map(muscleGroup => {
+                    const muscleExercises = exercises.filter(ex => 
+                      ex.muscleGroups && ex.muscleGroups.some(mg => mg.toLowerCase() === muscleGroup.id)
+                    );
+                    return (
+                      <Card 
+                        key={muscleGroup.id} 
+                        className="cursor-pointer transition-all hover:bg-gray-700 bg-gray-800 border-gray-700"
+                        onClick={() => setSelectedCategory(muscleGroup.id)}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                              <div className="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center">
+                                <span className="text-xl">{muscleGroup.icon}</span>
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-white">{muscleGroup.name}</h4>
+                                <p className="text-sm text-gray-400">{muscleGroup.description}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-sm text-gray-400">{muscleExercises.length} exercises</span>
+                              <ArrowLeft className="h-4 w-4 text-gray-400 transform rotate-180" />
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="text-lg font-bold text-white">{categoryExercises.length}</div>
-                            <div className="text-xs text-gray-400">exercises</div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
               </div>
             ) : (
-              // Show Exercises for Selected Category
+              // Show Exercises for Selected Muscle Group
               <div className="space-y-3">
                 {filteredExercises
-                  .filter(exercise => exercise.category === selectedCategory)
+                  .filter(exercise => 
+                    exercise.muscleGroups && exercise.muscleGroups.some(mg => mg.toLowerCase() === selectedCategory)
+                  )
+                  .sort((a, b) => a.name.localeCompare(b.name))
                   .map(exercise => (
                   <Card key={exercise.id} className="bg-gray-700 border-gray-600">
                     <CardContent className="p-4">
@@ -655,9 +671,11 @@ export default function BuildWorkout() {
                   </Card>
                 ))}
                 
-                {filteredExercises.filter(exercise => exercise.category === selectedCategory).length === 0 && (
+                {filteredExercises.filter(exercise => 
+                  exercise.muscleGroups && exercise.muscleGroups.some(mg => mg.toLowerCase() === selectedCategory)
+                ).length === 0 && (
                   <div className="text-center py-8">
-                    <p className="text-gray-400">No exercises found in this category.</p>
+                    <p className="text-gray-400">No exercises found for this muscle group.</p>
                   </div>
                 )}
               </div>

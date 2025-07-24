@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, UserPlus, Users } from "lucide-react";
+import { Search, UserPlus, Users, Brain } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { CURRENT_USER_ID } from "@/lib/constants";
+import { AIExerciseGenerator } from "@/components/ai-exercise-generator";
 import type { User } from "@shared/schema";
 
 export default function SearchPage() {
@@ -53,16 +55,31 @@ export default function SearchPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
-        <div className="flex items-center space-x-3">
-          <Search className="w-5 h-5 text-gray-400" />
-          <Input
-            placeholder="Search users..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="border-none bg-gray-100 dark:bg-gray-700 focus:ring-0 focus:border-none"
-          />
-        </div>
+        <h1 className="text-xl font-bold text-gray-900 dark:text-white">Discover</h1>
       </header>
+
+      <Tabs defaultValue="users" className="px-4 py-4">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="users" className="flex items-center gap-2">
+            <Users className="w-4 h-4" />
+            Find Users
+          </TabsTrigger>
+          <TabsTrigger value="ai-exercises" className="flex items-center gap-2">
+            <Brain className="w-4 h-4" />
+            AI Exercises
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="users" className="space-y-4 mt-4">
+          <div className="flex items-center space-x-3 mb-4">
+            <Search className="w-5 h-5 text-gray-400" />
+            <Input
+              placeholder="Search users..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="border-none bg-gray-100 dark:bg-gray-700 focus:ring-0 focus:border-none"
+            />
+          </div>
 
       <div className="px-4 py-6">
         {/* Search Results */}
@@ -189,7 +206,12 @@ export default function SearchPage() {
             )}
           </div>
         )}
-      </div>
+        </TabsContent>
+
+        <TabsContent value="ai-exercises" className="mt-4">
+          <AIExerciseGenerator />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

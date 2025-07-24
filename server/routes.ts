@@ -560,4 +560,48 @@ router.get("/api/workout-templates", async (req, res) => {
   }
 });
 
+// Generate exercises with muscle diagrams
+router.post("/api/generate-exercises-with-diagrams", async (req, res) => {
+  try {
+    console.log("Generating AI exercises with muscle diagrams...");
+    const { generatePopularExercisesWithDiagrams } = await import("./ai-muscle-diagram-generator");
+    await generatePopularExercisesWithDiagrams();
+    res.json({ success: true, message: "AI exercises with muscle diagrams generated successfully" });
+  } catch (error) {
+    console.error("Error generating exercises with diagrams:", error);
+    res.status(500).json({ error: "Failed to generate exercises with muscle diagrams" });
+  }
+});
+
+// Generate a single custom exercise with muscle diagram
+router.post("/api/generate-custom-exercise", async (req, res) => {
+  try {
+    const { category, targetMuscles, equipment, difficulty, name } = req.body;
+    
+    if (!category || !targetMuscles || !equipment || !difficulty) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    console.log(`Generating custom exercise: ${name || 'unnamed'}`);
+    const { generateExerciseWithMuscleDiagram } = await import("./ai-muscle-diagram-generator");
+    
+    const exercise = await generateExerciseWithMuscleDiagram({
+      name,
+      category,
+      targetMuscles,
+      equipment,
+      difficulty
+    });
+
+    res.json({ 
+      success: true, 
+      exercise,
+      message: `Generated "${exercise.name}" with muscle diagram successfully` 
+    });
+  } catch (error) {
+    console.error("Error generating custom exercise:", error);
+    res.status(500).json({ error: "Failed to generate custom exercise" });
+  }
+});
+
 export default router;

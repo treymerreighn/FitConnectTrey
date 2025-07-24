@@ -263,7 +263,7 @@ export default function WorkoutSession() {
   };
 
   const generateWorkoutName = () => {
-    const muscleGroups = [...new Set(workoutExercises.flatMap(ex => ex.muscleGroups))];
+    const muscleGroups = Array.from(new Set(workoutExercises.flatMap(ex => ex.muscleGroups)));
     const primaryMuscles = muscleGroups.slice(0, 2).join(" & ");
     const timeOfDay = new Date().getHours() < 12 ? "Morning" : new Date().getHours() < 17 ? "Afternoon" : "Evening";
     return `${timeOfDay} ${primaryMuscles} Workout`;
@@ -311,13 +311,13 @@ export default function WorkoutSession() {
         userId: "44595091", // Current user ID - should be dynamic
         caption: workoutNotes || `Completed ${workoutName} in ${formatTime(elapsedTime)}! 💪`,
         type: "workout",
-        workoutData: {
-          workoutType: workoutName,
-          duration: Math.floor(elapsedTime / 60), // Convert to minutes
-          calories: estimatedCalories,
-          sets: completedSets,
-          exercises: workoutExercises.length
-        }
+        workoutType: workoutName,
+        duration: Math.floor(elapsedTime / 60), // Convert to minutes
+        calories: estimatedCalories,
+        sets: completedSets,
+        reps: `${workoutExercises.length} exercises`,
+        intervals: workoutExercises.length,
+        rest: "90s avg"
       };
 
       saveWorkoutMutation.mutate(postData);

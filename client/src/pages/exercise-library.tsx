@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, Plus, Play, X, Filter } from "lucide-react";
+import { Search, Plus, Play, X, Filter, Brain, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -108,6 +108,31 @@ export default function ExerciseLibrary() {
     queryFn: () => fetch("/api/exercises").then(res => res.json()),
   });
 
+  const generateLibraryMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("/api/generate-exercise-library", {
+        method: "POST"
+      });
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Exercise Library Generation Started! 🔥",
+        description: data.message,
+      });
+      // Refresh exercises after a delay
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["/api/exercises"] });
+      }, 3000);
+    },
+    onError: (error) => {
+      toast({
+        title: "Generation Failed",
+        description: error.message || "Failed to generate exercise library",
+        variant: "destructive",
+      });
+    }
+  });
+
   const exercises = exercisesData.length > 0 ? exercisesData : MOCK_EXERCISES;
 
   const categories = ["All", "Strength", "Cardio", "Flexibility", "Sports"];
@@ -164,6 +189,25 @@ export default function ExerciseLibrary() {
             <h1 className="text-xl font-bold">All Exercises</h1>
           </div>
           <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => generateLibraryMutation.mutate()}
+              disabled={generateLibraryMutation.isPending}
+              className="text-blue-400 border-blue-400 hover:bg-blue-400/10 mr-2"
+            >
+              {generateLibraryMutation.isPending ? (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Brain className="h-4 w-4 mr-2" />
+                  AI Generate
+                </>
+              )}
+            </Button>
             <Button
               variant="outline"
               size="sm"

@@ -560,47 +560,46 @@ router.get("/api/workout-templates", async (req, res) => {
   }
 });
 
-// Generate exercises with muscle diagrams
-router.post("/api/generate-exercises-with-diagrams", async (req, res) => {
+// Generate AI exercises for the exercise library
+router.post("/api/generate-exercise-library", async (req, res) => {
   try {
-    console.log("Generating AI exercises with muscle diagrams...");
-    const { generatePopularExercisesWithDiagrams } = await import("./ai-muscle-diagram-generator");
-    await generatePopularExercisesWithDiagrams();
-    res.json({ success: true, message: "AI exercises with muscle diagrams generated successfully" });
+    console.log("🔥 Building AI Exercise Library with Muscle Diagrams...");
+    const { generatePopularExercisesForLibrary } = await import("./ai-exercise-library-builder");
+    
+    // Start generation in background
+    generatePopularExercisesForLibrary().catch(console.error);
+    
+    res.json({ 
+      success: true, 
+      message: "Started generating exercise library with muscle diagrams. Check back in a few minutes!" 
+    });
   } catch (error) {
-    console.error("Error generating exercises with diagrams:", error);
-    res.status(500).json({ error: "Failed to generate exercises with muscle diagrams" });
+    console.error("Error generating exercise library:", error);
+    res.status(500).json({ error: "Failed to start exercise library generation" });
   }
 });
 
-// Generate a single custom exercise with muscle diagram
-router.post("/api/generate-custom-exercise", async (req, res) => {
+// Generate comprehensive exercise library (admin only)
+router.post("/api/admin/generate-full-exercise-library", async (req, res) => {
   try {
-    const { category, targetMuscles, equipment, difficulty, name } = req.body;
-    
-    if (!category || !targetMuscles || !equipment || !difficulty) {
-      return res.status(400).json({ error: "Missing required fields" });
+    const { isAdmin } = req.body;
+    if (!isAdmin) {
+      return res.status(403).json({ error: "Admin access required" });
     }
 
-    console.log(`Generating custom exercise: ${name || 'unnamed'}`);
-    const { generateExerciseWithMuscleDiagram } = await import("./ai-muscle-diagram-generator");
+    console.log("🏗️ Building Full AI Exercise Library...");
+    const { generateExerciseLibraryWithDiagrams } = await import("./ai-exercise-library-builder");
     
-    const exercise = await generateExerciseWithMuscleDiagram({
-      name,
-      category,
-      targetMuscles,
-      equipment,
-      difficulty
-    });
-
+    // Start comprehensive generation in background
+    generateExerciseLibraryWithDiagrams().catch(console.error);
+    
     res.json({ 
       success: true, 
-      exercise,
-      message: `Generated "${exercise.name}" with muscle diagram successfully` 
+      message: "Started generating comprehensive exercise library. This will take 15-20 minutes." 
     });
   } catch (error) {
-    console.error("Error generating custom exercise:", error);
-    res.status(500).json({ error: "Failed to generate custom exercise" });
+    console.error("Error generating full exercise library:", error);
+    res.status(500).json({ error: "Failed to start full library generation" });
   }
 });
 

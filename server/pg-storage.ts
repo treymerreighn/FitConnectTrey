@@ -499,7 +499,10 @@ export class PgStorage implements IStorage {
       images: newExercise.images || [],
       videos: newExercise.videos || [],
       tips: newExercise.tips || [],
+      safetyNotes: newExercise.safetyNotes || [],
+      variations: newExercise.variations || [],
       tags: newExercise.tags || [],
+      isUserCreated: newExercise.isUserCreated || false,
       createdBy: newExercise.createdBy,
       isApproved: newExercise.isApproved
     });

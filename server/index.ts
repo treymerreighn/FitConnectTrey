@@ -4,7 +4,7 @@ import { createServer } from "http";
 import { setupVite, serveStatic, log } from "./vite";
 import { registerRoutes } from "./authRoutes";
 import { initializeDatabase } from "./db";
-import { seedBasicExercises } from "./seed-exercises-simple";
+import { buildExerciseDatabase } from "./ai-exercise-database-builder";
 
 const app = express();
 
@@ -25,8 +25,15 @@ async function startServer() {
     // Initialize database
     await initializeDatabase();
     
-    // Seed expanded exercise library
-    await seedBasicExercises();
+    // Build AI exercise library automatically
+    if (process.env.OPENAI_API_KEY) {
+      console.log("🔥 Building exercise library with AI...");
+      buildExerciseDatabase().catch(error => {
+        console.error("AI exercise generation failed:", error);
+      });
+    } else {
+      console.log("OpenAI API key not found, skipping AI exercise generation");
+    }
     
     // Register routes with authentication
     const server = await registerRoutes(app);

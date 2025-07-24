@@ -210,6 +210,9 @@ The application is mobile app store ready with PWA capabilities and can be deplo
 
 ```
 Changelog:
+- July 24, 2025: Implemented automatic AI exercise database population - AI now builds comprehensive exercise library with generated images on server startup
+- July 24, 2025: Created AI exercise database builder that generates 20+ popular exercises (push-ups, squats, pull-ups, etc.) with professional demonstration images
+- July 24, 2025: Integrated AI exercise generation directly into workout builder's exercise library system for seamless workout creation
 - July 24, 2025: Fixed dark mode text readability with improved contrast and better color hierarchy throughout the app
 - July 24, 2025: Enhanced home page layout with professional post cards, improved typography, and better visual hierarchy
 - July 24, 2025: Renamed "Search" to "Discover" with enhanced content discovery for users, workout tips, and healthy meals

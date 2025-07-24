@@ -111,6 +111,7 @@ export default function BuildWorkout() {
   });
   
   const [showExerciseLibrary, setShowExerciseLibrary] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showAIBuilder, setShowAIBuilder] = useState(false);
   const [showSaveOptions, setShowSaveOptions] = useState(false);
   const [showPostOptions, setShowPostOptions] = useState(false);
@@ -548,46 +549,119 @@ export default function BuildWorkout() {
       </div>
 
       {/* Exercise Library Modal */}
-      <Dialog open={showExerciseLibrary} onOpenChange={setShowExerciseLibrary}>
+      <Dialog open={showExerciseLibrary} onOpenChange={(open) => {
+        setShowExerciseLibrary(open);
+        if (!open) {
+          setSelectedCategory(null);
+        }
+      }}>
         <DialogContent className="sm:max-w-2xl bg-gray-800 border-gray-700 text-white max-h-[80vh] overflow-hidden">
           <DialogHeader>
-            <DialogTitle>Add Exercises</DialogTitle>
+            <DialogTitle className="flex items-center">
+              {selectedCategory && (
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setSelectedCategory(null)}
+                  className="mr-2 p-1"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              )}
+              {selectedCategory ? `${selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)} Exercises` : "Choose Exercise Category"}
+            </DialogTitle>
           </DialogHeader>
+          
           <div className="space-y-4 overflow-y-auto max-h-[60vh]">
-            {filteredExercises.map(exercise => (
-              <Card key={exercise.id} className="bg-gray-700 border-gray-600">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-600">
-                        <img 
-                          src={exercise.thumbnailUrl} 
-                          alt={exercise.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">{exercise.name}</h4>
-                        <div className="flex space-x-2 mt-1">
-                          {exercise.muscleGroups.slice(0, 2).map(muscle => (
-                            <Badge key={muscle} variant="secondary" className="text-xs">
-                              {muscle}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    <Button
-                      onClick={() => addExerciseToWorkout(exercise)}
-                      disabled={workoutPlan.exercises.some(ex => ex.id === exercise.id)}
-                      size="sm"
+            {!selectedCategory ? (
+              // Show Categories
+              <div className="grid grid-cols-1 gap-3">
+                {[
+                  { id: "strength", name: "Strength Training", icon: "💪", description: "Build muscle and power", color: "bg-red-600/20 border-red-500" },
+                  { id: "cardio", name: "Cardio", icon: "❤️", description: "Improve cardiovascular fitness", color: "bg-blue-600/20 border-blue-500" },
+                  { id: "flexibility", name: "Flexibility", icon: "🧘", description: "Improve mobility and stretch", color: "bg-green-600/20 border-green-500" },
+                  { id: "functional", name: "Functional", icon: "⚡", description: "Real-world movement patterns", color: "bg-yellow-600/20 border-yellow-500" },
+                  { id: "sports", name: "Sports", icon: "⚽", description: "Sport-specific training", color: "bg-purple-600/20 border-purple-500" }
+                ].map(category => {
+                  const categoryExercises = exercises.filter(ex => ex.category === category.id);
+                  return (
+                    <Card 
+                      key={category.id} 
+                      className={`cursor-pointer transition-all hover:scale-[1.02] ${category.color} border-2`}
+                      onClick={() => setSelectedCategory(category.id)}
                     >
-                      {workoutPlan.exercises.some(ex => ex.id === exercise.id) ? "Added" : "Add"}
-                    </Button>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className="text-2xl">{category.icon}</div>
+                            <div>
+                              <h3 className="font-semibold text-white">{category.name}</h3>
+                              <p className="text-sm text-gray-300">{category.description}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-lg font-bold text-white">{categoryExercises.length}</div>
+                            <div className="text-xs text-gray-400">exercises</div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              // Show Exercises for Selected Category
+              <div className="space-y-3">
+                {filteredExercises
+                  .filter(exercise => exercise.category === selectedCategory)
+                  .map(exercise => (
+                  <Card key={exercise.id} className="bg-gray-700 border-gray-600">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-600">
+                            <img 
+                              src={exercise.thumbnailUrl} 
+                              alt={exercise.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-white">{exercise.name}</h4>
+                            <p className="text-sm text-gray-400 capitalize">{exercise.difficulty}</p>
+                            <div className="flex space-x-2 mt-1">
+                              {exercise.muscleGroups.slice(0, 3).map(muscle => (
+                                <Badge key={muscle} variant="secondary" className="text-xs">
+                                  {muscle}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                        <Button
+                          onClick={() => {
+                            addExerciseToWorkout(exercise);
+                            setSelectedCategory(null);
+                            setShowExerciseLibrary(false);
+                          }}
+                          disabled={workoutPlan.exercises.some(ex => ex.id === exercise.id)}
+                          size="sm"
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          {workoutPlan.exercises.some(ex => ex.id === exercise.id) ? "Added" : "Add"}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                
+                {filteredExercises.filter(exercise => exercise.category === selectedCategory).length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-gray-400">No exercises found in this category.</p>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                )}
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

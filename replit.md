@@ -210,6 +210,9 @@ The application is mobile app store ready with PWA capabilities and can be deplo
 
 ```
 Changelog:
+- July 24, 2025: Enhanced exercise selection with category-based navigation - users now see exercise categories first, then drill down to specific exercises
+- July 24, 2025: Fixed OpenAI API quota limitations by implementing comprehensive fallback exercise library with 10 professional exercises
+- July 24, 2025: Resolved database schema issues preventing exercise storage and implemented automatic exercise library population
 - July 24, 2025: Implemented automatic AI exercise database population - AI now builds comprehensive exercise library with generated images on server startup
 - July 24, 2025: Created AI exercise database builder that generates 20+ popular exercises (push-ups, squats, pull-ups, etc.) with professional demonstration images
 - July 24, 2025: Integrated AI exercise generation directly into workout builder's exercise library system for seamless workout creation

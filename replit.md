@@ -210,6 +210,10 @@ The application is mobile app store ready with PWA capabilities and can be deplo
 
 ```
 Changelog:
+- July 24, 2025: Renamed "Search" to "Discover" with enhanced content discovery for users, workout tips, and healthy meals
+- July 24, 2025: Improved dark mode styling with better contrast and removed theme toggle button
+- July 24, 2025: Implemented workout history in Profile Workouts tab with filtering and detailed workout cards
+- July 24, 2025: Added "Today's Workouts" section to home page showing completed workouts with visual indicators
 - July 24, 2025: Complete workout session redesign with professional interface matching user reference screenshots
 - July 24, 2025: Added comprehensive workout completion flow with naming, calorie tracking, and social sharing
 - July 24, 2025: Fixed action button visibility issues with floating action button design

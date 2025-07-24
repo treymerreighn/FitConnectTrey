@@ -112,6 +112,8 @@ export default function BuildWorkout() {
   
   const [showExerciseLibrary, setShowExerciseLibrary] = useState(false);
   const [showAIBuilder, setShowAIBuilder] = useState(false);
+  const [showSaveOptions, setShowSaveOptions] = useState(false);
+  const [showPostOptions, setShowPostOptions] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
@@ -475,7 +477,7 @@ export default function BuildWorkout() {
               ))}
 
               {/* Action Buttons */}
-              <div className="flex space-x-4 pt-4">
+              <div className="flex space-x-3 pt-4">
                 <Button
                   onClick={startWorkout}
                   className="flex-1 bg-red-600 hover:bg-red-700"
@@ -485,13 +487,20 @@ export default function BuildWorkout() {
                   Start Workout
                 </Button>
                 <Button
-                  onClick={postWorkout}
+                  onClick={() => setShowSaveOptions(true)}
+                  className="bg-green-600 hover:bg-green-700"
+                  size="lg"
+                >
+                  Save
+                </Button>
+                <Button
+                  onClick={() => setShowPostOptions(true)}
                   variant="outline"
-                  className="flex-1"
+                  className="border-blue-500 text-blue-400 hover:bg-blue-500/10"
                   size="lg"
                 >
                   <Share className="h-5 w-5 mr-2" />
-                  Post Workout
+                  Share
                 </Button>
               </div>
             </div>
@@ -599,6 +608,176 @@ export default function BuildWorkout() {
                 </>
               )}
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Save Workout Modal */}
+      <Dialog open={showSaveOptions} onOpenChange={setShowSaveOptions}>
+        <DialogContent className="sm:max-w-md bg-gray-800 border-gray-700 text-white">
+          <DialogHeader>
+            <DialogTitle>Save Workout</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Workout Name</Label>
+              <Input
+                placeholder="Enter workout name..."
+                value={workoutPlan.name}
+                onChange={(e) => setWorkoutPlan(prev => ({ ...prev, name: e.target.value }))}
+                className="bg-gray-700 border-gray-600 mt-2"
+              />
+            </div>
+            <div>
+              <Label>Description (Optional)</Label>
+              <Textarea
+                placeholder="Describe your workout..."
+                value={workoutPlan.description}
+                onChange={(e) => setWorkoutPlan(prev => ({ ...prev, description: e.target.value }))}
+                className="bg-gray-700 border-gray-600 mt-2"
+                rows={3}
+              />
+            </div>
+            <div className="flex space-x-3 pt-4">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowSaveOptions(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 bg-green-600 hover:bg-green-700"
+                onClick={() => {
+                  toast({
+                    title: "Workout Saved!",
+                    description: `"${workoutPlan.name || 'Unnamed Workout'}" saved to your workouts`
+                  });
+                  setShowSaveOptions(false);
+                }}
+              >
+                Save Workout
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Share Workout Modal */}
+      <Dialog open={showPostOptions} onOpenChange={setShowPostOptions}>
+        <DialogContent className="sm:max-w-lg bg-gray-800 border-gray-700 text-white">
+          <DialogHeader>
+            <DialogTitle>Share Workout</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Workout Preview */}
+            <div className="bg-gray-700 rounded-lg p-4">
+              <h3 className="font-semibold mb-2">Workout Preview</h3>
+              <div className="text-sm text-gray-300 space-y-1">
+                <p><strong>Exercises:</strong> {workoutPlan.exercises.length}</p>
+                <p><strong>Duration:</strong> ~{workoutPlan.estimatedDuration} minutes</p>
+                <p><strong>Target:</strong> {selectedBodyParts.length > 0 ? 
+                  selectedBodyParts.map(id => BODY_PARTS.find(bp => bp.id === id)?.name).join(", ") : 
+                  "Full Body"
+                }</p>
+              </div>
+            </div>
+
+            {/* Post Details */}
+            <div>
+              <Label>Caption</Label>
+              <Textarea
+                placeholder="What's on your mind? Share your workout with the community..."
+                value={workoutPlan.description}
+                onChange={(e) => setWorkoutPlan(prev => ({ ...prev, description: e.target.value }))}
+                className="bg-gray-700 border-gray-600 mt-2"
+                rows={4}
+              />
+            </div>
+
+            <div>
+              <Label>Workout Name</Label>
+              <Input
+                placeholder="Name your workout..."
+                value={workoutPlan.name}
+                onChange={(e) => setWorkoutPlan(prev => ({ ...prev, name: e.target.value }))}
+                className="bg-gray-700 border-gray-600 mt-2"
+              />
+            </div>
+
+            {/* Exercise List */}
+            <div>
+              <Label>Exercises ({workoutPlan.exercises.length})</Label>
+              <div className="mt-2 space-y-2 max-h-32 overflow-y-auto">
+                {workoutPlan.exercises.map(exercise => (
+                  <div key={exercise.id} className="flex justify-between items-center bg-gray-700 p-2 rounded text-sm">
+                    <span>{exercise.name}</span>
+                    <span className="text-gray-400">{exercise.targetSets || 3} sets × {exercise.targetReps || 10} reps</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex space-x-3 pt-4">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowPostOptions(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+                onClick={async () => {
+                  try {
+                    const response = await fetch("/api/posts", {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify({
+                        type: "workout",
+                        content: workoutPlan.description || `Check out my workout: ${workoutPlan.name || 'Custom Workout'}!`,
+                        workoutData: {
+                          name: workoutPlan.name || 'Custom Workout',
+                          exercises: workoutPlan.exercises.map(ex => ({
+                            name: ex.name,
+                            sets: ex.targetSets || 3,
+                            reps: ex.targetReps || 10,
+                            muscleGroups: ex.muscleGroups
+                          })),
+                          duration: workoutPlan.estimatedDuration,
+                          targetBodyParts: selectedBodyParts
+                        }
+                      }),
+                    });
+
+                    if (!response.ok) {
+                      throw new Error("Failed to create post");
+                    }
+
+                    toast({
+                      title: "Workout Shared!",
+                      description: "Your workout has been posted to the community"
+                    });
+                    
+                    setShowPostOptions(false);
+                    setLocation("/");
+                  } catch (error) {
+                    toast({
+                      title: "Share Failed",
+                      description: "Failed to share workout. Please try again.",
+                      variant: "destructive"
+                    });
+                  }
+                }}
+              >
+                <Share className="h-4 w-4 mr-2" />
+                Post Workout
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

@@ -20,10 +20,12 @@ interface GeneratedExercise {
 // This runs automatically when the server starts to build the exercise library
 export async function buildExerciseDatabase(): Promise<void> {
   try {
-    // Check if we already have exercises in the database
+    // Check if we already have AI-generated exercises
+    console.log("Checking for existing AI exercises...");
     const existingExercises = await storage.getAllExercises();
-    if (existingExercises.length > 15) {
-      console.log(`Exercise database already populated with ${existingExercises.length} exercises`);
+    const aiExercises = existingExercises.filter(ex => ex.createdBy === "ai-system");
+    if (aiExercises.length > 10) {
+      console.log(`Exercise database already populated with ${aiExercises.length} AI exercises`);
       return;
     }
 

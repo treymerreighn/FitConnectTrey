@@ -395,7 +395,7 @@ export default function WorkoutSession() {
       </div>
 
       {/* Workout Content */}
-      <div className="p-4 space-y-6 pb-24">
+      <div className="p-4 space-y-6 pb-32">
         {Object.entries(groupedExercises).map(([groupKey, exercises]) => {
           const isSuperset = !groupKey.startsWith('single-');
           const supersetLetter = isSuperset ? groupKey : null;
@@ -509,11 +509,11 @@ export default function WorkoutSession() {
       </div>
 
       {/* Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-gray-900/95 backdrop-blur-sm border-t border-gray-800 p-4">
+      <div className="fixed bottom-20 left-0 right-0 bg-gray-900/95 backdrop-blur-sm border-t border-gray-800 p-4 z-50">
         <div className="flex items-center justify-center">
           <Button
             onClick={openFinishModal}
-            className="w-16 h-16 bg-red-600 hover:bg-red-700 rounded-full"
+            className="w-16 h-16 bg-red-600 hover:bg-red-700 rounded-full shadow-lg"
             size="lg"
           >
             <div className="w-6 h-6 bg-white rounded-sm" />

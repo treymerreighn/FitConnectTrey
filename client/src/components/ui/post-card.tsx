@@ -133,10 +133,9 @@ export function PostCard({ post }: PostCardProps) {
               </span>
             )}
           </div>
-          <p className="text-gray-900 text-sm">{post.caption}</p>
+          <p className="text-sm text-[#f0f0f0]">{post.caption}</p>
         </div>
       </CardHeader>
-      
       {post.image && (
         <div className="px-0">
           <img 
@@ -146,7 +145,6 @@ export function PostCard({ post }: PostCardProps) {
           />
         </div>
       )}
-      
       <CardContent className="pt-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-4">

@@ -169,9 +169,67 @@ export const insertConnectionSchema = connectionSchema.omit({ id: true, createdA
 export const insertProgressEntrySchema = progressEntrySchema.omit({ id: true, createdAt: true });
 export const insertExerciseSchema = exerciseSchema.omit({ id: true, createdAt: true });
 
+// Workout session tracking schema
+export const workoutSessionSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  name: z.string(),
+  startTime: z.date(),
+  endTime: z.date().optional(),
+  totalDuration: z.number().optional(), // in minutes
+  exercises: z.array(z.object({
+    exerciseId: z.string(),
+    exerciseName: z.string(),
+    sets: z.array(z.object({
+      reps: z.number(),
+      weight: z.number().optional(),
+      duration: z.number().optional(), // for time-based exercises like planks
+      distance: z.number().optional(), // for cardio
+      restTime: z.number().optional(), // rest after this set in seconds
+      oneRepMax: z.number().optional(), // calculated 1RM
+      completed: z.boolean().default(true),
+    })),
+    totalVolume: z.number().optional(), // total weight lifted for this exercise
+    personalRecord: z.boolean().default(false),
+    notes: z.string().optional(),
+  })),
+  totalVolume: z.number().optional(), // total workout volume
+  caloriesBurned: z.number().optional(),
+  notes: z.string().optional(),
+  createdAt: z.date().default(() => new Date()),
+});
+
+// Exercise progress tracking schema
+export const exerciseProgressSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  exerciseId: z.string(),
+  exerciseName: z.string(),
+  date: z.date(),
+  bestSet: z.object({
+    reps: z.number(),
+    weight: z.number().optional(),
+    duration: z.number().optional(),
+    distance: z.number().optional(),
+    oneRepMax: z.number().optional(),
+  }),
+  totalVolume: z.number().optional(),
+  personalRecord: z.boolean().default(false),
+  workoutSessionId: z.string().optional(),
+  createdAt: z.date().default(() => new Date()),
+});
+
+export type WorkoutSession = z.infer<typeof workoutSessionSchema>;
+export type ExerciseProgress = z.infer<typeof exerciseProgressSchema>;
+
+export const insertWorkoutSessionSchema = workoutSessionSchema.omit({ id: true, createdAt: true });
+export const insertExerciseProgressSchema = exerciseProgressSchema.omit({ id: true, createdAt: true });
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertPost = z.infer<typeof insertPostSchema>;
 export type InsertComment = z.infer<typeof insertCommentSchema>;
 export type InsertConnection = z.infer<typeof insertConnectionSchema>;
 export type InsertProgressEntry = z.infer<typeof insertProgressEntrySchema>;
 export type InsertExercise = z.infer<typeof insertExerciseSchema>;
+export type InsertWorkoutSession = z.infer<typeof insertWorkoutSessionSchema>;
+export type InsertExerciseProgress = z.infer<typeof insertExerciseProgressSchema>;

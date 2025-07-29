@@ -2,12 +2,13 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupSimpleAuth, isAuthenticated } from "./simpleAuth";
-import { insertPostSchema, insertCommentSchema, insertConnectionSchema, insertProgressEntrySchema, insertExerciseSchema } from "@shared/schema";
+import { insertPostSchema, insertCommentSchema, insertConnectionSchema, insertProgressEntrySchema, insertExerciseSchema, insertWorkoutSessionSchema, insertExerciseProgressSchema } from "@shared/schema";
 import multer from "multer";
 import { AWSImageService } from "./aws-config";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
 import { generateAIWorkout } from "./ai-workout";
+import { generateExerciseInsights, generateWorkoutVolumeInsights } from "./ai-exercise-insights";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -395,6 +396,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error uploading images:", error);
       res.status(500).json({ message: "Failed to upload images" });
+    }
+  });
+
+  // Workout session tracking endpoints
+  app.post("/api/workout-sessions", isAuthenticated, async (req: any, res) => {
+    try {
+      const sessionData = insertWorkoutSessionSchema.parse(req.body);
+      const session = await storage.createWorkoutSession({ 
+        ...sessionData, 
+        userId: req.user.claims.sub 
+      });
+      res.status(201).json(session);
+    } catch (error) {
+      console.error("Workout session creation error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create workout session" });
+    }
+  });
+
+  app.get("/api/workout-sessions", isAuthenticated, async (req: any, res) => {
+    try {
+      const sessions = await storage.getWorkoutSessionsByUserId(req.user.claims.sub);
+      res.json(sessions);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch workout sessions" });
+    }
+  });
+
+  app.get("/api/exercise-progress/:exerciseId", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const exerciseId = req.params.exerciseId;
+      const progressData = await storage.getExerciseProgressChart(userId, exerciseId);
+      res.json(progressData);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch exercise progress" });
+    }
+  });
+
+  app.get("/api/workout-volume-chart", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const volumeData = await storage.getWorkoutVolumeChart(userId);
+      res.json(volumeData);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch workout volume data" });
+    }
+  });
+
+  app.get("/api/personal-records", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const records = await storage.getUserPersonalRecords(userId);
+      res.json(records);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch personal records" });
+    }
+  });
+
+  app.get("/api/exercise-insights/:exerciseId", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const exerciseId = req.params.exerciseId;
+      
+      // Get exercise details
+      const exercise = await storage.getExerciseById(exerciseId);
+      if (!exercise) {
+        return res.status(404).json({ error: "Exercise not found" });
+      }
+
+      // Get progress data for the exercise
+      const progressData = await storage.getExerciseProgressByExercise(userId, exerciseId);
+      
+      // Generate AI insights
+      const insights = await generateExerciseInsights(exercise.name, progressData);
+      
+      res.json(insights);
+    } catch (error) {
+      console.error("Exercise insights error:", error);
+      res.status(500).json({ error: "Failed to generate exercise insights" });
+    }
+  });
+
+  app.get("/api/volume-insights", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const volumeData = await storage.getWorkoutVolumeChart(userId);
+      const insights = await generateWorkoutVolumeInsights(volumeData);
+      res.json(insights);
+    } catch (error) {
+      console.error("Volume insights error:", error);
+      res.status(500).json({ error: "Failed to generate volume insights" });
     }
   });
 

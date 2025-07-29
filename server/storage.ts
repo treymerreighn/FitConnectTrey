@@ -1,4 +1,4 @@
-import type { User, Post, Comment, Connection, ProgressEntry, Exercise, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise } from "@shared/schema";
+import type { User, Post, Comment, Connection, ProgressEntry, Exercise, WorkoutSession, ExerciseProgress, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, InsertWorkoutSession, InsertExerciseProgress } from "@shared/schema";
 import { nanoid } from "nanoid";
 import { PgStorage } from "./pg-storage";
 
@@ -62,6 +62,26 @@ export interface IStorage {
   
   // Workout template operations
   getWorkoutTemplates(filters?: { category?: string; difficulty?: string; bodyPart?: string }): Promise<Post[]>;
+  
+  // Workout session tracking
+  createWorkoutSession(session: InsertWorkoutSession): Promise<WorkoutSession>;
+  getWorkoutSessionById(id: string): Promise<WorkoutSession | null>;
+  getWorkoutSessionsByUserId(userId: string): Promise<WorkoutSession[]>;
+  updateWorkoutSession(id: string, updates: Partial<WorkoutSession>): Promise<WorkoutSession>;
+  deleteWorkoutSession(id: string): Promise<boolean>;
+  
+  // Exercise progress tracking
+  createExerciseProgress(progress: InsertExerciseProgress): Promise<ExerciseProgress>;
+  getExerciseProgressById(id: string): Promise<ExerciseProgress | null>;
+  getExerciseProgressByUserId(userId: string): Promise<ExerciseProgress[]>;
+  getExerciseProgressByExercise(userId: string, exerciseId: string): Promise<ExerciseProgress[]>;
+  updateExerciseProgress(id: string, updates: Partial<ExerciseProgress>): Promise<ExerciseProgress>;
+  deleteExerciseProgress(id: string): Promise<boolean>;
+  
+  // Analytics and insights
+  getExerciseProgressChart(userId: string, exerciseId: string): Promise<{ date: string; weight?: number; reps: number; oneRepMax?: number }[]>;
+  getWorkoutVolumeChart(userId: string): Promise<{ date: string; volume: number; duration: number }[]>;
+  getUserPersonalRecords(userId: string): Promise<ExerciseProgress[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -71,6 +91,8 @@ export class MemStorage implements IStorage {
   private connections: Map<string, Connection> = new Map();
   private progressEntries: Map<string, ProgressEntry> = new Map();
   private exercises: Map<string, Exercise> = new Map();
+  private workoutSessions: Map<string, WorkoutSession> = new Map();
+  private exerciseProgress: Map<string, ExerciseProgress> = new Map();
 
   constructor() {
     this.seedData();
@@ -775,6 +797,138 @@ export class MemStorage implements IStorage {
       post.type === "workout_template" || 
       (post.workoutData && post.isTemplate)
     );
+  }
+
+  // Workout session tracking methods
+  async createWorkoutSession(session: InsertWorkoutSession): Promise<WorkoutSession> {
+    const newSession: WorkoutSession = {
+      id: nanoid(),
+      ...session,
+      createdAt: new Date(),
+    };
+    
+    this.workoutSessions.set(newSession.id, newSession);
+    
+    // Also create exercise progress records for each exercise
+    for (const exercise of session.exercises) {
+      const bestSet = exercise.sets.reduce((best, current) => {
+        const currentScore = (current.weight || 0) * current.reps + (current.duration || 0);
+        const bestScore = (best.weight || 0) * best.reps + (best.duration || 0);
+        return currentScore > bestScore ? current : best;
+      });
+
+      const progressEntry: InsertExerciseProgress = {
+        userId: session.userId,
+        exerciseId: exercise.exerciseId,
+        exerciseName: exercise.exerciseName,
+        date: session.startTime,
+        bestSet: {
+          reps: bestSet.reps,
+          weight: bestSet.weight,
+          duration: bestSet.duration,
+          oneRepMax: bestSet.weight ? Math.round(bestSet.weight * (1 + bestSet.reps / 30)) : undefined,
+        },
+        totalVolume: exercise.totalVolume,
+        personalRecord: exercise.personalRecord,
+        workoutSessionId: newSession.id,
+      };
+
+      await this.createExerciseProgress(progressEntry);
+    }
+    
+    return newSession;
+  }
+
+  async getWorkoutSessionById(id: string): Promise<WorkoutSession | null> {
+    return this.workoutSessions.get(id) || null;
+  }
+
+  async getWorkoutSessionsByUserId(userId: string): Promise<WorkoutSession[]> {
+    return Array.from(this.workoutSessions.values())
+      .filter(session => session.userId === userId)
+      .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+  }
+
+  async updateWorkoutSession(id: string, updates: Partial<WorkoutSession>): Promise<WorkoutSession> {
+    const session = this.workoutSessions.get(id);
+    if (!session) throw new Error("Workout session not found");
+    
+    const updatedSession = { ...session, ...updates };
+    this.workoutSessions.set(id, updatedSession);
+    return updatedSession;
+  }
+
+  async deleteWorkoutSession(id: string): Promise<boolean> {
+    return this.workoutSessions.delete(id);
+  }
+
+  // Exercise progress tracking methods
+  async createExerciseProgress(progress: InsertExerciseProgress): Promise<ExerciseProgress> {
+    const newProgress: ExerciseProgress = {
+      id: nanoid(),
+      ...progress,
+      createdAt: new Date(),
+    };
+    
+    this.exerciseProgress.set(newProgress.id, newProgress);
+    return newProgress;
+  }
+
+  async getExerciseProgressById(id: string): Promise<ExerciseProgress | null> {
+    return this.exerciseProgress.get(id) || null;
+  }
+
+  async getExerciseProgressByUserId(userId: string): Promise<ExerciseProgress[]> {
+    return Array.from(this.exerciseProgress.values())
+      .filter(progress => progress.userId === userId)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
+
+  async getExerciseProgressByExercise(userId: string, exerciseId: string): Promise<ExerciseProgress[]> {
+    return Array.from(this.exerciseProgress.values())
+      .filter(progress => progress.userId === userId && progress.exerciseId === exerciseId)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }
+
+  async updateExerciseProgress(id: string, updates: Partial<ExerciseProgress>): Promise<ExerciseProgress> {
+    const progress = this.exerciseProgress.get(id);
+    if (!progress) throw new Error("Exercise progress not found");
+    
+    const updatedProgress = { ...progress, ...updates };
+    this.exerciseProgress.set(id, updatedProgress);
+    return updatedProgress;
+  }
+
+  async deleteExerciseProgress(id: string): Promise<boolean> {
+    return this.exerciseProgress.delete(id);
+  }
+
+  // Analytics and insights methods
+  async getExerciseProgressChart(userId: string, exerciseId: string): Promise<{ date: string; weight?: number; reps: number; oneRepMax?: number }[]> {
+    const progressEntries = await this.getExerciseProgressByExercise(userId, exerciseId);
+    
+    return progressEntries.map(entry => ({
+      date: entry.date.toISOString().split('T')[0],
+      weight: entry.bestSet.weight,
+      reps: entry.bestSet.reps,
+      oneRepMax: entry.bestSet.oneRepMax,
+    }));
+  }
+
+  async getWorkoutVolumeChart(userId: string): Promise<{ date: string; volume: number; duration: number }[]> {
+    const sessions = await this.getWorkoutSessionsByUserId(userId);
+    
+    return sessions.map(session => ({
+      date: session.startTime.toISOString().split('T')[0],
+      volume: session.totalVolume || 0,
+      duration: session.totalDuration || 0,
+    })).reverse(); // Oldest first for chart display
+  }
+
+  async getUserPersonalRecords(userId: string): Promise<ExerciseProgress[]> {
+    return Array.from(this.exerciseProgress.values())
+      .filter(progress => progress.userId === userId && progress.personalRecord)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }
 }
 

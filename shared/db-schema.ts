@@ -82,3 +82,30 @@ export const exercises = pgTable("exercises", {
   isApproved: boolean("is_approved").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const workoutSessions = pgTable("workout_sessions", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id),
+  name: text("name").notNull(),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time"),
+  totalDuration: integer("total_duration"), // in minutes
+  exercises: jsonb("exercises").notNull(), // structured exercise data with sets/reps
+  totalVolume: integer("total_volume"), // total weight lifted
+  caloriesBurned: integer("calories_burned"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const exerciseProgress = pgTable("exercise_progress", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id),
+  exerciseId: text("exercise_id").notNull().references(() => exercises.id),
+  exerciseName: text("exercise_name").notNull(), // denormalized for performance
+  date: timestamp("date").notNull(),
+  bestSet: jsonb("best_set").notNull(), // best set from that workout
+  totalVolume: integer("total_volume"),
+  personalRecord: boolean("personal_record").default(false),
+  workoutSessionId: text("workout_session_id").references(() => workoutSessions.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});

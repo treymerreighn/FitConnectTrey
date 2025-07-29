@@ -41,6 +41,10 @@ async function startServer() {
             await buildFreshExerciseLibrary();
             await expandExerciseLibrary();
             console.log("🎯 Complete exercise library ready!");
+            
+            // Seed workout data for demo
+            const { seedWorkoutData } = await import("./seed-workout-data");
+            await seedWorkoutData();
           } catch (error) {
             console.log("⚠️ Exercise generation failed, using existing library");
           }

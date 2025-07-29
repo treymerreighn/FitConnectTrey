@@ -23,6 +23,7 @@ import { format } from "date-fns";
 import { ProgressChart } from "@/components/ProgressChart";
 import { ProgressPhotoAnalysis } from "@/components/ProgressPhotoAnalysis";
 import { apiRequest } from "@/lib/queryClient";
+import { Link } from "wouter";
 
 const progressFormSchema = z.object({
   date: z.string(),
@@ -238,6 +239,19 @@ export default function Progress() {
               <TrendingUp className="w-4 h-4 text-white" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Progress Tracking</h1>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Link href="/exercise-progress" asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <BarChart3 className="w-4 h-4" />
+                Exercise Progress
+              </Button>
+            </Link>
           </div>
           
           <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>

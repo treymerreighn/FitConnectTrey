@@ -7,6 +7,8 @@ import { generateAIWorkout } from "./ai-workout";
 import { generateExerciseDatabase, generateWorkoutTemplates } from "./ai-exercise-generator";
 import { seedExerciseDatabase } from "./seed-exercises";
 import { removeDuplicateExercises } from "./duplicate-remover";
+import { AIWorkoutIntelligence } from "./ai-fitness-coach";
+import { AINutritionCoach } from "./ai-nutrition-coach";
 
 const router = Router();
 
@@ -605,6 +607,149 @@ router.post("/api/admin/generate-full-exercise-library", async (req, res) => {
   } catch (error) {
     console.error("Error generating full exercise library:", error);
     res.status(500).json({ error: "Failed to start full library generation" });
+  }
+});
+
+// Next-Level AI Features
+
+// 1. Smart Exercise Sequencing - AI optimizes workout order for maximum effectiveness
+router.post("/api/ai/optimize-workout-sequence", async (req, res) => {
+  try {
+    const { exercises, userGoals, fitnessLevel } = req.body;
+    
+    if (!exercises || !Array.isArray(exercises)) {
+      return res.status(400).json({ error: "Exercises array is required" });
+    }
+    
+    const optimizedExercises = await AIWorkoutIntelligence.optimizeExerciseSequence(
+      exercises, 
+      userGoals || ["general_fitness"], 
+      fitnessLevel || "intermediate"
+    );
+    
+    res.json({
+      optimizedExercises,
+      message: "Workout sequence optimized using AI exercise science principles"
+    });
+  } catch (error) {
+    console.error("Exercise sequencing error:", error);
+    res.status(500).json({ error: "Failed to optimize workout sequence" });
+  }
+});
+
+// 2. Dynamic Difficulty Adjustment - AI adjusts workouts in real-time
+router.post("/api/ai/adjust-workout-difficulty", async (req, res) => {
+  try {
+    const { currentWorkout, performanceData, userFeedback } = req.body;
+    
+    const adjustments = await AIWorkoutIntelligence.adjustWorkoutDifficulty(
+      currentWorkout,
+      performanceData,
+      userFeedback || "feeling good"
+    );
+    
+    res.json(adjustments);
+  } catch (error) {
+    console.error("Difficulty adjustment error:", error);
+    res.status(500).json({ error: "Failed to adjust workout difficulty" });
+  }
+});
+
+// 3. Predictive Recovery Analytics - AI predicts optimal rest periods
+router.post("/api/ai/predict-recovery", async (req, res) => {
+  try {
+    const { workoutHistory, sleepData, stressLevel } = req.body;
+    
+    const recoveryPrediction = await AIWorkoutIntelligence.predictRecoveryNeeds(
+      workoutHistory || [],
+      sleepData || { hours: 7, quality: "good" },
+      stressLevel || "moderate"
+    );
+    
+    res.json(recoveryPrediction);
+  } catch (error) {
+    console.error("Recovery prediction error:", error);
+    res.status(500).json({ error: "Failed to predict recovery needs" });
+  }
+});
+
+// 4. Intelligent Exercise Substitution - AI finds perfect alternatives
+router.post("/api/ai/substitute-exercise", async (req, res) => {
+  try {
+    const { targetExercise, reason, availableEquipment, userLimitations } = req.body;
+    
+    if (!targetExercise) {
+      return res.status(400).json({ error: "Target exercise is required" });
+    }
+    
+    const substitutions = await AIWorkoutIntelligence.findIntelligentSubstitutions(
+      targetExercise,
+      reason || "equipment_unavailable",
+      availableEquipment || ["bodyweight"],
+      userLimitations || []
+    );
+    
+    res.json(substitutions);
+  } catch (error) {
+    console.error("Exercise substitution error:", error);
+    res.status(500).json({ error: "Failed to find exercise substitutions" });
+  }
+});
+
+// 5. Personalized Meal Plan Generation - AI creates custom nutrition plans
+router.post("/api/ai/generate-meal-plan", async (req, res) => {
+  try {
+    const userProfile = req.body;
+    
+    if (!userProfile.fitnessGoals || !userProfile.bodyMetrics) {
+      return res.status(400).json({ error: "Fitness goals and body metrics are required" });
+    }
+    
+    const mealPlan = await AINutritionCoach.generatePersonalizedMealPlan(userProfile);
+    
+    res.json(mealPlan);
+  } catch (error) {
+    console.error("Meal plan generation error:", error);
+    res.status(500).json({ error: "Failed to generate personalized meal plan" });
+  }
+});
+
+// 6. Food Photo Analysis - AI analyzes food photos for nutrition insights
+router.post("/api/ai/analyze-food-photo", async (req, res) => {
+  try {
+    const { imageUrl, userGoals } = req.body;
+    
+    if (!imageUrl) {
+      return res.status(400).json({ error: "Image URL is required" });
+    }
+    
+    const analysis = await AINutritionCoach.analyzeFoodPhoto(
+      imageUrl,
+      userGoals || ["general_health"]
+    );
+    
+    res.json(analysis);
+  } catch (error) {
+    console.error("Food photo analysis error:", error);
+    res.status(500).json({ error: "Failed to analyze food photo" });
+  }
+});
+
+// 7. Performance-Based Nutrition Adjustments - AI optimizes nutrition for results
+router.post("/api/ai/adjust-nutrition", async (req, res) => {
+  try {
+    const { workoutData, currentNutrition, performanceMetrics } = req.body;
+    
+    const nutritionAdjustments = await AINutritionCoach.adjustNutritionForPerformance(
+      workoutData,
+      currentNutrition,
+      performanceMetrics
+    );
+    
+    res.json(nutritionAdjustments);
+  } catch (error) {
+    console.error("Nutrition adjustment error:", error);
+    res.status(500).json({ error: "Failed to adjust nutrition plan" });
   }
 });
 

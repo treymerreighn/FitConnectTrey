@@ -298,6 +298,7 @@ router.delete("/api/connections/:id", async (req, res) => {
 
 // Progress tracking
 router.post("/api/progress", async (req, res) => {
+  console.log("🚨 Progress endpoint hit!");
   try {
     console.log("Raw request body:", req.body);
     
@@ -335,7 +336,7 @@ router.post("/api/progress", async (req, res) => {
       console.error("Validation errors:", error.errors);
       return res.status(400).json({ error: error.errors });
     }
-    res.status(500).json({ error: "Failed to create progress entry" });
+    res.status(500).json({ error: "Invalid progress data" });
   }
 });
 

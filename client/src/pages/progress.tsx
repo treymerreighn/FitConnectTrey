@@ -44,8 +44,11 @@ export default function Progress() {
   const [selectedPhotoForAnalysis, setSelectedPhotoForAnalysis] = useState<string | null>(null);
 
   const { data: progressEntries = [], isLoading } = useQuery<ProgressEntry[]>({
-    queryKey: ["/api/progress", user?.id || CURRENT_USER_ID],
-    queryFn: () => api.getProgressEntries(user?.id || CURRENT_USER_ID),
+    queryKey: ["/api/progress"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/progress");
+      return response.json();
+    },
   });
 
   // Get weight data for chart
@@ -111,8 +114,15 @@ export default function Progress() {
       console.log("Progress data to send:", progressData);
       
       // Use apiRequest directly to see detailed error responses
-      const response = await apiRequest("POST", "/api/progress", progressData);
-      return response;
+      try {
+        const response = await apiRequest("POST", "/api/progress", progressData);
+        const result = await response.json();
+        console.log("API Response:", result);
+        return result;
+      } catch (error) {
+        console.error("API Error:", error);
+        throw error;
+      }
     },
     onSuccess: (result) => {
       console.log("Progress entry created successfully:", result);

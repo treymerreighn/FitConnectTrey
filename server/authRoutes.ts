@@ -225,16 +225,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/progress", isAuthenticated, async (req: any, res) => {
+    console.log("🚨 Progress endpoint hit!");
+    console.log("Raw request body:", req.body);
+    console.log("User from auth:", req.user.claims.sub);
+    
     try {
       const userId = req.user.claims.sub;
-      const progressData = insertProgressEntrySchema.parse(req.body);
+      
+      // Ensure date is properly parsed and handle defaults
+      const requestData = { 
+        ...req.body,
+        photos: req.body.photos || [],
+        isPrivate: req.body.isPrivate !== undefined ? req.body.isPrivate : true
+      };
+      
+      if (typeof requestData.date === 'string') {
+        requestData.date = new Date(requestData.date);
+      }
+      
+      console.log("Processed request data:", requestData);
+      
+      const progressData = insertProgressEntrySchema.parse(requestData);
+      console.log("Schema validation passed:", progressData);
+      
       const entry = await storage.createProgressEntry({ 
         ...progressData, 
         userId 
       });
+      
+      console.log("Progress entry created:", entry);
       res.status(201).json(entry);
     } catch (error) {
-      res.status(400).json({ error: "Invalid progress data" });
+      console.error("Progress creation error:", error);
+      if (error instanceof z.ZodError) {
+        console.error("Validation errors:", error.errors);
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Invalid progress data" });
     }
   });
 

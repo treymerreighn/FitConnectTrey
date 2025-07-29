@@ -26,18 +26,7 @@ import { apiRequest } from "@/lib/queryClient";
 const progressFormSchema = z.object({
   date: z.string(),
   weight: z.number().optional(),
-  bodyFatPercentage: z.number().min(0).max(100).optional(),
-  muscleMass: z.number().optional(),
-  measurements: z.object({
-    chest: z.number().optional(),
-    waist: z.number().optional(),
-    hips: z.number().optional(),
-    arms: z.number().optional(),
-    thighs: z.number().optional(),
-  }).optional(),
   notes: z.string().optional(),
-  mood: z.enum(["excellent", "good", "average", "poor", "terrible"]).optional(),
-  energyLevel: z.number().min(1).max(10).optional(),
   isPrivate: z.boolean().default(true),
 });
 
@@ -63,7 +52,7 @@ export default function Progress() {
     .map(entry => ({
       date: format(new Date(entry.date), 'yyyy-MM-dd'),
       weight: entry.weight!,
-      bodyFat: entry.bodyFat,
+      bodyFat: entry.bodyFatPercentage,
       muscleMass: entry.muscleMass
     }))
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -100,7 +89,6 @@ export default function Progress() {
     defaultValues: {
       date: format(new Date(), "yyyy-MM-dd"),
       isPrivate: true,
-      energyLevel: 5,
     },
   });
 
@@ -110,12 +98,7 @@ export default function Progress() {
         userId: CURRENT_USER_ID,
         date: new Date(data.date),
         weight: data.weight,
-        bodyFatPercentage: data.bodyFatPercentage,
-        muscleMass: data.muscleMass,
-        measurements: data.measurements,
         notes: data.notes,
-        mood: data.mood,
-        energyLevel: data.energyLevel,
         photos: selectedPhotos,
         isPrivate: data.isPrivate,
       };
@@ -192,11 +175,7 @@ export default function Progress() {
       ? latest.weight - earliest.weight 
       : null;
     
-    const bodyFatChange = latest.bodyFatPercentage && earliest.bodyFatPercentage
-      ? latest.bodyFatPercentage - earliest.bodyFatPercentage
-      : null;
-
-    return { weightChange, bodyFatChange };
+    return { weightChange };
   };
 
   const progressStats = calculateProgress();
@@ -257,71 +236,21 @@ export default function Progress() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="weight">Weight (lbs)</Label>
-                    <Input
-                      id="weight"
-                      type="number"
-                      step="0.1"
-                      {...form.register("weight", { valueAsNumber: true })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="bodyFat">Body Fat %</Label>
-                    <Input
-                      id="bodyFat"
-                      type="number"
-                      step="0.1"
-                      {...form.register("bodyFatPercentage", { valueAsNumber: true })}
-                    />
-                  </div>
-                </div>
-
                 <div>
-                  <Label htmlFor="muscleMass">Muscle Mass (lbs)</Label>
+                  <Label htmlFor="weight">Weight (lbs) - Optional</Label>
                   <Input
-                    id="muscleMass"
+                    id="weight"
                     type="number"
                     step="0.1"
-                    {...form.register("muscleMass", { valueAsNumber: true })}
+                    placeholder="Enter your current weight"
+                    {...form.register("weight", { valueAsNumber: true })}
                   />
-                </div>
-
-                {/* Measurements */}
-                <div className="space-y-2">
-                  <Label>Measurements (inches)</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      placeholder="Chest"
-                      type="number"
-                      step="0.1"
-                      {...form.register("measurements.chest", { valueAsNumber: true })}
-                    />
-                    <Input
-                      placeholder="Waist"
-                      type="number"
-                      step="0.1"
-                      {...form.register("measurements.waist", { valueAsNumber: true })}
-                    />
-                    <Input
-                      placeholder="Hips"
-                      type="number"
-                      step="0.1"
-                      {...form.register("measurements.hips", { valueAsNumber: true })}
-                    />
-                    <Input
-                      placeholder="Arms"
-                      type="number"
-                      step="0.1"
-                      {...form.register("measurements.arms", { valueAsNumber: true })}
-                    />
-                  </div>
                 </div>
 
                 {/* Photos */}
                 <div>
-                  <Label>Progress Photos</Label>
+                  <Label>Progress Photos - Optional</Label>
+                  <p className="text-xs text-gray-500 mb-2">Add photos to track your visual progress with AI analysis</p>
                   <div className="mt-2">
                     <input
                       type="file"
@@ -333,12 +262,12 @@ export default function Progress() {
                     />
                     <label
                       htmlFor="photo-upload"
-                      className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+                      className="flex items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
                     >
                       <div className="text-center">
-                        <Camera className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                        <Camera className="w-6 h-6 text-gray-400 mx-auto mb-1" />
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Upload progress photos
+                          Add photos (optional)
                         </p>
                       </div>
                     </label>
@@ -358,38 +287,8 @@ export default function Progress() {
                   </div>
                 </div>
 
-                {/* Mood */}
                 <div>
-                  <Label htmlFor="mood">Mood</Label>
-                  <Select onValueChange={(value) => form.setValue("mood", value as any)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="How are you feeling?" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="excellent">😄 Excellent</SelectItem>
-                      <SelectItem value="good">🙂 Good</SelectItem>
-                      <SelectItem value="average">😐 Average</SelectItem>
-                      <SelectItem value="poor">😕 Poor</SelectItem>
-                      <SelectItem value="terrible">😞 Terrible</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Energy Level */}
-                <div>
-                  <Label>Energy Level: {form.watch("energyLevel")}/10</Label>
-                  <Slider
-                    value={[form.watch("energyLevel") || 5]}
-                    onValueChange={(value) => form.setValue("energyLevel", value[0])}
-                    max={10}
-                    min={1}
-                    step={1}
-                    className="mt-2"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="notes">Notes</Label>
+                  <Label htmlFor="notes">Notes - Optional</Label>
                   <Textarea
                     id="notes"
                     placeholder="How are you feeling? Any observations?"
@@ -444,24 +343,7 @@ export default function Progress() {
               </CardContent>
             </Card>
             
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center">
-                    <TrendingUp className="w-5 h-5 text-purple-500" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Body Fat Change</p>
-                    <p className={`text-lg font-bold ${progressStats.bodyFatChange && progressStats.bodyFatChange < 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {progressStats.bodyFatChange ? 
-                        `${progressStats.bodyFatChange > 0 ? '+' : ''}${progressStats.bodyFatChange.toFixed(1)}%` : 
-                        'No data'
-                      }
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+
           </div>
         )}
 
@@ -475,7 +357,7 @@ export default function Progress() {
                 <TrendingUp className="h-8 w-8 text-gray-400" />
               </div>
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Start Your Progress Journey</h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">Track your transformation with photos, measurements, and AI insights</p>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">Track your weight and visual progress with optional photos and AI insights</p>
               <Button onClick={() => setIsCreateModalOpen(true)} className="bg-fit-green hover:bg-fit-green/90">
                 Add Your First Entry
               </Button>
@@ -494,13 +376,6 @@ export default function Progress() {
                       </div>
                       
                       <div className="flex items-center space-x-2">
-                        {entry.mood && (
-                          <Badge variant="secondary" className="flex items-center space-x-1">
-                            <span>{getMoodEmoji(entry.mood)}</span>
-                            <span className="capitalize">{entry.mood}</span>
-                          </Badge>
-                        )}
-                        
                         {entry.isPrivate ? (
                           <EyeOff className="w-4 h-4 text-gray-400" />
                         ) : (
@@ -535,7 +410,7 @@ export default function Progress() {
                 
                 <CardContent className="space-y-4">
                   {/* Metrics */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="flex flex-wrap gap-4">
                     {entry.weight && (
                       <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                         <div className="text-2xl font-bold text-gray-900 dark:text-white">{entry.weight}</div>
@@ -543,26 +418,7 @@ export default function Progress() {
                       </div>
                     )}
                     
-                    {entry.bodyFatPercentage && (
-                      <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                        <div className="text-2xl font-bold text-gray-900 dark:text-white">{entry.bodyFatPercentage}%</div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">Body Fat</div>
-                      </div>
-                    )}
-                    
-                    {entry.energyLevel && (
-                      <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                        <div className="text-2xl font-bold text-gray-900 dark:text-white">{entry.energyLevel}/10</div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">Energy</div>
-                      </div>
-                    )}
-                    
-                    {entry.muscleMass && (
-                      <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                        <div className="text-2xl font-bold text-gray-900 dark:text-white">{entry.muscleMass}</div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">Muscle Mass</div>
-                      </div>
-                    )}
+
                   </div>
 
                   {/* Progress Photos */}

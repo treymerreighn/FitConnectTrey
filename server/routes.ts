@@ -299,11 +299,40 @@ router.delete("/api/connections/:id", async (req, res) => {
 // Progress tracking
 router.post("/api/progress", async (req, res) => {
   try {
-    const entryData = insertProgressEntrySchema.parse(req.body);
-    const entry = await storage.createProgressEntry(entryData);
-    res.status(201).json(entry);
+    console.log("Raw request body:", req.body);
+    
+    // Parse date string to Date object if needed and ensure proper defaults
+    const requestData = { 
+      ...req.body,
+      photos: req.body.photos || [],
+      isPrivate: req.body.isPrivate !== undefined ? req.body.isPrivate : true
+    };
+    
+    if (typeof requestData.date === 'string') {
+      requestData.date = new Date(requestData.date);
+    }
+    
+    console.log("Processed request data:", requestData);
+    
+    try {
+      const entryData = insertProgressEntrySchema.parse(requestData);
+      console.log("Schema validation passed:", entryData);
+      const entry = await storage.createProgressEntry(entryData);
+      console.log("Created entry:", entry);
+      
+      res.status(201).json(entry);
+    } catch (validationError) {
+      console.error("Schema validation failed:", validationError);
+      if (validationError instanceof z.ZodError) {
+        console.error("Validation errors detail:", validationError.errors);
+        return res.status(400).json({ error: validationError.errors });
+      }
+      throw validationError;
+    }
   } catch (error) {
+    console.error("Progress entry creation error:", error);
     if (error instanceof z.ZodError) {
+      console.error("Validation errors:", error.errors);
       return res.status(400).json({ error: error.errors });
     }
     res.status(500).json({ error: "Failed to create progress entry" });

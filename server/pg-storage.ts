@@ -433,16 +433,16 @@ export class PgStorage implements IStorage {
       id: newEntry.id,
       userId: newEntry.userId,
       date: newEntry.date,
-      type: newEntry.type,
+      type: "weight", // Default type for simplified progress tracking
       weight: newEntry.weight,
-      bodyFat: newEntry.bodyFat,
+      bodyFat: newEntry.bodyFatPercentage,
       muscleMass: newEntry.muscleMass,
       measurements: newEntry.measurements,
       photos: newEntry.photos,
       notes: newEntry.notes,
       mood: newEntry.mood,
       energyLevel: newEntry.energyLevel,
-      aiInsights: newEntry.aiInsights
+      aiInsights: JSON.stringify(newEntry.aiInsights) // Convert object to string for storage
     });
     
     return newEntry;
@@ -454,7 +454,14 @@ export class PgStorage implements IStorage {
   }
 
   async getProgressEntriesByUserId(userId: string): Promise<ProgressEntry[]> {
-    return await db.select().from(progressEntries).where(eq(progressEntries.userId, userId)).orderBy(desc(progressEntries.date));
+    const dbEntries = await db.select().from(progressEntries).where(eq(progressEntries.userId, userId)).orderBy(desc(progressEntries.date));
+    
+    // Convert database entries to match schema format
+    return dbEntries.map(entry => ({
+      ...entry,
+      bodyFatPercentage: entry.bodyFat,
+      aiInsights: entry.aiInsights ? JSON.parse(entry.aiInsights) : undefined
+    })) as ProgressEntry[];
   }
 
   async updateProgressEntry(id: string, updates: Partial<ProgressEntry>): Promise<ProgressEntry> {

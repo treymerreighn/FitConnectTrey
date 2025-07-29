@@ -52,7 +52,7 @@ export const progressEntries = pgTable("progress_entries", {
   id: text("id").primaryKey(),
   userId: text("user_id").notNull().references(() => users.id),
   date: timestamp("date").notNull(),
-  type: text("type").notNull(), // weight, measurements, photos
+  type: text("type").notNull().default("weight"), // weight, measurements, photos
   weight: integer("weight"),
   bodyFat: integer("body_fat"),
   muscleMass: integer("muscle_mass"),
@@ -62,6 +62,7 @@ export const progressEntries = pgTable("progress_entries", {
   mood: text("mood"),
   energyLevel: integer("energy_level"),
   aiInsights: text("ai_insights"),
+  isPrivate: boolean("is_private").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

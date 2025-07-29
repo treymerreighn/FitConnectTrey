@@ -779,4 +779,4 @@ export class MemStorage implements IStorage {
 }
 
 // Switch between development (MemStorage) and production (PgStorage)
-export const storage = new PgStorage();
+export const storage = new MemStorage();

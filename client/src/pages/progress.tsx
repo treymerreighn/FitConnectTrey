@@ -17,6 +17,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { api } from "@/lib/api";
 import { CURRENT_USER_ID } from "@/lib/constants";
+import { useAuth } from "@/hooks/useAuth";
 import type { ProgressEntry, InsertProgressEntry } from "@shared/schema";
 import { format } from "date-fns";
 import { ProgressChart } from "@/components/ProgressChart";
@@ -34,6 +35,7 @@ type ProgressFormData = z.infer<typeof progressFormSchema>;
 
 export default function Progress() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [generatingInsights, setGeneratingInsights] = useState<string | null>(null);
@@ -42,8 +44,8 @@ export default function Progress() {
   const [selectedPhotoForAnalysis, setSelectedPhotoForAnalysis] = useState<string | null>(null);
 
   const { data: progressEntries = [], isLoading } = useQuery<ProgressEntry[]>({
-    queryKey: ["/api/progress", CURRENT_USER_ID],
-    queryFn: () => api.getProgressEntries(CURRENT_USER_ID),
+    queryKey: ["/api/progress", user?.id || CURRENT_USER_ID],
+    queryFn: () => api.getProgressEntries(user?.id || CURRENT_USER_ID),
   });
 
   // Get weight data for chart
@@ -59,8 +61,8 @@ export default function Progress() {
 
   // Get recent workouts for trend analysis
   const { data: recentWorkouts = [] } = useQuery({
-    queryKey: ["/api/user-exercises", CURRENT_USER_ID],
-    queryFn: () => fetch(`/api/user-exercises?userId=${CURRENT_USER_ID}`).then(res => res.json()),
+    queryKey: ["/api/user-exercises", user?.id || CURRENT_USER_ID],
+    queryFn: () => fetch(`/api/user-exercises?userId=${user?.id || CURRENT_USER_ID}`).then(res => res.json()),
   });
 
   // Analyze weight trends when data changes
@@ -94,21 +96,33 @@ export default function Progress() {
 
   const createProgressMutation = useMutation({
     mutationFn: async (data: ProgressFormData) => {
+      console.log("Form data:", data);
+      console.log("Selected photos:", selectedPhotos);
+      
       const progressData: InsertProgressEntry = {
-        userId: CURRENT_USER_ID,
+        userId: user?.id || CURRENT_USER_ID,
         date: new Date(data.date),
         weight: data.weight,
         notes: data.notes,
         photos: selectedPhotos,
         isPrivate: data.isPrivate,
       };
-      return api.createProgressEntry(progressData);
+      
+      console.log("Progress data to send:", progressData);
+      
+      // Use apiRequest directly to see detailed error responses
+      const response = await apiRequest("POST", "/api/progress", progressData);
+      return response;
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      console.log("Progress entry created successfully:", result);
       queryClient.invalidateQueries({ queryKey: ["/api/progress", CURRENT_USER_ID] });
       setIsCreateModalOpen(false);
       form.reset();
       setSelectedPhotos([]);
+    },
+    onError: (error) => {
+      console.error("Failed to create progress entry:", error);
     },
   });
 
@@ -134,6 +148,8 @@ export default function Progress() {
   };
 
   const onSubmit = (data: ProgressFormData) => {
+    console.log("Form submit triggered with data:", data);
+    console.log("Form errors:", form.formState.errors);
     createProgressMutation.mutate(data);
   };
 

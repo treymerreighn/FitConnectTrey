@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Camera, TrendingUp, Brain, Calendar, Weight, Eye, EyeOff, Share2, Sparkles } from "lucide-react";
+import { Plus, Camera, TrendingUp, Brain, Calendar, Weight, Eye, EyeOff, Share2, Sparkles, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,9 @@ import { api } from "@/lib/api";
 import { CURRENT_USER_ID } from "@/lib/constants";
 import type { ProgressEntry, InsertProgressEntry } from "@shared/schema";
 import { format } from "date-fns";
+import { ProgressChart } from "@/components/ProgressChart";
+import { ProgressPhotoAnalysis } from "@/components/ProgressPhotoAnalysis";
+import { apiRequest } from "@/lib/queryClient";
 
 const progressFormSchema = z.object({
   date: z.string(),
@@ -45,11 +48,52 @@ export default function Progress() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [generatingInsights, setGeneratingInsights] = useState<string | null>(null);
+  const [showWeightChart, setShowWeightChart] = useState(true);
+  const [weightTrendAnalysis, setWeightTrendAnalysis] = useState<any>(null);
+  const [selectedPhotoForAnalysis, setSelectedPhotoForAnalysis] = useState<string | null>(null);
 
   const { data: progressEntries = [], isLoading } = useQuery<ProgressEntry[]>({
     queryKey: ["/api/progress", CURRENT_USER_ID],
     queryFn: () => api.getProgressEntries(CURRENT_USER_ID),
   });
+
+  // Get weight data for chart
+  const weightData = progressEntries
+    .filter(entry => entry.weight)
+    .map(entry => ({
+      date: format(new Date(entry.date), 'yyyy-MM-dd'),
+      weight: entry.weight!,
+      bodyFat: entry.bodyFat,
+      muscleMass: entry.muscleMass
+    }))
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  // Get recent workouts for trend analysis
+  const { data: recentWorkouts = [] } = useQuery({
+    queryKey: ["/api/user-exercises", CURRENT_USER_ID],
+    queryFn: () => fetch(`/api/user-exercises?userId=${CURRENT_USER_ID}`).then(res => res.json()),
+  });
+
+  // Analyze weight trends when data changes
+  useEffect(() => {
+    if (weightData.length >= 3) {
+      analyzeWeightTrends();
+    }
+  }, [weightData.length]);
+
+  const analyzeWeightTrends = async () => {
+    try {
+      const response = await apiRequest("POST", "/api/ai/analyze-weight-trends", {
+        weightEntries: weightData,
+        userGoals: ["general_fitness"], // Could come from user profile
+        workoutData: recentWorkouts.slice(-10)
+      });
+      const analysis = await response.json();
+      setWeightTrendAnalysis(analysis);
+    } catch (error) {
+      console.error("Failed to analyze weight trends:", error);
+    }
+  };
 
   const form = useForm<ProgressFormData>({
     resolver: zodResolver(progressFormSchema),

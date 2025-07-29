@@ -9,6 +9,7 @@ import { seedExerciseDatabase } from "./seed-exercises";
 import { removeDuplicateExercises } from "./duplicate-remover";
 import { AIWorkoutIntelligence } from "./ai-fitness-coach";
 import { AINutritionCoach } from "./ai-nutrition-coach";
+import { AIProgressAnalyzer } from "./ai-progress-analyzer";
 
 const router = Router();
 
@@ -352,6 +353,7 @@ router.delete("/api/progress/:id", async (req, res) => {
   }
 });
 
+// Enhanced AI Progress Analysis
 router.post("/api/progress/:id/ai-insights", async (req, res) => {
   try {
     const { photos } = req.body;
@@ -359,6 +361,70 @@ router.post("/api/progress/:id/ai-insights", async (req, res) => {
     res.json(entry);
   } catch (error) {
     res.status(500).json({ error: "Failed to generate AI insights" });
+  }
+});
+
+// AI Progress Photo Analysis
+router.post("/api/ai/analyze-progress-photo", async (req, res) => {
+  try {
+    const { imageUrl, previousAnalysis, userGoals, timeframe } = req.body;
+    
+    if (!imageUrl) {
+      return res.status(400).json({ error: "Image URL is required" });
+    }
+    
+    const analysis = await AIProgressAnalyzer.analyzeProgressPhoto(
+      imageUrl,
+      previousAnalysis,
+      userGoals || ["general_fitness"],
+      timeframe || "1 month"
+    );
+    
+    res.json(analysis);
+  } catch (error) {
+    console.error("Progress photo analysis error:", error);
+    res.status(500).json({ error: "Failed to analyze progress photo" });
+  }
+});
+
+// AI Weight Trend Analysis
+router.post("/api/ai/analyze-weight-trends", async (req, res) => {
+  try {
+    const { weightEntries, userGoals, workoutData } = req.body;
+    
+    if (!weightEntries || !Array.isArray(weightEntries)) {
+      return res.status(400).json({ error: "Weight entries array is required" });
+    }
+    
+    const analysis = await AIProgressAnalyzer.analyzeWeightTrends(
+      weightEntries,
+      userGoals || ["general_fitness"],
+      workoutData || []
+    );
+    
+    res.json(analysis);
+  } catch (error) {
+    console.error("Weight trend analysis error:", error);
+    res.status(500).json({ error: "Failed to analyze weight trends" });
+  }
+});
+
+// AI Comprehensive Progress Report
+router.post("/api/ai/generate-progress-report", async (req, res) => {
+  try {
+    const { progressPhotos, weightData, workouts, userProfile } = req.body;
+    
+    const report = await AIProgressAnalyzer.generateProgressReport(
+      progressPhotos || [],
+      weightData || [],
+      workouts || [],
+      userProfile || {}
+    );
+    
+    res.json(report);
+  } catch (error) {
+    console.error("Progress report generation error:", error);
+    res.status(500).json({ error: "Failed to generate progress report" });
   }
 });
 

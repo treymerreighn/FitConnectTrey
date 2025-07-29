@@ -48,6 +48,153 @@ const BODY_PARTS = [
   { id: "full-body", name: "Full Body", icon: "🔥", exercises: ["Burpees", "Mountain Climbers", "Jumping Jacks"] }
 ];
 
+// Workout analysis and balancing functions
+const analyzeWorkoutBalance = (exercises: Exercise[]) => {
+  const pushExercises = exercises.filter((ex: Exercise) => 
+    ex.muscleGroups.some((mg: string) => 
+      ['chest', 'shoulders', 'triceps', 'quadriceps'].includes(mg.toLowerCase())
+    )
+  );
+  
+  const pullExercises = exercises.filter((ex: Exercise) => 
+    ex.muscleGroups.some((mg: string) => 
+      ['back', 'biceps', 'hamstrings', 'glutes'].includes(mg.toLowerCase())
+    )
+  );
+
+  const coreExercises = exercises.filter((ex: Exercise) => 
+    ex.muscleGroups.some((mg: string) => mg.toLowerCase().includes('abs') || mg.toLowerCase().includes('core'))
+  );
+
+  const suggestions = [];
+  
+  // Push/Pull balance check
+  if (pushExercises.length > pullExercises.length + 1) {
+    suggestions.push("Consider adding more pulling exercises (back, biceps) to balance your workout");
+  } else if (pullExercises.length > pushExercises.length + 1) {
+    suggestions.push("Consider adding more pushing exercises (chest, shoulders, triceps) to balance your workout");
+  }
+
+  // Core inclusion check
+  if (exercises.length >= 4 && coreExercises.length === 0) {
+    suggestions.push("Add core exercises for a complete workout");
+  }
+
+  // Difficulty progression
+  const difficulties = exercises.map((ex: Exercise) => ex.difficulty);
+  const hasProgression = difficulties.includes("Beginner") && 
+                        (difficulties.includes("Intermediate") || difficulties.includes("Advanced"));
+  
+  if (!hasProgression && exercises.length >= 3) {
+    suggestions.push("Mix difficulty levels for better progression");
+  }
+
+  return {
+    pushCount: pushExercises.length,
+    pullCount: pullExercises.length,
+    coreCount: coreExercises.length,
+    isBalanced: Math.abs(pushExercises.length - pullExercises.length) <= 1,
+    suggestions
+  };
+};
+
+const calculateWorkoutDuration = (exercises: Exercise[]) => {
+  return exercises.reduce((total: number, ex: Exercise) => {
+    const sets = ex.targetSets || 3;
+    const restTime = ex.restTime || 60;
+    const setDuration = 45; // Average time per set in seconds
+    return total + ((sets * setDuration + (sets - 1) * restTime) / 60); // Convert to minutes
+  }, 0);
+};
+
+const calculateWorkoutDifficulty = (exercises: Exercise[]): "Beginner" | "Intermediate" | "Advanced" => {
+  if (exercises.length === 0) return "Beginner";
+  
+  const difficultyScores = exercises.map((ex: Exercise) => {
+    switch (ex.difficulty) {
+      case "Beginner": return 1;
+      case "Intermediate": return 2;
+      case "Advanced": return 3;
+      default: return 1;
+    }
+  });
+  
+  const avgScore = difficultyScores.reduce((sum, score) => sum + score, 0) / difficultyScores.length;
+  
+  if (avgScore <= 1.3) return "Beginner";
+  if (avgScore <= 2.3) return "Intermediate";
+  return "Advanced";
+};
+
+const generateSmartWorkout = (
+  availableExercises: Exercise[], 
+  targetDuration: number, 
+  difficulty: "Beginner" | "Intermediate" | "Advanced",
+  bodyParts: string[]
+) => {
+  const filteredExercises = availableExercises.filter(ex => {
+    // Filter by difficulty
+    if (difficulty === "Beginner" && ex.difficulty === "Advanced") return false;
+    if (difficulty === "Advanced" && ex.difficulty === "Beginner") return false;
+    
+    // Filter by body parts if specified
+    if (bodyParts.length > 0) {
+      return ex.muscleGroups.some((mg: string) => 
+        bodyParts.some((bp: string) => mg.toLowerCase().includes(bp.toLowerCase()))
+      );
+    }
+    
+    return true;
+  });
+
+  const selectedExercises: Exercise[] = [];
+  let currentDuration = 0;
+  let pushCount = 0;
+  let pullCount = 0;
+  let hasCore = false;
+
+  // Prioritize balance while staying within time limit
+  for (const exercise of filteredExercises) {
+    if (currentDuration >= targetDuration) break;
+    if (selectedExercises.some((ex: Exercise) => ex.id === exercise.id)) continue;
+
+    const isPush = exercise.muscleGroups.some((mg: string) => 
+      ['chest', 'shoulders', 'triceps', 'quadriceps'].includes(mg.toLowerCase())
+    );
+    const isPull = exercise.muscleGroups.some((mg: string) => 
+      ['back', 'biceps', 'hamstrings', 'glutes'].includes(mg.toLowerCase())
+    );
+    const isCore = exercise.muscleGroups.some((mg: string) => 
+      mg.toLowerCase().includes('abs') || mg.toLowerCase().includes('core')
+    );
+
+    // Smart selection logic
+    let shouldAdd = false;
+    
+    if (isCore && !hasCore && selectedExercises.length >= 2) {
+      shouldAdd = true;
+      hasCore = true;
+    } else if (isPush && pushCount <= pullCount) {
+      shouldAdd = true;
+      pushCount++;
+    } else if (isPull && pullCount <= pushCount) {
+      shouldAdd = true;
+      pullCount++;
+    } else if (selectedExercises.length < 2) {
+      shouldAdd = true;
+      if (isPush) pushCount++;
+      if (isPull) pullCount++;
+    }
+
+    if (shouldAdd) {
+      selectedExercises.push(exercise);
+      currentDuration = calculateWorkoutDuration(selectedExercises);
+    }
+  }
+
+  return selectedExercises;
+};
+
 const MOCK_EXERCISES: Exercise[] = [
   {
     id: "1",
@@ -118,11 +265,11 @@ export default function BuildWorkout() {
   const [aiPrompt, setAiPrompt] = useState("");
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
-  const filteredExercises = (exercises.length > 0 ? exercises : MOCK_EXERCISES).filter(exercise => {
+  const filteredExercises = (exercises.length > 0 ? exercises : MOCK_EXERCISES).filter((exercise: Exercise) => {
     if (selectedBodyParts.length === 0) return true;
-    return exercise.muscleGroups.some(muscle => 
-      selectedBodyParts.some(bodyPart => 
-        BODY_PARTS.find(bp => bp.id === bodyPart)?.exercises.some(ex => 
+    return exercise.muscleGroups.some((muscle: string) => 
+      selectedBodyParts.some((bodyPart: string) => 
+        BODY_PARTS.find(bp => bp.id === bodyPart)?.exercises.some((ex: string) => 
           muscle.toLowerCase().includes(ex.toLowerCase().split(' ')[0])
         )
       )
@@ -138,16 +285,53 @@ export default function BuildWorkout() {
   };
 
   const addExerciseToWorkout = (exercise: Exercise) => {
+    // Check for duplicates
+    if (workoutPlan.exercises.some(ex => ex.id === exercise.id)) {
+      toast({
+        title: "Exercise Already Added",
+        description: "This exercise is already in your workout plan",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Smart balancing logic
+    const exerciseWithDefaults = {
+      ...exercise,
+      targetSets: exercise.targetSets || 3,
+      targetReps: exercise.targetReps || 12,
+      restTime: exercise.restTime || 60
+    };
+
+    const updatedExercises = [...workoutPlan.exercises, exerciseWithDefaults];
+
+    // Analyze balance and suggest improvements
+    const balance = analyzeWorkoutBalance(updatedExercises);
+    
     setWorkoutPlan(prev => ({
       ...prev,
-      exercises: [...prev.exercises, exercise],
-      estimatedDuration: prev.estimatedDuration + (exercise.targetSets || 3) * 2 // 2 min per set estimate
+      exercises: updatedExercises,
+      estimatedDuration: calculateWorkoutDuration(updatedExercises),
+      difficulty: calculateWorkoutDifficulty(updatedExercises)
     }));
+
     setShowExerciseLibrary(false); // Close modal after adding
+    
     toast({
       title: "Exercise Added!",
       description: `${exercise.name} has been added to your workout`
     });
+
+    // Show balance recommendations
+    if (balance.suggestions.length > 0) {
+      setTimeout(() => {
+        toast({
+          title: "Workout Balance Tip",
+          description: balance.suggestions[0],
+          duration: 4000
+        });
+      }, 1000);
+    }
   };
 
   const removeExerciseFromWorkout = (exerciseId: string) => {
@@ -295,6 +479,34 @@ export default function BuildWorkout() {
             <Button
               variant="outline"
               size="sm"
+              onClick={() => {
+                const smartWorkout = generateSmartWorkout(
+                  exercises.length > 0 ? exercises : MOCK_EXERCISES,
+                  30, // 30 minute workout
+                  "Intermediate",
+                  selectedBodyParts
+                );
+                setWorkoutPlan({
+                  name: "Smart Balanced Workout",
+                  description: "AI-generated balanced workout with push/pull harmony",
+                  exercises: smartWorkout,
+                  targetBodyParts: selectedBodyParts,
+                  estimatedDuration: calculateWorkoutDuration(smartWorkout),
+                  difficulty: calculateWorkoutDifficulty(smartWorkout)
+                });
+                toast({
+                  title: "Smart Workout Generated!",
+                  description: `Created balanced workout with ${smartWorkout.length} exercises`
+                });
+              }}
+              className="border-green-500 text-green-400 hover:bg-green-500/10"
+            >
+              <Target className="h-4 w-4 mr-2" />
+              Smart Generate
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setShowAIBuilder(true)}
               className="border-purple-500 text-purple-400 hover:bg-purple-500/10"
             >
@@ -366,14 +578,14 @@ export default function BuildWorkout() {
               {/* Workout Summary */}
               <Card className="bg-gray-800 border-gray-700">
                 <CardContent className="p-4">
-                  <div className="grid grid-cols-3 gap-4 text-center">
+                  <div className="grid grid-cols-4 gap-4 text-center">
                     <div>
                       <div className="text-2xl font-bold text-red-400">{workoutPlan.exercises.length}</div>
                       <div className="text-xs text-gray-400">Exercises</div>
                     </div>
                     <div>
-                      <div className="text-2xl font-bold text-blue-400">{workoutPlan.estimatedDuration}m</div>
-                      <div className="text-xs text-gray-400">Est. Duration</div>
+                      <div className="text-2xl font-bold text-blue-400">{Math.round(workoutPlan.estimatedDuration)}m</div>
+                      <div className="text-xs text-gray-400">Duration</div>
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-green-400">
@@ -381,7 +593,42 @@ export default function BuildWorkout() {
                       </div>
                       <div className="text-xs text-gray-400">Total Sets</div>
                     </div>
+                    <div>
+                      {(() => {
+                        const balance = analyzeWorkoutBalance(workoutPlan.exercises);
+                        return (
+                          <div>
+                            <div className={`text-2xl font-bold ${balance.isBalanced ? 'text-green-400' : 'text-yellow-400'}`}>
+                              {balance.isBalanced ? '⚖️' : '⚠️'}
+                            </div>
+                            <div className="text-xs text-gray-400">
+                              {balance.isBalanced ? 'Balanced' : 'Unbalanced'}
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
                   </div>
+                  
+                  {/* Balance Details */}
+                  {workoutPlan.exercises.length > 0 && (() => {
+                    const balance = analyzeWorkoutBalance(workoutPlan.exercises);
+                    return (
+                      <div className="mt-3 pt-3 border-t border-gray-700">
+                        <div className="grid grid-cols-3 gap-2 text-xs text-gray-400">
+                          <div className="text-center">
+                            <span className="text-red-400 font-semibold">{balance.pushCount}</span> Push
+                          </div>
+                          <div className="text-center">
+                            <span className="text-blue-400 font-semibold">{balance.pullCount}</span> Pull
+                          </div>
+                          <div className="text-center">
+                            <span className="text-green-400 font-semibold">{balance.coreCount}</span> Core
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </CardContent>
               </Card>
 
@@ -591,8 +838,8 @@ export default function BuildWorkout() {
                     { id: "glutes", name: "Glutes", icon: "🍑", description: "Hip and buttock muscles" },
                     { id: "calves", name: "Calves", icon: "🦵", description: "Lower leg muscles" }
                   ].map(muscleGroup => {
-                    const muscleExercises = exercises.filter(ex => 
-                      ex.muscleGroups && ex.muscleGroups.some(mg => mg.toLowerCase() === muscleGroup.id)
+                    const muscleExercises = exercises.filter((ex: Exercise) => 
+                      ex.muscleGroups && ex.muscleGroups.some((mg: string) => mg.toLowerCase() === muscleGroup.id)
                     );
                     return (
                       <Card 
@@ -626,11 +873,11 @@ export default function BuildWorkout() {
               // Show Exercises for Selected Muscle Group
               <div className="space-y-3">
                 {filteredExercises
-                  .filter(exercise => 
-                    exercise.muscleGroups && exercise.muscleGroups.some(mg => mg.toLowerCase() === selectedCategory)
+                  .filter((exercise: Exercise) => 
+                    exercise.muscleGroups && exercise.muscleGroups.some((mg: string) => mg.toLowerCase() === selectedCategory)
                   )
-                  .sort((a, b) => a.name.localeCompare(b.name))
-                  .map(exercise => (
+                  .sort((a: Exercise, b: Exercise) => a.name.localeCompare(b.name))
+                  .map((exercise: Exercise) => (
                   <Card key={exercise.id} className="bg-gray-700 border-gray-600">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
@@ -671,8 +918,8 @@ export default function BuildWorkout() {
                   </Card>
                 ))}
                 
-                {filteredExercises.filter(exercise => 
-                  exercise.muscleGroups && exercise.muscleGroups.some(mg => mg.toLowerCase() === selectedCategory)
+                {filteredExercises.filter((exercise: Exercise) => 
+                  exercise.muscleGroups && exercise.muscleGroups.some((mg: string) => mg.toLowerCase() === selectedCategory)
                 ).length === 0 && (
                   <div className="text-center py-8">
                     <p className="text-gray-400">No exercises found for this muscle group.</p>

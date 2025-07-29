@@ -6,6 +6,7 @@ import { setupAuth, isAuthenticated } from "./replitAuth";
 import { generateAIWorkout } from "./ai-workout";
 import { generateExerciseDatabase, generateWorkoutTemplates } from "./ai-exercise-generator";
 import { seedExerciseDatabase } from "./seed-exercises";
+import { removeDuplicateExercises } from "./duplicate-remover";
 
 const router = Router();
 
@@ -375,7 +376,11 @@ router.get("/api/exercises", async (req, res) => {
       exercises = await storage.getAllExercises();
     }
     
-    res.json(exercises);
+    // Remove duplicates before sending to frontend
+    const uniqueExercises = removeDuplicateExercises(exercises);
+    console.log(`🧹 API: Removed duplicates: ${exercises.length} → ${uniqueExercises.length} exercises`);
+    
+    res.json(uniqueExercises);
   } catch (error) {
     console.error("Error fetching exercises:", error);
     res.status(500).json({ error: "Failed to fetch exercises" });

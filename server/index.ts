@@ -6,6 +6,7 @@ import { registerRoutes } from "./authRoutes";
 import { initializeDatabase } from "./db";
 import { buildBasicExerciseLibrary } from "./simple-exercise-builder";
 import { generateComprehensiveExerciseLibrary } from "./generate-exercise-library";
+import { cleanupDuplicateExercises } from "./cleanup-duplicates";
 
 const app = express();
 
@@ -26,21 +27,28 @@ async function startServer() {
     // Initialize database
     await initializeDatabase();
     
+    // Clean up any existing duplicates first
+    console.log("🧹 Cleaning up duplicate exercises...");
+    await cleanupDuplicateExercises();
+    
     // Build exercise library - start with basic exercises for fast startup
     console.log("🏗️ Building exercise library...");
     await buildBasicExerciseLibrary();
     
-    // Generate comprehensive exercises in background after server starts
+    // Generate comprehensive exercises in background after cleanup
     if (process.env.OPENAI_API_KEY) {
-      console.log("🤖 Scheduling AI exercise generation in background...");
+      console.log("🤖 Scheduling AI exercise generation...");
       setTimeout(async () => {
         try {
           await generateComprehensiveExerciseLibrary();
-          console.log("🎯 AI exercise library generation completed successfully!");
+          console.log("🎯 AI exercise library generation completed!");
+          
+          // Final cleanup after AI generation
+          await cleanupDuplicateExercises();
         } catch (error) {
           console.log("⚠️ Background AI exercise generation failed, basic library remains active");
         }
-      }, 5000); // Wait 5 seconds after server starts
+      }, 3000); // Wait 3 seconds after server starts
     } else {
       console.log("ℹ️ No OpenAI API key found, using basic exercise library");
     }

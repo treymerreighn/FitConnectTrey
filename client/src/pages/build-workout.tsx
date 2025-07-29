@@ -130,7 +130,8 @@ const generateSmartWorkout = (
   availableExercises: Exercise[], 
   targetDuration: number, 
   difficulty: "Beginner" | "Intermediate" | "Advanced",
-  bodyParts: string[]
+  bodyParts: string[],
+  targetExerciseCount?: number
 ) => {
   const filteredExercises = availableExercises.filter(ex => {
     // Filter by difficulty
@@ -153,9 +154,10 @@ const generateSmartWorkout = (
   let pullCount = 0;
   let hasCore = false;
 
-  // Prioritize balance while staying within time limit
+  // Prioritize balance while staying within time and exercise count limits
   for (const exercise of filteredExercises) {
     if (currentDuration >= targetDuration) break;
+    if (targetExerciseCount && selectedExercises.length >= targetExerciseCount) break;
     if (selectedExercises.some((ex: Exercise) => ex.id === exercise.id)) continue;
 
     const isPush = exercise.muscleGroups.some((mg: string) => 
@@ -360,53 +362,29 @@ export default function BuildWorkout() {
     }));
   };
 
-  const generateAIWorkout = async () => {
+  const generateAIWorkout = async (targetDuration: number) => {
     setIsGeneratingAI(true);
     
     try {
-      const response = await fetch("/api/generate-workout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          bodyParts: selectedBodyParts,
-          fitnessLevel: "intermediate",
-          duration: 45,
-          equipment: ["None", "Dumbbells", "Barbell"],
-          goals: aiPrompt || `Build strength and muscle in ${selectedBodyParts.join(", ")}`,
-          userPrompt: aiPrompt
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to generate workout");
-      }
-
-      const aiWorkout = await response.json();
+      // Calculate logical exercise count based on duration
+      const exerciseCount = Math.max(4, Math.min(8, Math.floor(targetDuration / 6))); // 6-7 minutes per exercise
       
-      // Convert AI response to our workout plan format
-      const exercises = aiWorkout.exercises.map((ex: any, index: number) => ({
-        id: `ai-${index + 1}`,
-        name: ex.name,
-        category: "Strength",
-        muscleGroups: ex.muscleGroups || ["Full Body"],
-        equipment: ["Various"],
-        difficulty: ex.difficulty,
-        thumbnailUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400",
-        instructions: ex.instructions || [],
-        targetSets: ex.sets,
-        targetReps: typeof ex.reps === 'string' ? parseInt(ex.reps.split('-')[0]) : ex.reps,
-        restTime: ex.restTime
-      }));
-      
+      // Use smart generation logic for balanced workouts
+      const smartWorkout = generateSmartWorkout(
+        exercises.length > 0 ? exercises : MOCK_EXERCISES,
+        targetDuration,
+        "Intermediate",
+        selectedBodyParts,
+        exerciseCount
+      );
+
       setWorkoutPlan({
-        name: aiWorkout.name,
-        description: aiWorkout.description,
-        exercises: exercises,
+        name: `${targetDuration}-Minute AI Workout`,
+        description: `AI-generated balanced workout with ${smartWorkout.length} exercises targeting your selected body parts`,
+        exercises: smartWorkout,
         targetBodyParts: selectedBodyParts,
-        estimatedDuration: aiWorkout.estimatedDuration,
-        difficulty: aiWorkout.difficulty
+        estimatedDuration: calculateWorkoutDuration(smartWorkout),
+        difficulty: calculateWorkoutDifficulty(smartWorkout)
       });
       
       setIsGeneratingAI(false);
@@ -414,16 +392,35 @@ export default function BuildWorkout() {
       
       toast({
         title: "AI Workout Generated!",
-        description: "Your personalized workout plan is ready"
+        description: `Created ${smartWorkout.length} exercises for ${Math.round(calculateWorkoutDuration(smartWorkout))} minutes`
       });
     } catch (error) {
       console.error("Failed to generate AI workout:", error);
       setIsGeneratingAI(false);
       
+      // Fallback to basic generation
+      const fallbackWorkout = generateSmartWorkout(
+        exercises.length > 0 ? exercises : MOCK_EXERCISES,
+        targetDuration,
+        "Intermediate", 
+        selectedBodyParts,
+        Math.floor(targetDuration / 6)
+      );
+      
+      setWorkoutPlan({
+        name: `${targetDuration}-Minute Workout`,
+        description: `Balanced workout with ${fallbackWorkout.length} exercises`,
+        exercises: fallbackWorkout,
+        targetBodyParts: selectedBodyParts,
+        estimatedDuration: calculateWorkoutDuration(fallbackWorkout),
+        difficulty: calculateWorkoutDifficulty(fallbackWorkout)
+      });
+      
+      setShowAIBuilder(false);
+      
       toast({
-        title: "Generation Failed",
-        description: "Failed to generate workout. Please try again.",
-        variant: "destructive"
+        title: "Workout Generated!",
+        description: `Created balanced ${Math.round(calculateWorkoutDuration(fallbackWorkout))}-minute workout`
       });
     }
   };
@@ -476,34 +473,6 @@ export default function BuildWorkout() {
           </div>
           
           <div className="flex space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                const smartWorkout = generateSmartWorkout(
-                  exercises.length > 0 ? exercises : MOCK_EXERCISES,
-                  30, // 30 minute workout
-                  "Intermediate",
-                  selectedBodyParts
-                );
-                setWorkoutPlan({
-                  name: "Smart Balanced Workout",
-                  description: "AI-generated balanced workout with push/pull harmony",
-                  exercises: smartWorkout,
-                  targetBodyParts: selectedBodyParts,
-                  estimatedDuration: calculateWorkoutDuration(smartWorkout),
-                  difficulty: calculateWorkoutDifficulty(smartWorkout)
-                });
-                toast({
-                  title: "Smart Workout Generated!",
-                  description: `Created balanced workout with ${smartWorkout.length} exercises`
-                });
-              }}
-              className="border-green-500 text-green-400 hover:bg-green-500/10"
-            >
-              <Target className="h-4 w-4 mr-2" />
-              Smart Generate
-            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -953,6 +922,26 @@ export default function BuildWorkout() {
             </div>
             
             <div>
+              <Label>Workout Duration</Label>
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                {[30, 45, 60].map(duration => (
+                  <Button
+                    key={duration}
+                    variant="outline"
+                    onClick={() => generateAIWorkout(duration)}
+                    disabled={isGeneratingAI}
+                    className="border-purple-500 text-purple-400 hover:bg-purple-500/20"
+                  >
+                    {duration}min
+                  </Button>
+                ))}
+              </div>
+              <p className="text-xs text-gray-400 mt-2">
+                30min: 4-5 exercises • 45min: 6-8 exercises • 60min: 8-10 exercises
+              </p>
+            </div>
+            
+            <div>
               <Label>Selected Body Parts</Label>
               <div className="flex flex-wrap gap-2 mt-2">
                 {selectedBodyParts.map(bodyPartId => {
@@ -963,29 +952,29 @@ export default function BuildWorkout() {
                     </Badge>
                   );
                 })}
+                {selectedBodyParts.length === 0 && (
+                  <p className="text-sm text-gray-400">Select body parts above for targeted workouts</p>
+                )}
               </div>
-              {selectedBodyParts.length === 0 && (
-                <p className="text-sm text-gray-400 mt-1">Select body parts above to include in generation</p>
-              )}
             </div>
 
-            <Button
-              onClick={generateAIWorkout}
-              disabled={isGeneratingAI || selectedBodyParts.length === 0}
-              className="w-full bg-purple-600 hover:bg-purple-700"
-            >
-              {isGeneratingAI ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Generate Workout
-                </>
-              )}
-            </Button>
+            <div>
+              <Label>Additional Focus (Optional)</Label>
+              <Textarea
+                placeholder="e.g., focus on strength, include cardio, beginner-friendly..."
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                className="bg-gray-700 border-gray-600 mt-2"
+                rows={3}
+              />
+            </div>
+            
+            {isGeneratingAI && (
+              <div className="flex items-center justify-center py-4">
+                <div className="animate-spin h-6 w-6 mr-3 border-2 border-purple-400 border-t-transparent rounded-full" />
+                <span className="text-purple-400">Generating balanced workout...</span>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

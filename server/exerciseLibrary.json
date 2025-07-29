@@ -1,0 +1,1964 @@
+[
+  {
+    "id": "ai-gen-1",
+    "name": "Push-Up",
+    "category": "Strength",
+    "muscleGroups": [
+      "chest",
+      "triceps"
+    ],
+    "equipment": [
+      "None"
+    ],
+    "difficulty": "Beginner",
+    "instructions": [
+      "Start in a plank position with your hands shoulder-width apart.",
+      "Lower your body until your chest nearly touches the floor.",
+      "Push back up to the starting position.",
+      "Keep your core engaged throughout the movement."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-2",
+    "name": "Barbell Squat",
+    "category": "Strength",
+    "muscleGroups": [
+      "legs",
+      "glutes"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand with feet shoulder-width apart and barbell resting on your upper back.",
+      "Lower your body by bending your knees and hips.",
+      "Descend until your thighs are parallel to the floor.",
+      "Push through your heels to return to the starting position."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 4,
+    "targetReps": 10,
+    "restTime": 90
+  },
+  {
+    "id": "ai-gen-3",
+    "name": "Dumbbell Shoulder Press",
+    "category": "Strength",
+    "muscleGroups": [
+      "shoulders",
+      "triceps"
+    ],
+    "equipment": [
+      "Dumbbells"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Sit or stand with a dumbbell in each hand at shoulder height.",
+      "Press the dumbbells overhead until your arms are fully extended.",
+      "Lower the dumbbells back to shoulder height.",
+      "Keep your core tight throughout the exercise."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-4",
+    "name": "Bent-Over Row",
+    "category": "Strength",
+    "muscleGroups": [
+      "back",
+      "biceps"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand with feet shoulder-width apart, holding a barbell.",
+      "Bend at the hips, keeping your back straight.",
+      "Pull the barbell towards your torso.",
+      "Lower the barbell back to the starting position."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 4,
+    "targetReps": 10,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-5",
+    "name": "Plank",
+    "category": "Core",
+    "muscleGroups": [
+      "core"
+    ],
+    "equipment": [
+      "None"
+    ],
+    "difficulty": "Beginner",
+    "instructions": [
+      "Start in a forearm plank position.",
+      "Keep your body in a straight line from head to heels.",
+      "Engage your core and hold the position.",
+      "Avoid letting your hips sag."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 30,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-6",
+    "name": "Lunges",
+    "category": "Strength",
+    "muscleGroups": [
+      "legs",
+      "glutes"
+    ],
+    "equipment": [
+      "None"
+    ],
+    "difficulty": "Beginner",
+    "instructions": [
+      "Stand with feet hip-width apart.",
+      "Step forward with one leg and lower your hips until both knees are bent at about a 90-degree angle.",
+      "Push back to the starting position.",
+      "Alternate legs with each repetition."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-7",
+    "name": "Jumping Jacks",
+    "category": "Cardio",
+    "muscleGroups": [
+      "cardio"
+    ],
+    "equipment": [
+      "None"
+    ],
+    "difficulty": "Beginner",
+    "instructions": [
+      "Stand with feet together and arms at your sides.",
+      "Jump up, spreading your legs and raising your arms overhead.",
+      "Return to the starting position.",
+      "Repeat continuously at a steady pace."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 45,
+    "restTime": 30
+  },
+  {
+    "id": "ai-gen-8",
+    "name": "Deadlift",
+    "category": "Strength",
+    "muscleGroups": [
+      "back",
+      "glutes",
+      "legs"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": "Advanced",
+    "instructions": [
+      "Stand with feet hip-width apart, barbell over mid-foot.",
+      "Bend at the hips and knees to grip the barbell.",
+      "Lift the barbell by extending your hips and knees.",
+      "Lower the barbell back to the ground with control."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 4,
+    "targetReps": 8,
+    "restTime": 90
+  },
+  {
+    "id": "ai-gen-9",
+    "name": "Bicep Curl",
+    "category": "Strength",
+    "muscleGroups": [
+      "biceps"
+    ],
+    "equipment": [
+      "Dumbbells"
+    ],
+    "difficulty": "Beginner",
+    "instructions": [
+      "Stand with feet shoulder-width apart, holding a dumbbell in each hand.",
+      "Curl the weights up towards your shoulders.",
+      "Lower the weights back to the starting position.",
+      "Keep your elbows close to your body throughout."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-10",
+    "name": "Tricep Dips",
+    "category": "Strength",
+    "muscleGroups": [
+      "triceps"
+    ],
+    "equipment": [
+      "None"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Sit on the edge of a bench or chair with hands beside your hips.",
+      "Slide your buttocks off the edge, supporting your weight with your hands.",
+      "Lower your body by bending your elbows.",
+      "Push back up to the starting position."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 10,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-11",
+    "name": "Mountain Climbers",
+    "category": "Cardio",
+    "muscleGroups": [
+      "core",
+      "cardio"
+    ],
+    "equipment": [
+      "None"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Start in a high plank position.",
+      "Drive one knee towards your chest.",
+      "Quickly switch legs, driving the other knee towards your chest.",
+      "Continue alternating legs at a fast pace."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 60,
+    "restTime": 30
+  },
+  {
+    "id": "ai-gen-12",
+    "name": "Russian Twists",
+    "category": "Core",
+    "muscleGroups": [
+      "core"
+    ],
+    "equipment": [
+      "None"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Sit on the floor with knees bent and feet lifted.",
+      "Lean back slightly and clasp your hands together.",
+      "Twist your torso to one side, then the other.",
+      "Keep your core engaged throughout the movement."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 15,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-13",
+    "name": "Burpees",
+    "category": "Cardio",
+    "muscleGroups": [
+      "cardio",
+      "full body"
+    ],
+    "equipment": [
+      "None"
+    ],
+    "difficulty": "Advanced",
+    "instructions": [
+      "Start standing, then drop into a squat with hands on the floor.",
+      "Kick your feet back into a plank position.",
+      "Perform a push-up, then jump your feet back to the squat position.",
+      "Explode up into a jump, reaching your arms overhead."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 4,
+    "targetReps": 15,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-14",
+    "name": "Leg Press",
+    "category": "Strength",
+    "muscleGroups": [
+      "legs",
+      "glutes"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Sit on the leg press machine with feet shoulder-width apart on the platform.",
+      "Push the platform away by extending your legs.",
+      "Slowly return to the starting position.",
+      "Keep your knees aligned with your toes throughout."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 4,
+    "targetReps": 12,
+    "restTime": 90
+  },
+  {
+    "id": "ai-gen-15",
+    "name": "Pull-Up",
+    "category": "Strength",
+    "muscleGroups": [
+      "back",
+      "biceps"
+    ],
+    "equipment": [
+      "Pull-Up Bar"
+    ],
+    "difficulty": "Advanced",
+    "instructions": [
+      "Hang from a pull-up bar with an overhand grip.",
+      "Pull yourself up until your chin is above the bar.",
+      "Lower yourself back to the starting position.",
+      "Avoid swinging or using momentum."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 8,
+    "restTime": 90
+  },
+  {
+    "id": "ai-gen-16",
+    "name": "Seated Row",
+    "category": "Strength",
+    "muscleGroups": [
+      "back",
+      "biceps"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Sit on the rowing machine with feet secured.",
+      "Pull the handle towards your torso, keeping elbows close to your body.",
+      "Return to the starting position.",
+      "Maintain a straight back throughout the exercise."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 4,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-17",
+    "name": "Chest Fly",
+    "category": "Strength",
+    "muscleGroups": [
+      "chest"
+    ],
+    "equipment": [
+      "Dumbbells"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Lie on a bench with a dumbbell in each hand, arms extended above your chest.",
+      "Lower the dumbbells out to the sides in a wide arc.",
+      "Bring the dumbbells back to the starting position.",
+      "Keep a slight bend in your elbows throughout."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-18",
+    "name": "Leg Curl",
+    "category": "Strength",
+    "muscleGroups": [
+      "hamstrings"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Lie face down on the leg curl machine.",
+      "Position the pad just above your ankles.",
+      "Curl your legs towards your buttocks.",
+      "Slowly return to the starting position."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 4,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-19",
+    "name": "Calf Raise",
+    "category": "Strength",
+    "muscleGroups": [
+      "calves"
+    ],
+    "equipment": [
+      "None"
+    ],
+    "difficulty": "Beginner",
+    "instructions": [
+      "Stand with feet shoulder-width apart.",
+      "Raise your heels off the ground, standing on your toes.",
+      "Lower your heels back to the ground.",
+      "Perform the movement slowly and with control."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 15,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-20",
+    "name": "Side Plank",
+    "category": "Core",
+    "muscleGroups": [
+      "core"
+    ],
+    "equipment": [
+      "None"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Lie on your side with legs extended.",
+      "Prop yourself up on one forearm, lifting your hips off the ground.",
+      "Hold the position, keeping your body in a straight line.",
+      "Switch sides and repeat."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 30,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-21",
+    "name": "High Knees",
+    "category": "Cardio",
+    "muscleGroups": [
+      "cardio"
+    ],
+    "equipment": [
+      "None"
+    ],
+    "difficulty": "Beginner",
+    "instructions": [
+      "Stand with feet hip-width apart.",
+      "Run in place, lifting your knees as high as possible.",
+      "Keep your core engaged and back straight.",
+      "Move your arms in rhythm with your legs."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 60,
+    "restTime": 30
+  },
+  {
+    "id": "ai-gen-22",
+    "name": "Lat Pulldown",
+    "category": "Strength",
+    "muscleGroups": [
+      "back"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Sit at the lat pulldown machine and grasp the bar with a wide grip.",
+      "Pull the bar down towards your chest.",
+      "Slowly return the bar to the starting position.",
+      "Keep your back straight and avoid leaning back."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 4,
+    "targetReps": 10,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-23",
+    "name": "Overhead Tricep Extension",
+    "category": "Strength",
+    "muscleGroups": [
+      "triceps"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand or sit with a dumbbell held with both hands overhead.",
+      "Lower the dumbbell behind your head by bending your elbows.",
+      "Extend your arms to return to the starting position.",
+      "Keep your elbows close to your head throughout."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-24",
+    "name": "Box Jump",
+    "category": "Cardio",
+    "muscleGroups": [
+      "legs",
+      "glutes"
+    ],
+    "equipment": [
+      "Box"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand in front of a sturdy box or platform.",
+      "Jump onto the box, landing softly with knees slightly bent.",
+      "Step or jump back down to the starting position.",
+      "Use your arms to help propel you upwards."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 15,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-25",
+    "name": "Bicycle Crunch",
+    "category": "Core",
+    "muscleGroups": [
+      "core"
+    ],
+    "equipment": [
+      "None"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Lie on your back with hands behind your head.",
+      "Lift your shoulders off the ground and bring one knee towards your chest.",
+      "Twist your torso to bring the opposite elbow towards the knee.",
+      "Alternate sides in a pedaling motion."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 20,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-26",
+    "name": "Bench Press",
+    "category": "Strength",
+    "muscleGroups": [
+      "chest",
+      "triceps"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Lie on a bench with feet flat on the ground.",
+      "Grip the barbell with hands slightly wider than shoulder-width.",
+      "Lower the barbell to your chest.",
+      "Press the barbell back up to the starting position."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 4,
+    "targetReps": 10,
+    "restTime": 90
+  },
+  {
+    "id": "ai-gen-27",
+    "name": "Jump Rope",
+    "category": "Cardio",
+    "muscleGroups": [
+      "cardio"
+    ],
+    "equipment": [
+      "Jump Rope"
+    ],
+    "difficulty": "Beginner",
+    "instructions": [
+      "Hold the jump rope handles with elbows close to your sides.",
+      "Swing the rope over your head and jump as it passes your feet.",
+      "Maintain a steady rhythm and jump on the balls of your feet.",
+      "Keep your core engaged and posture upright."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 60,
+    "restTime": 30
+  },
+  {
+    "id": "ai-gen-28",
+    "name": "Side Lunge",
+    "category": "Strength",
+    "muscleGroups": [
+      "legs",
+      "glutes"
+    ],
+    "equipment": [
+      "None"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand with feet together.",
+      "Step to the side with one leg, bending the knee while keeping the other leg straight.",
+      "Push back to the starting position.",
+      "Alternate sides with each repetition."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-29",
+    "name": "Reverse Fly",
+    "category": "Strength",
+    "muscleGroups": [
+      "shoulders",
+      "back"
+    ],
+    "equipment": [
+      "Dumbbells"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand with feet shoulder-width apart, holding a dumbbell in each hand.",
+      "Bend at the hips, keeping your back straight.",
+      "Raise the dumbbells out to the sides, squeezing your shoulder blades together.",
+      "Lower the dumbbells back to the starting position."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-30",
+    "name": "Leg Raise",
+    "category": "Core",
+    "muscleGroups": [
+      "core"
+    ],
+    "equipment": [
+      "None"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Lie on your back with legs extended.",
+      "Lift your legs towards the ceiling, keeping them straight.",
+      "Lower your legs back to the starting position without touching the ground.",
+      "Engage your core throughout the movement."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 15,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-31",
+    "name": "Treadmill Run",
+    "category": "Cardio",
+    "muscleGroups": [
+      "cardio"
+    ],
+    "equipment": [
+      "Treadmill"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Set the treadmill to a comfortable running speed.",
+      "Run at a steady pace, maintaining good posture.",
+      "Keep your core engaged and arms moving naturally.",
+      "Cool down by gradually reducing the speed."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 60,
+    "restTime": 30
+  },
+  {
+    "id": "ai-gen-32",
+    "name": "Cable Tricep Pushdown",
+    "category": "Strength",
+    "muscleGroups": [
+      "triceps"
+    ],
+    "equipment": [
+      "Cable Machine"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand facing the cable machine with a rope attachment.",
+      "Grip the rope with both hands and pull it down.",
+      "Extend your arms fully, then return to the starting position.",
+      "Keep your elbows close to your body throughout."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-33",
+    "name": "Goblet Squat",
+    "category": "Strength",
+    "muscleGroups": [
+      "legs",
+      "glutes"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": "Beginner",
+    "instructions": [
+      "Hold a dumbbell close to your chest with both hands.",
+      "Stand with feet shoulder-width apart.",
+      "Lower your body into a squat, keeping the dumbbell close.",
+      "Push through your heels to return to the starting position."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-34",
+    "name": "Incline Bench Press",
+    "category": "Strength",
+    "muscleGroups": [
+      "chest",
+      "shoulders"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Lie on an incline bench with feet flat on the ground.",
+      "Grip the barbell with hands slightly wider than shoulder-width.",
+      "Lower the barbell to your upper chest.",
+      "Press the barbell back up to the starting position."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 4,
+    "targetReps": 10,
+    "restTime": 90
+  },
+  {
+    "id": "ai-gen-35",
+    "name": "Standing Calf Raise",
+    "category": "Strength",
+    "muscleGroups": [
+      "calves"
+    ],
+    "equipment": [
+      "None"
+    ],
+    "difficulty": "Beginner",
+    "instructions": [
+      "Stand with feet shoulder-width apart.",
+      "Raise your heels off the ground, standing on your toes.",
+      "Lower your heels back to the ground.",
+      "Perform the movement slowly and with control."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 15,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-36",
+    "name": "Kettlebell Swing",
+    "category": "Cardio",
+    "muscleGroups": [
+      "legs",
+      "glutes",
+      "core"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand with feet shoulder-width apart, holding a kettlebell with both hands.",
+      "Hinge at the hips and swing the kettlebell between your legs.",
+      "Thrust your hips forward to swing the kettlebell up to shoulder height.",
+      "Control the swing back down and repeat."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 15,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-37",
+    "name": "Dumbbell Lateral Raise",
+    "category": "Strength",
+    "muscleGroups": [
+      "shoulders"
+    ],
+    "equipment": [
+      "Dumbbells"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand with feet shoulder-width apart, holding a dumbbell in each hand.",
+      "Raise the dumbbells out to the sides until they reach shoulder height.",
+      "Lower the dumbbells back to the starting position.",
+      "Keep a slight bend in your elbows throughout."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-38",
+    "name": "Crunch",
+    "category": "Core",
+    "muscleGroups": [
+      "core"
+    ],
+    "equipment": [
+      "None"
+    ],
+    "difficulty": "Beginner",
+    "instructions": [
+      "Lie on your back with knees bent and feet flat on the ground.",
+      "Place your hands behind your head.",
+      "Lift your shoulders off the ground, engaging your core.",
+      "Lower back to the starting position."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 15,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-39",
+    "name": "Elliptical Trainer",
+    "category": "Cardio",
+    "muscleGroups": [
+      "cardio"
+    ],
+    "equipment": [
+      "Elliptical Machine"
+    ],
+    "difficulty": "Beginner",
+    "instructions": [
+      "Step onto the elliptical and select a comfortable resistance level.",
+      "Move your feet in a smooth, circular motion.",
+      "Use the handles to engage your upper body.",
+      "Maintain a steady pace and good posture."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 60,
+    "restTime": 30
+  },
+  {
+    "id": "ai-gen-40",
+    "name": "Cable Bicep Curl",
+    "category": "Strength",
+    "muscleGroups": [
+      "biceps"
+    ],
+    "equipment": [
+      "Cable Machine"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand facing the cable machine with a straight bar attachment.",
+      "Grip the bar with palms facing up.",
+      "Curl the bar towards your shoulders.",
+      "Lower the bar back to the starting position."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-41",
+    "name": "Step-Up",
+    "category": "Strength",
+    "muscleGroups": [
+      "legs",
+      "glutes"
+    ],
+    "equipment": [
+      "Box"
+    ],
+    "difficulty": "Beginner",
+    "instructions": [
+      "Stand in front of a box or platform.",
+      "Step up onto the box with one foot.",
+      "Bring the other foot up to meet the first.",
+      "Step back down and repeat, alternating legs."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-42",
+    "name": "Seated Leg Extension",
+    "category": "Strength",
+    "muscleGroups": [
+      "quadriceps"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Sit on the leg extension machine with your feet under the pad.",
+      "Extend your legs until they are straight.",
+      "Lower back to the starting position.",
+      "Keep your back against the seat throughout."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 4,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-43",
+    "name": "Dumbbell Chest Press",
+    "category": "Strength",
+    "muscleGroups": [
+      "chest",
+      "triceps"
+    ],
+    "equipment": [
+      "Dumbbells"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Lie on a bench with a dumbbell in each hand.",
+      "Press the dumbbells up until your arms are fully extended.",
+      "Lower the dumbbells back to chest level.",
+      "Keep your feet flat on the ground throughout."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-44",
+    "name": "Rowing Machine",
+    "category": "Cardio",
+    "muscleGroups": [
+      "cardio",
+      "back"
+    ],
+    "equipment": [
+      "Rowing Machine"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Sit on the rowing machine with feet secured.",
+      "Grip the handle with both hands.",
+      "Push with your legs and pull the handle towards your chest.",
+      "Return to the starting position and repeat."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 60,
+    "restTime": 30
+  },
+  {
+    "id": "ai-gen-45",
+    "name": "Standing Overhead Press",
+    "category": "Strength",
+    "muscleGroups": [
+      "shoulders",
+      "triceps"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand with feet shoulder-width apart, holding a barbell at shoulder height.",
+      "Press the barbell overhead until your arms are fully extended.",
+      "Lower the barbell back to shoulder height.",
+      "Keep your core engaged throughout the movement."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-46",
+    "name": "Hanging Leg Raise",
+    "category": "Core",
+    "muscleGroups": [
+      "core"
+    ],
+    "equipment": [
+      "Pull-Up Bar"
+    ],
+    "difficulty": "Advanced",
+    "instructions": [
+      "Hang from a pull-up bar with arms extended.",
+      "Lift your legs towards your chest, keeping them straight.",
+      "Lower your legs back to the starting position.",
+      "Avoid swinging and use controlled movements."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 10,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-47",
+    "name": "Battle Ropes",
+    "category": "Cardio",
+    "muscleGroups": [
+      "cardio",
+      "full body"
+    ],
+    "equipment": [
+      "Battle Ropes"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand with feet shoulder-width apart, holding a rope in each hand.",
+      "Move your arms up and down to create waves in the ropes.",
+      "Maintain a steady rhythm and engage your core.",
+      "Continue for the desired duration."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 45,
+    "restTime": 30
+  },
+  {
+    "id": "ai-gen-48",
+    "name": "Smith Machine Squat",
+    "category": "Strength",
+    "muscleGroups": [
+      "legs",
+      "glutes"
+    ],
+    "equipment": [
+      "Smith Machine"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Position the bar on your upper back and stand with feet shoulder-width apart.",
+      "Lower your body into a squat position.",
+      "Push through your heels to return to the starting position.",
+      "Keep your back straight and core engaged."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 4,
+    "targetReps": 10,
+    "restTime": 90
+  },
+  {
+    "id": "ai-gen-49",
+    "name": "Incline Dumbbell Fly",
+    "category": "Strength",
+    "muscleGroups": [
+      "chest"
+    ],
+    "equipment": [
+      "Dumbbells"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Lie on an incline bench with a dumbbell in each hand.",
+      "Extend your arms above your chest.",
+      "Lower the dumbbells out to the sides in a wide arc.",
+      "Bring the dumbbells back to the starting position."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-50",
+    "name": "Reverse Crunch",
+    "category": "Core",
+    "muscleGroups": [
+      "core"
+    ],
+    "equipment": [
+      "None"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Lie on your back with legs bent and feet flat on the ground.",
+      "Lift your legs towards your chest, curling your hips off the ground.",
+      "Lower your legs back to the starting position.",
+      "Engage your core throughout the movement."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 15,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-51",
+    "name": "Stationary Bike",
+    "category": "Cardio",
+    "muscleGroups": [
+      "cardio"
+    ],
+    "equipment": [
+      "Stationary Bike"
+    ],
+    "difficulty": "Beginner",
+    "instructions": [
+      "Sit on the bike and adjust the seat height.",
+      "Start pedaling at a comfortable pace.",
+      "Maintain a steady rhythm and keep your back straight.",
+      "Increase resistance for added intensity."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 60,
+    "restTime": 30
+  },
+  {
+    "id": "ai-gen-52",
+    "name": "Cable Lateral Raise",
+    "category": "Strength",
+    "muscleGroups": [
+      "shoulders"
+    ],
+    "equipment": [
+      "Cable Machine"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand next to a cable machine with the handle at the lowest setting.",
+      "Grip the handle with one hand and raise it out to the side.",
+      "Lower the handle back to the starting position.",
+      "Keep a slight bend in your elbow throughout."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-53",
+    "name": "Leg Press Machine",
+    "category": "Strength",
+    "muscleGroups": [
+      "legs",
+      "glutes"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Sit on the leg press machine with feet shoulder-width apart on the platform.",
+      "Push the platform away by extending your legs.",
+      "Slowly return to the starting position.",
+      "Keep your knees aligned with your toes throughout."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 4,
+    "targetReps": 12,
+    "restTime": 90
+  },
+  {
+    "id": "ai-gen-54",
+    "name": "Dumbbell Pullover",
+    "category": "Strength",
+    "muscleGroups": [
+      "chest",
+      "back"
+    ],
+    "equipment": [
+      "Dumbbell"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Lie on a bench with a dumbbell held with both hands above your chest.",
+      "Lower the dumbbell back over your head.",
+      "Return the dumbbell to the starting position.",
+      "Keep your arms slightly bent throughout."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-55",
+    "name": "Medicine Ball Slam",
+    "category": "Cardio",
+    "muscleGroups": [
+      "full body",
+      "core"
+    ],
+    "equipment": [
+      "Medicine Ball"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand with feet shoulder-width apart, holding a medicine ball.",
+      "Raise the ball overhead with both hands.",
+      "Slam the ball down to the ground with force.",
+      "Catch the ball on the rebound and repeat."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 15,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-56",
+    "name": "Dumbbell Row",
+    "category": "Strength",
+    "muscleGroups": [
+      "back",
+      "biceps"
+    ],
+    "equipment": [
+      "Dumbbells"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand with feet shoulder-width apart, holding a dumbbell in one hand.",
+      "Bend at the hips, keeping your back straight.",
+      "Pull the dumbbell towards your torso.",
+      "Lower the dumbbell back to the starting position."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-57",
+    "name": "Pec Deck Machine",
+    "category": "Strength",
+    "muscleGroups": [
+      "chest"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Sit on the pec deck machine with arms at shoulder height.",
+      "Bring the handles together in front of your chest.",
+      "Slowly return to the starting position.",
+      "Keep your elbows slightly bent throughout."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-58",
+    "name": "Dumbbell Deadlift",
+    "category": "Strength",
+    "muscleGroups": [
+      "legs",
+      "glutes",
+      "back"
+    ],
+    "equipment": [
+      "Dumbbells"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand with feet shoulder-width apart, holding a dumbbell in each hand.",
+      "Bend at the hips and knees, lowering the dumbbells towards the ground.",
+      "Return to the starting position by extending your hips and knees.",
+      "Keep your back straight throughout the movement."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 4,
+    "targetReps": 10,
+    "restTime": 90
+  },
+  {
+    "id": "ai-gen-59",
+    "name": "Treadmill Incline Walk",
+    "category": "Cardio",
+    "muscleGroups": [
+      "cardio"
+    ],
+    "equipment": [
+      "Treadmill"
+    ],
+    "difficulty": "Beginner",
+    "instructions": [
+      "Set the treadmill to a moderate incline.",
+      "Walk at a steady pace, maintaining good posture.",
+      "Engage your core and swing your arms naturally.",
+      "Cool down by reducing the incline and speed."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 60,
+    "restTime": 30
+  },
+  {
+    "id": "ai-gen-60",
+    "name": "Cable Chest Fly",
+    "category": "Strength",
+    "muscleGroups": [
+      "chest"
+    ],
+    "equipment": [
+      "Cable Machine"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand between two cable machines with handles at chest height.",
+      "Grip the handles and bring them together in front of your chest.",
+      "Slowly return to the starting position.",
+      "Keep a slight bend in your elbows throughout."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-61",
+    "name": "Dumbbell Step-Up",
+    "category": "Strength",
+    "muscleGroups": [
+      "legs",
+      "glutes"
+    ],
+    "equipment": [
+      "Dumbbells"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand in front of a box or platform, holding a dumbbell in each hand.",
+      "Step up onto the box with one foot.",
+      "Bring the other foot up to meet the first.",
+      "Step back down and repeat, alternating legs."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-62",
+    "name": "Tricep Kickback",
+    "category": "Strength",
+    "muscleGroups": [
+      "triceps"
+    ],
+    "equipment": [
+      "Dumbbells"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand with feet shoulder-width apart, holding a dumbbell in each hand.",
+      "Bend at the hips, keeping your back straight.",
+      "Extend your arms behind you, keeping your elbows close to your body.",
+      "Return to the starting position."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-63",
+    "name": "Seated Calf Raise",
+    "category": "Strength",
+    "muscleGroups": [
+      "calves"
+    ],
+    "equipment": [
+      "Machine"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Sit on the calf raise machine with feet on the platform.",
+      "Raise your heels by extending your ankles.",
+      "Lower your heels back to the starting position.",
+      "Keep the movement controlled throughout."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 15,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-64",
+    "name": "Barbell Curl",
+    "category": "Strength",
+    "muscleGroups": [
+      "biceps"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand with feet shoulder-width apart, holding a barbell with an underhand grip.",
+      "Curl the barbell towards your shoulders.",
+      "Lower the barbell back to the starting position.",
+      "Keep your elbows close to your body throughout."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-65",
+    "name": "Elliptical Interval Training",
+    "category": "Cardio",
+    "muscleGroups": [
+      "cardio"
+    ],
+    "equipment": [
+      "Elliptical Machine"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Start with a warm-up at a moderate pace.",
+      "Increase the resistance and speed for 1 minute.",
+      "Return to the moderate pace for 2 minutes.",
+      "Repeat the intervals for the desired duration."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 60,
+    "restTime": 30
+  },
+  {
+    "id": "ai-gen-66",
+    "name": "Cable Woodchop",
+    "category": "Core",
+    "muscleGroups": [
+      "core"
+    ],
+    "equipment": [
+      "Cable Machine"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand sideways to the cable machine with the handle set high.",
+      "Grip the handle with both hands and pull it diagonally across your body.",
+      "Return to the starting position.",
+      "Keep your core engaged throughout the movement."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 15,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-67",
+    "name": "Dumbbell Shrug",
+    "category": "Strength",
+    "muscleGroups": [
+      "shoulders"
+    ],
+    "equipment": [
+      "Dumbbells"
+    ],
+    "difficulty": "Beginner",
+    "instructions": [
+      "Stand with feet shoulder-width apart, holding a dumbbell in each hand.",
+      "Lift your shoulders towards your ears.",
+      "Lower your shoulders back to the starting position.",
+      "Keep your arms straight throughout the movement."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 15,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-68",
+    "name": "Cable Face Pull",
+    "category": "Strength",
+    "muscleGroups": [
+      "shoulders",
+      "upper back"
+    ],
+    "equipment": [
+      "Cable Machine"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand facing the cable machine with a rope attachment set at face height.",
+      "Grip the rope with both hands and pull it towards your face.",
+      "Return to the starting position.",
+      "Keep your elbows high and core engaged."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-69",
+    "name": "Reverse Lunge",
+    "category": "Strength",
+    "muscleGroups": [
+      "legs",
+      "glutes"
+    ],
+    "equipment": [
+      "None"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand with feet together.",
+      "Step back with one leg and lower your hips until both knees are bent at about a 90-degree angle.",
+      "Push back to the starting position.",
+      "Alternate legs with each repetition."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-70",
+    "name": "Dumbbell Bench Press",
+    "category": "Strength",
+    "muscleGroups": [
+      "chest",
+      "triceps"
+    ],
+    "equipment": [
+      "Dumbbells"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Lie on a bench with a dumbbell in each hand.",
+      "Press the dumbbells up until your arms are fully extended.",
+      "Lower the dumbbells back to chest level.",
+      "Keep your feet flat on the ground throughout."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-71",
+    "name": "Barbell Bent-Over Row",
+    "category": "Strength",
+    "muscleGroups": [
+      "back",
+      "biceps"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand with feet shoulder-width apart, holding a barbell.",
+      "Bend at the hips, keeping your back straight.",
+      "Pull the barbell towards your torso.",
+      "Lower the barbell back to the starting position."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 4,
+    "targetReps": 10,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-72",
+    "name": "Dumbbell Front Raise",
+    "category": "Strength",
+    "muscleGroups": [
+      "shoulders"
+    ],
+    "equipment": [
+      "Dumbbells"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand with feet shoulder-width apart, holding a dumbbell in each hand.",
+      "Raise the dumbbells in front of you until they reach shoulder height.",
+      "Lower the dumbbells back to the starting position.",
+      "Keep your arms straight throughout the movement."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-73",
+    "name": "Cable Tricep Extension",
+    "category": "Strength",
+    "muscleGroups": [
+      "triceps"
+    ],
+    "equipment": [
+      "Cable Machine"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand facing the cable machine with a rope attachment.",
+      "Grip the rope with both hands and pull it down.",
+      "Extend your arms fully, then return to the starting position.",
+      "Keep your elbows close to your body throughout."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-74",
+    "name": "Dumbbell Hammer Curl",
+    "category": "Strength",
+    "muscleGroups": [
+      "biceps"
+    ],
+    "equipment": [
+      "Dumbbells"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand with feet shoulder-width apart, holding a dumbbell in each hand with palms facing each other.",
+      "Curl the weights up towards your shoulders.",
+      "Lower the weights back to the starting position.",
+      "Keep your elbows close to your body throughout."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-75",
+    "name": "Dumbbell Lunge",
+    "category": "Strength",
+    "muscleGroups": [
+      "legs",
+      "glutes"
+    ],
+    "equipment": [
+      "Dumbbells"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand with feet together, holding a dumbbell in each hand.",
+      "Step forward with one leg and lower your hips until both knees are bent at about a 90-degree angle.",
+      "Push back to the starting position.",
+      "Alternate legs with each repetition."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-76",
+    "name": "Cable Upright Row",
+    "category": "Strength",
+    "muscleGroups": [
+      "shoulders",
+      "traps"
+    ],
+    "equipment": [
+      "Cable Machine"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand facing the cable machine with a straight bar attachment.",
+      "Grip the bar with palms facing down.",
+      "Pull the bar up towards your chin, keeping elbows higher than your wrists.",
+      "Lower the bar back to the starting position."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-77",
+    "name": "Dumbbell Fly",
+    "category": "Strength",
+    "muscleGroups": [
+      "chest"
+    ],
+    "equipment": [
+      "Dumbbells"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Lie on a bench with a dumbbell in each hand, arms extended above your chest.",
+      "Lower the dumbbells out to the sides in a wide arc.",
+      "Bring the dumbbells back to the starting position.",
+      "Keep a slight bend in your elbows throughout."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-78",
+    "name": "Barbell Deadlift",
+    "category": "Strength",
+    "muscleGroups": [
+      "back",
+      "glutes",
+      "legs"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": "Advanced",
+    "instructions": [
+      "Stand with feet hip-width apart, barbell over mid-foot.",
+      "Bend at the hips and knees to grip the barbell.",
+      "Lift the barbell by extending your hips and knees.",
+      "Lower the barbell back to the ground with control."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 4,
+    "targetReps": 8,
+    "restTime": 90
+  },
+  {
+    "id": "ai-gen-79",
+    "name": "Seated Dumbbell Press",
+    "category": "Strength",
+    "muscleGroups": [
+      "shoulders",
+      "triceps"
+    ],
+    "equipment": [
+      "Dumbbells"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Sit on a bench with a dumbbell in each hand at shoulder height.",
+      "Press the dumbbells overhead until your arms are fully extended.",
+      "Lower the dumbbells back to shoulder height.",
+      "Keep your core tight throughout the exercise."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-80",
+    "name": "Dumbbell Squat",
+    "category": "Strength",
+    "muscleGroups": [
+      "legs",
+      "glutes"
+    ],
+    "equipment": [
+      "Dumbbells"
+    ],
+    "difficulty": "Beginner",
+    "instructions": [
+      "Stand with feet shoulder-width apart, holding a dumbbell in each hand.",
+      "Lower your body into a squat position.",
+      "Push through your heels to return to the starting position.",
+      "Keep your back straight and core engaged."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-81",
+    "name": "Barbell Bench Press",
+    "category": "Strength",
+    "muscleGroups": [
+      "chest",
+      "triceps"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Lie on a bench with feet flat on the ground.",
+      "Grip the barbell with hands slightly wider than shoulder-width.",
+      "Lower the barbell to your chest.",
+      "Press the barbell back up to the starting position."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 4,
+    "targetReps": 10,
+    "restTime": 90
+  },
+  {
+    "id": "ai-gen-82",
+    "name": "Cable Crunch",
+    "category": "Core",
+    "muscleGroups": [
+      "core"
+    ],
+    "equipment": [
+      "Cable Machine"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Kneel in front of a cable machine with a rope attachment.",
+      "Grip the rope and pull it down towards your shoulders.",
+      "Crunch forward, engaging your core.",
+      "Return to the starting position."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 15,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-83",
+    "name": "Dumbbell Lateral Lunge",
+    "category": "Strength",
+    "muscleGroups": [
+      "legs",
+      "glutes"
+    ],
+    "equipment": [
+      "Dumbbells"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand with feet together, holding a dumbbell in each hand.",
+      "Step to the side with one leg, bending the knee while keeping the other leg straight.",
+      "Push back to the starting position.",
+      "Alternate sides with each repetition."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-84",
+    "name": "Barbell Overhead Press",
+    "category": "Strength",
+    "muscleGroups": [
+      "shoulders",
+      "triceps"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand with feet shoulder-width apart, holding a barbell at shoulder height.",
+      "Press the barbell overhead until your arms are fully extended.",
+      "Lower the barbell back to shoulder height.",
+      "Keep your core engaged throughout the movement."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-85",
+    "name": "Dumbbell Front Squat",
+    "category": "Strength",
+    "muscleGroups": [
+      "legs",
+      "glutes"
+    ],
+    "equipment": [
+      "Dumbbells"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand with feet shoulder-width apart, holding a dumbbell in each hand at shoulder height.",
+      "Lower your body into a squat position.",
+      "Push through your heels to return to the starting position.",
+      "Keep your back straight and core engaged."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-86",
+    "name": "Barbell Curl",
+    "category": "Strength",
+    "muscleGroups": [
+      "biceps"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand with feet shoulder-width apart, holding a barbell with an underhand grip.",
+      "Curl the barbell towards your shoulders.",
+      "Lower the barbell back to the starting position.",
+      "Keep your elbows close to your body throughout."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-87",
+    "name": "Cable Chest Press",
+    "category": "Strength",
+    "muscleGroups": [
+      "chest",
+      "triceps"
+    ],
+    "equipment": [
+      "Cable Machine"
+    ],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand between two cable machines with handles at chest height.",
+      "Grip the handles and press them forward until your arms are fully extended.",
+      "Return to the starting position.",
+      "Keep your core engaged throughout."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  }
+]

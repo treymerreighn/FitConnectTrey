@@ -26,20 +26,23 @@ async function startServer() {
     // Initialize database
     await initializeDatabase();
     
-    // Build exercise library
+    // Build exercise library - start with basic exercises for fast startup
     console.log("🏗️ Building exercise library...");
+    await buildBasicExerciseLibrary();
     
-    // Try to generate comprehensive exercise library with OpenAI
+    // Generate comprehensive exercises in background after server starts
     if (process.env.OPENAI_API_KEY) {
-      try {
-        await generateComprehensiveExerciseLibrary();
-      } catch (error) {
-        console.log("⚠️ AI exercise generation failed, falling back to basic library");
-        await buildBasicExerciseLibrary();
-      }
+      console.log("🤖 Scheduling AI exercise generation in background...");
+      setTimeout(async () => {
+        try {
+          await generateComprehensiveExerciseLibrary();
+          console.log("🎯 AI exercise library generation completed successfully!");
+        } catch (error) {
+          console.log("⚠️ Background AI exercise generation failed, basic library remains active");
+        }
+      }, 5000); // Wait 5 seconds after server starts
     } else {
       console.log("ℹ️ No OpenAI API key found, using basic exercise library");
-      await buildBasicExerciseLibrary();
     }
     
     // Register routes with authentication

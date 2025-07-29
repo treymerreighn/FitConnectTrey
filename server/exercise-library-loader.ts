@@ -2,33 +2,43 @@ import fs from 'fs';
 import path from 'path';
 import { Exercise } from '../shared/schema';
 import { BASIC_EXERCISES } from './simple-exercise-builder';
+import { removeDuplicateExercises, logDuplicateRemovalStats } from './duplicate-remover';
 
 /**
- * Loads exercises from multiple sources in priority order:
+ * Loads exercises from multiple sources and removes duplicates:
  * 1. AI-generated comprehensive library (exerciseLibrary.json)
  * 2. Basic fallback exercises
+ * 3. Combines and deduplicates
  */
 export function loadExerciseLibrary(): Exercise[] {
+  let allExercises: Exercise[] = [];
+  
   try {
     // Try to load AI-generated exercises first
     const libraryPath = path.join(__dirname, 'exerciseLibrary.json');
     
     if (fs.existsSync(libraryPath)) {
       const libraryData = fs.readFileSync(libraryPath, 'utf8');
-      const exercises: Exercise[] = JSON.parse(libraryData);
+      const aiExercises: Exercise[] = JSON.parse(libraryData);
       
-      if (Array.isArray(exercises) && exercises.length > 0) {
-        console.log(`📚 Loaded ${exercises.length} exercises from comprehensive library`);
-        return exercises;
+      if (Array.isArray(aiExercises) && aiExercises.length > 0) {
+        console.log(`📚 Loaded ${aiExercises.length} AI-generated exercises`);
+        allExercises = [...aiExercises];
       }
     }
   } catch (error) {
-    console.log('⚠️ Could not load comprehensive exercise library, using basic exercises');
+    console.log('⚠️ Could not load AI exercise library');
   }
   
-  // Fallback to basic exercises
-  console.log(`📚 Using ${BASIC_EXERCISES.length} basic exercises as fallback`);
-  return BASIC_EXERCISES;
+  // Always include basic exercises as foundation
+  console.log(`📚 Adding ${BASIC_EXERCISES.length} basic exercises`);
+  allExercises = [...allExercises, ...BASIC_EXERCISES];
+  
+  // Remove duplicates - AI exercises take priority
+  const uniqueExercises = removeDuplicateExercises(allExercises);
+  logDuplicateRemovalStats(allExercises, uniqueExercises);
+  
+  return uniqueExercises;
 }
 
 /**

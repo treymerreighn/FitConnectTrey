@@ -92,9 +92,13 @@ export async function generateComprehensiveExerciseLibrary(): Promise<void> {
       restTime: exercise.restTime
     }));
 
+    // Remove any potential duplicates within AI exercises before saving
+    const { removeDuplicateExercises } = await import('./duplicate-remover');
+    const uniqueAIExercises = removeDuplicateExercises(formattedExercises);
+    
     // Save to JSON file
-    fs.writeFileSync('server/exerciseLibrary.json', JSON.stringify(formattedExercises, null, 2));
-    console.log(`✅ ${formattedExercises.length} AI-generated exercises saved to exerciseLibrary.json`);
+    fs.writeFileSync('server/exerciseLibrary.json', JSON.stringify(uniqueAIExercises, null, 2));
+    console.log(`✅ ${uniqueAIExercises.length} unique AI-generated exercises saved to exerciseLibrary.json`);
     
     // Import and populate database using existing function
     try {

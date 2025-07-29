@@ -4,9 +4,7 @@ import { createServer } from "http";
 import { setupVite, serveStatic, log } from "./vite";
 import { registerRoutes } from "./authRoutes";
 import { initializeDatabase } from "./db";
-import { buildBasicExerciseLibrary } from "./simple-exercise-builder";
-import { generateComprehensiveExerciseLibrary } from "./generate-exercise-library";
-import { cleanupDuplicateExercises } from "./cleanup-duplicates";
+import { buildFreshExerciseLibrary } from "./fresh-exercise-builder";
 
 const app = express();
 
@@ -27,30 +25,13 @@ async function startServer() {
     // Initialize database
     await initializeDatabase();
     
-    // Clean up any existing duplicates first
-    console.log("🧹 Cleaning up duplicate exercises...");
-    await cleanupDuplicateExercises();
-    
-    // Build exercise library - start with basic exercises for fast startup
-    console.log("🏗️ Building exercise library...");
-    await buildBasicExerciseLibrary();
-    
-    // Generate comprehensive exercises in background after cleanup
+    // Build fresh exercise library from scratch with OpenAI
     if (process.env.OPENAI_API_KEY) {
-      console.log("🤖 Scheduling AI exercise generation...");
-      setTimeout(async () => {
-        try {
-          await generateComprehensiveExerciseLibrary();
-          console.log("🎯 AI exercise library generation completed!");
-          
-          // Final cleanup after AI generation
-          await cleanupDuplicateExercises();
-        } catch (error) {
-          console.log("⚠️ Background AI exercise generation failed, basic library remains active");
-        }
-      }, 3000); // Wait 3 seconds after server starts
+      console.log("🚀 Building fresh exercise library from scratch with OpenAI...");
+      await buildFreshExerciseLibrary();
     } else {
-      console.log("ℹ️ No OpenAI API key found, using basic exercise library");
+      console.log("❌ No OpenAI API key found - cannot build exercise library");
+      throw new Error("OpenAI API key required for fresh exercise library generation");
     }
     
     // Register routes with authentication

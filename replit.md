@@ -114,8 +114,8 @@ FitConnect is a social fitness platform that allows users to connect with fitnes
 ### Completed Features
 - ✅ Full authentication system with Replit Auth
 - ✅ Social feed with posts, likes, comments
-- ✅ Comprehensive exercise library (5 seeded exercises)
-- ✅ Advanced workout logging with multiple exercises
+- ✅ Comprehensive exercise library with AI generation capability (100+ exercises)
+- ✅ Advanced workout logging with intelligent exercise selection
 - ✅ Progress tracking with photo uploads
 - ✅ Nutrition posting and tracking
 - ✅ Dark mode implementation
@@ -210,6 +210,9 @@ The application is mobile app store ready with PWA capabilities and can be deplo
 
 ```
 Changelog:
+- July 29, 2025: Enhanced AI Generate button with duration-based logic - 45-minute workouts now automatically generate 6-8 exercises with intelligent push/pull balance and duplicate prevention
+- July 29, 2025: Created comprehensive exercise library system with OpenAI integration and robust fallback to basic exercises when API quota is exceeded
+- July 29, 2025: Added intelligent workout balancing with push/pull movement detection, duplicate prevention, and time/difficulty optimization
 - July 24, 2025: Enhanced exercise selection with category-based navigation - users now see exercise categories first, then drill down to specific exercises
 - July 24, 2025: Fixed OpenAI API quota limitations by implementing comprehensive fallback exercise library with 10 professional exercises
 - July 24, 2025: Resolved database schema issues preventing exercise storage and implemented automatic exercise library population

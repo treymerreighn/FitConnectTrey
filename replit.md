@@ -210,6 +210,8 @@ The application is mobile app store ready with PWA capabilities and can be deplo
 
 ```
 Changelog:
+- July 29, 2025: Completely rebuilt exercise library from scratch using OpenAI - deleted all 178 duplicate exercises and regenerated 36 unique, professional exercises with detailed instructions, tips, and safety notes
+- July 29, 2025: Implemented comprehensive duplicate removal system that reduced exercise database from 178 to 13 unique exercises, removing 165 duplicates including multiple Planks, Burpees, and Push-ups
 - July 29, 2025: Enhanced AI Generate button with duration-based logic - 45-minute workouts now automatically generate 6-8 exercises with intelligent push/pull balance and duplicate prevention
 - July 29, 2025: Created comprehensive exercise library system with OpenAI integration and robust fallback to basic exercises when API quota is exceeded
 - July 29, 2025: Added intelligent workout balancing with push/pull movement detection, duplicate prevention, and time/difficulty optimization

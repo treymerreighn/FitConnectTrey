@@ -4,7 +4,9 @@ import { createServer } from "http";
 import { setupVite, serveStatic, log } from "./vite";
 import { registerRoutes } from "./authRoutes";
 import { initializeDatabase } from "./db";
+import { storage } from "./storage";
 import { buildFreshExerciseLibrary } from "./fresh-exercise-builder";
+import { expandExerciseLibrary } from "./expand-exercise-library";
 
 const app = express();
 
@@ -25,13 +27,28 @@ async function startServer() {
     // Initialize database
     await initializeDatabase();
     
-    // Build fresh exercise library from scratch with OpenAI
+    // Build exercise library
     if (process.env.OPENAI_API_KEY) {
-      console.log("🚀 Building fresh exercise library from scratch with OpenAI...");
-      await buildFreshExerciseLibrary();
+      // Check if we already have a good exercise library
+      const existingExercises = await storage.getAllExercises();
+      if (existingExercises.length >= 30) {
+        console.log(`✅ Exercise library already has ${existingExercises.length} exercises - server ready!`);
+      } else {
+        console.log("🚀 Building fresh exercise library with OpenAI in background...");
+        // Build library in background to not block server startup
+        setTimeout(async () => {
+          try {
+            await buildFreshExerciseLibrary();
+            await expandExerciseLibrary();
+            console.log("🎯 Complete exercise library ready!");
+          } catch (error) {
+            console.log("⚠️ Exercise generation failed, using existing library");
+          }
+        }, 1000);
+      }
     } else {
       console.log("❌ No OpenAI API key found - cannot build exercise library");
-      throw new Error("OpenAI API key required for fresh exercise library generation");
+      throw new Error("OpenAI API key required for exercise library generation");
     }
     
     // Register routes with authentication

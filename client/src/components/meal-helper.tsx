@@ -40,8 +40,11 @@ export function MealHelper() {
 
   const generateRecipeMutation = useMutation({
     mutationFn: async (params: any) => {
+      console.log("Sending recipe request:", params);
       const response = await apiRequest("POST", "/api/meal-helper/generate", params);
-      return response;
+      const recipe = await response.json();
+      console.log("Parsed recipe data:", recipe);
+      return recipe;
     },
     onSuccess: (recipe: Recipe) => {
       console.log("Recipe received:", recipe);

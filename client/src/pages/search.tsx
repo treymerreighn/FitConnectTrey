@@ -63,9 +63,9 @@ export default function SearchPage() {
             <Users className="w-4 h-4" />
             Find Users
           </TabsTrigger>
-          <TabsTrigger value="healthy-recipes" className="flex items-center gap-2">
-            <span className="text-orange-500">🍎</span>
-            Healthy Recipes
+          <TabsTrigger value="meal-helper" className="flex items-center gap-2">
+            <Brain className="w-4 h-4 text-orange-500" />
+            Meal Helper
           </TabsTrigger>
         </TabsList>
 
@@ -207,10 +207,32 @@ export default function SearchPage() {
         )}
         </TabsContent>
 
-        <TabsContent value="healthy-recipes" className="space-y-4 mt-4">
-          <HealthyRecipesTab />
+        <TabsContent value="meal-helper" className="space-y-4 mt-4">
+          <MealHelperTab />
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function MealHelperTab() {
+  return (
+    <div className="space-y-4">
+      <div className="text-center p-6 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
+        <Brain className="h-12 w-12 text-orange-500 mx-auto mb-3" />
+        <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100 mb-2">
+          AI Meal Helper
+        </h3>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">
+          Tell us what you're craving and get a personalized healthy recipe instantly
+        </p>
+        <Button 
+          onClick={() => window.location.href = '/recipes'}
+          className="bg-orange-500 hover:bg-orange-600"
+        >
+          Try Meal Helper
+        </Button>
+      </div>
     </div>
   );
 }

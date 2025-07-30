@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Clock, Users, ChefHat, Filter, Star } from "lucide-react";
+import { Search, Clock, Users, ChefHat, Filter, Star, Sparkles, Brain } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { MealHelper } from "@/components/meal-helper";
 import type { Recipe } from "@shared/schema";
 
 export default function RecipesPage() {
@@ -75,24 +76,32 @@ export default function RecipesPage() {
       <div className="max-w-7xl mx-auto p-4 space-y-6">
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-            Healthy Recipes
+            Meal Helper & Recipes
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Discover AI-generated healthy recipes and meals shared by our community
+            Get personalized AI-generated recipes and discover meals shared by our community
           </p>
         </div>
 
-        <Tabs defaultValue="ai-recipes" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs defaultValue="meal-helper" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="meal-helper">
+              <Brain className="h-4 w-4 mr-2" />
+              AI Meal Helper
+            </TabsTrigger>
             <TabsTrigger value="ai-recipes">
               <ChefHat className="h-4 w-4 mr-2" />
-              AI Recipe Database
+              Recipe Library
             </TabsTrigger>
             <TabsTrigger value="user-meals">
               <Users className="h-4 w-4 mr-2" />
-              Community Meals (Free)
+              Community Meals
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="meal-helper" className="space-y-6">
+            <MealHelper />
+          </TabsContent>
 
           <TabsContent value="ai-recipes" className="space-y-6">
             {/* Search and Filters */}

@@ -985,4 +985,68 @@ router.get("/api/recipes/:id", async (req, res) => {
   }
 });
 
+// AI Meal Helper routes
+router.post("/api/meal-helper/generate", async (req, res) => {
+  try {
+    const { generatePersonalizedRecipe } = await import("./ai-meal-helper");
+    
+    const {
+      preferences,
+      mealType,
+      cuisineType,
+      servings,
+      cookingTime,
+      difficulty,
+      dietaryRestrictions,
+      healthGoals,
+      availableIngredients
+    } = req.body;
+
+    if (!preferences) {
+      return res.status(400).json({ message: "Preferences are required" });
+    }
+
+    const recipe = await generatePersonalizedRecipe({
+      preferences,
+      mealType: mealType || "lunch",
+      cuisineType,
+      servings: servings || 2,
+      cookingTime: cookingTime || 30,
+      difficulty: difficulty || "easy",
+      dietaryRestrictions: dietaryRestrictions || [],
+      healthGoals: healthGoals || [],
+      availableIngredients: availableIngredients || []
+    });
+
+    res.json(recipe);
+  } catch (error) {
+    console.error("Error generating personalized recipe:", error);
+    res.status(500).json({ 
+      message: "Failed to generate recipe", 
+      error: error.message 
+    });
+  }
+});
+
+router.post("/api/meal-helper/generate-multiple", async (req, res) => {
+  try {
+    const { generateMultipleRecipes } = await import("./ai-meal-helper");
+    
+    const { count = 3, ...params } = req.body;
+
+    if (!params.preferences) {
+      return res.status(400).json({ message: "Preferences are required" });
+    }
+
+    const recipes = await generateMultipleRecipes(params, count);
+    res.json(recipes);
+  } catch (error) {
+    console.error("Error generating multiple recipes:", error);
+    res.status(500).json({ 
+      message: "Failed to generate recipes", 
+      error: error.message 
+    });
+  }
+});
+
 export default router;

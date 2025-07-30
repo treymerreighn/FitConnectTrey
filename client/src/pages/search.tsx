@@ -9,8 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { CURRENT_USER_ID } from "@/lib/constants";
-import { AIExerciseGenerator } from "@/components/ai-exercise-generator";
-import type { User } from "@shared/schema";
+import type { User, Recipe } from "@shared/schema";
 
 export default function SearchPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -64,9 +63,9 @@ export default function SearchPage() {
             <Users className="w-4 h-4" />
             Find Users
           </TabsTrigger>
-          <TabsTrigger value="ai-exercises" className="flex items-center gap-2">
-            <Brain className="w-4 h-4" />
-            AI Exercises
+          <TabsTrigger value="healthy-recipes" className="flex items-center gap-2">
+            <span className="text-orange-500">🍎</span>
+            Healthy Recipes
           </TabsTrigger>
         </TabsList>
 
@@ -208,10 +207,117 @@ export default function SearchPage() {
         )}
         </TabsContent>
 
-        <TabsContent value="ai-exercises" className="mt-4">
-          <AIExerciseGenerator />
+        <TabsContent value="healthy-recipes" className="space-y-4 mt-4">
+          <HealthyRecipesTab />
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+function HealthyRecipesTab() {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const { data: recipes = [], isLoading } = useQuery<Recipe[]>({
+    queryKey: ["/api/recipes"],
+  });
+
+  const { data: featuredRecipes = [] } = useQuery<Recipe[]>({
+    queryKey: ["/api/recipes/featured"],
+  });
+
+  const filteredRecipes = recipes.filter(recipe =>
+    searchQuery === "" || 
+    recipe.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    recipe.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {Array(3).fill(0).map((_, i) => (
+          <div key={i} className="h-24 bg-gray-200 rounded-lg animate-pulse"></div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="relative">
+        <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+        <Input
+          placeholder="Search healthy recipes..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
+      {featuredRecipes.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="font-medium text-gray-900 dark:text-white">Featured Healthy Recipes</h3>
+          <div className="grid gap-3">
+            {featuredRecipes.slice(0, 3).map((recipe) => (
+              <RecipeSearchCard key={recipe.id} recipe={recipe} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-3">
+        <h3 className="font-medium text-gray-900 dark:text-white">
+          {searchQuery ? `Search Results (${filteredRecipes.length})` : 'All Healthy Recipes'}
+        </h3>
+        <div className="grid gap-3">
+          {filteredRecipes.map((recipe) => (
+            <RecipeSearchCard key={recipe.id} recipe={recipe} />
+          ))}
+        </div>
+      </div>
+
+      {filteredRecipes.length === 0 && searchQuery && (
+        <div className="text-center py-8">
+          <div className="text-orange-500 text-4xl mb-2">🍎</div>
+          <p className="text-gray-500 dark:text-gray-400">No recipes found for "{searchQuery}"</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RecipeSearchCard({ recipe }: { recipe: Recipe }) {
+  return (
+    <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer">
+      <div className="flex items-start space-x-3">
+        <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-red-500 rounded-lg flex items-center justify-center flex-shrink-0">
+          <span className="text-white text-2xl">🍽️</span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h4 className="font-medium text-gray-900 dark:text-white truncate">
+                {recipe.name}
+              </h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mt-1">
+                {recipe.description}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500 dark:text-gray-400">
+            <span className="flex items-center">
+              <Users className="w-3 h-3 mr-1" />
+              {recipe.servings}
+            </span>
+            <span className="flex items-center">
+              ⏱️ {recipe.prepTime + recipe.cookTime}m
+            </span>
+            <span className="flex items-center">
+              🔥 {recipe.calories} cal
+            </span>
+          </div>
+        </div>
+      </div>
+    </Card>
   );
 }

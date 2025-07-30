@@ -26,6 +26,32 @@ export const userSchema = z.object({
 
 export type User = z.infer<typeof userSchema>;
 
+// Recipe schema for healthy recipes database
+export const recipeSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().optional(),
+  ingredients: z.array(z.string()),
+  instructions: z.array(z.string()),
+  cookTime: z.number(), // in minutes
+  prepTime: z.number(), // in minutes
+  servings: z.number(),
+  difficulty: z.enum(["easy", "medium", "hard"]),
+  cuisineType: z.string().optional(), // italian, asian, mexican, etc.
+  dietaryTags: z.array(z.string()).optional(), // vegetarian, vegan, gluten-free, etc.
+  calories: z.number().optional(),
+  protein: z.number().optional(), // in grams
+  carbs: z.number().optional(), // in grams
+  fat: z.number().optional(), // in grams
+  fiber: z.number().optional(), // in grams
+  image: z.string().optional(),
+  isAiGenerated: z.boolean().default(true),
+  category: z.enum(["breakfast", "lunch", "dinner", "snack", "dessert"]),
+  createdAt: z.date().default(() => new Date()),
+});
+
+export type Recipe = z.infer<typeof recipeSchema>;
+
 // Post base schema
 export const postSchema = z.object({
   id: z.string(),

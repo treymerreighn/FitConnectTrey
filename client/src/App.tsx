@@ -20,6 +20,7 @@ import AdminDashboard from "./pages/admin-dashboard";
 import Progress from "./pages/progress";
 import ExerciseProgress from "./pages/exercise-progress";
 import TestUpload from "./pages/test-upload";
+import RecipesPage from "./pages/recipes";
 import Landing from "./pages/landing";
 
 const queryClient = new QueryClient();
@@ -87,6 +88,7 @@ function Router() {
           <Route path="/exercise-progress" component={ExerciseProgress} />
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/test-upload" component={TestUpload} />
+          <Route path="/recipes" component={RecipesPage} />
           <Route path="/discover">
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
               <header className="fixed top-0 w-full bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-50">
@@ -119,13 +121,13 @@ function Router() {
                       <h3 className="font-medium text-gray-900 dark:text-white text-sm">Tips</h3>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Workout advice</p>
                     </div>
-                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 text-center">
+                    <Link href="/recipes" className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 text-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                       <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-2">
                         <span className="text-white text-sm">🍎</span>
                       </div>
                       <h3 className="font-medium text-gray-900 dark:text-white text-sm">Meals</h3>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Healthy recipes</p>
-                    </div>
+                    </Link>
                   </div>
 
                   {/* Trending Section */}

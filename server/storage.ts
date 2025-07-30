@@ -1,4 +1,4 @@
-import type { User, Post, Comment, Connection, ProgressEntry, Exercise, WorkoutSession, ExerciseProgress, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, InsertWorkoutSession, InsertExerciseProgress } from "@shared/schema";
+import type { User, Post, Comment, Connection, ProgressEntry, Exercise, WorkoutSession, ExerciseProgress, Recipe, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, InsertWorkoutSession, InsertExerciseProgress } from "@shared/schema";
 import { nanoid } from "nanoid";
 import { PgStorage } from "./pg-storage";
 
@@ -82,6 +82,15 @@ export interface IStorage {
   getExerciseProgressChart(userId: string, exerciseId: string): Promise<{ date: string; weight?: number; reps: number; oneRepMax?: number }[]>;
   getWorkoutVolumeChart(userId: string): Promise<{ date: string; volume: number; duration: number }[]>;
   getUserPersonalRecords(userId: string): Promise<ExerciseProgress[]>;
+  
+  // Recipe database operations
+  addRecipe(recipe: Recipe): Promise<Recipe>;
+  getRecipeById(id: string): Promise<Recipe | null>;
+  getAllRecipes(): Promise<Recipe[]>;
+  getRecipesByCategory(category: string): Promise<Recipe[]>;
+  getRecipesByDietaryTags(tags: string[]): Promise<Recipe[]>;
+  searchRecipes(query: string): Promise<Recipe[]>;
+  getRandomRecipes(count: number): Promise<Recipe[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -93,6 +102,7 @@ export class MemStorage implements IStorage {
   private exercises: Map<string, Exercise> = new Map();
   private workoutSessions: Map<string, WorkoutSession> = new Map();
   private exerciseProgress: Map<string, ExerciseProgress> = new Map();
+  private recipes: Map<string, Recipe> = new Map();
 
   constructor() {
     this.seedData();
@@ -929,6 +939,45 @@ export class MemStorage implements IStorage {
     return Array.from(this.exerciseProgress.values())
       .filter(progress => progress.userId === userId && progress.personalRecord)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
+
+  // Recipe database operations
+  async addRecipe(recipe: Recipe): Promise<Recipe> {
+    this.recipes.set(recipe.id, recipe);
+    return recipe;
+  }
+
+  async getRecipeById(id: string): Promise<Recipe | null> {
+    return this.recipes.get(id) || null;
+  }
+
+  async getAllRecipes(): Promise<Recipe[]> {
+    return Array.from(this.recipes.values());
+  }
+
+  async getRecipesByCategory(category: string): Promise<Recipe[]> {
+    return Array.from(this.recipes.values()).filter(recipe => recipe.category === category);
+  }
+
+  async getRecipesByDietaryTags(tags: string[]): Promise<Recipe[]> {
+    return Array.from(this.recipes.values()).filter(recipe => 
+      recipe.dietaryTags && tags.some(tag => recipe.dietaryTags!.includes(tag))
+    );
+  }
+
+  async searchRecipes(query: string): Promise<Recipe[]> {
+    const lowercaseQuery = query.toLowerCase();
+    return Array.from(this.recipes.values()).filter(recipe =>
+      recipe.name.toLowerCase().includes(lowercaseQuery) ||
+      recipe.description?.toLowerCase().includes(lowercaseQuery) ||
+      recipe.ingredients.some(ingredient => ingredient.toLowerCase().includes(lowercaseQuery))
+    );
+  }
+
+  async getRandomRecipes(count: number): Promise<Recipe[]> {
+    const allRecipes = Array.from(this.recipes.values());
+    const shuffled = allRecipes.sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, count);
   }
 }
 

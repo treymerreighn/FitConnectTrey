@@ -398,7 +398,7 @@ export function MealHelper() {
             <div>
               <h4 className="font-semibold mb-2">Ingredients:</h4>
               <ul className="space-y-1">
-                {generatedRecipe.ingredients.map((ingredient, index) => (
+                {generatedRecipe?.ingredients?.map((ingredient, index) => (
                   <li key={index} className="flex items-center space-x-2">
                     <span className="w-1 h-1 bg-orange-500 rounded-full"></span>
                     <span className="text-sm">{ingredient}</span>
@@ -411,7 +411,7 @@ export function MealHelper() {
             <div>
               <h4 className="font-semibold mb-2">Instructions:</h4>
               <ol className="space-y-2">
-                {generatedRecipe.instructions.map((instruction, index) => (
+                {generatedRecipe?.instructions?.map((instruction, index) => (
                   <li key={index} className="flex space-x-3">
                     <span className="flex-shrink-0 w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-semibold">
                       {index + 1}
@@ -430,7 +430,7 @@ export function MealHelper() {
                   <span>Health Benefits:</span>
                 </h4>
                 <ul className="space-y-1">
-                  {generatedRecipe.healthBenefits.map((benefit, index) => (
+                  {generatedRecipe?.healthBenefits?.map((benefit, index) => (
                     <li key={index} className="flex items-center space-x-2">
                       <span className="w-1 h-1 bg-green-500 rounded-full"></span>
                       <span className="text-sm">{benefit}</span>
@@ -445,7 +445,7 @@ export function MealHelper() {
               <div>
                 <h4 className="font-semibold mb-2">Chef's Tips:</h4>
                 <ul className="space-y-1">
-                  {generatedRecipe.tips.map((tip, index) => (
+                  {generatedRecipe?.tips?.map((tip, index) => (
                     <li key={index} className="flex items-center space-x-2">
                       <span className="w-1 h-1 bg-blue-500 rounded-full"></span>
                       <span className="text-sm">{tip}</span>

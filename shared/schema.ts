@@ -47,6 +47,8 @@ export const recipeSchema = z.object({
   image: z.string().optional(),
   isAiGenerated: z.boolean().default(true),
   category: z.enum(["breakfast", "lunch", "dinner", "snack", "dessert"]),
+  healthBenefits: z.array(z.string()).default([]),
+  tips: z.array(z.string()).default([]),
   createdAt: z.date().default(() => new Date()),
 });
 

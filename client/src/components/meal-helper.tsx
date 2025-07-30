@@ -14,6 +14,16 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { Recipe } from "@shared/schema";
 
+const dietaryOptions = [
+  "vegetarian", "vegan", "gluten-free", "dairy-free", 
+  "keto", "paleo", "high-protein", "low-carb", "low-calorie"
+];
+
+const healthGoalOptions = [
+  "weight-loss", "muscle-gain", "energy-boost", 
+  "heart-health", "digestive-health", "immune-support"
+];
+
 export function MealHelper() {
   const [preferences, setPreferences] = useState("");
   const [cuisineType, setCuisineType] = useState("");
@@ -29,7 +39,8 @@ export function MealHelper() {
 
   const generateRecipeMutation = useMutation({
     mutationFn: async (params: any) => {
-      return await apiRequest("POST", "/api/meal-helper/generate", params);
+      const response = await apiRequest("POST", "/api/meal-helper/generate", params);
+      return response;
     },
     onSuccess: (recipe: Recipe) => {
       setGeneratedRecipe(recipe);
@@ -173,7 +184,7 @@ export function MealHelper() {
             <div className="space-y-3">
               <Label className="text-lg font-medium">Dietary Preferences</Label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {dietaryOptions.map((option) => (
+                {dietaryOptions?.map((option) => (
                   <div key={option} className="flex items-center space-x-2">
                     <Checkbox
                       id={option}
@@ -197,7 +208,7 @@ export function MealHelper() {
             <div className="space-y-3">
               <Label className="text-lg font-medium">Health Goals</Label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {healthGoalOptions.map((goal) => (
+                {healthGoalOptions?.map((goal) => (
                   <div key={goal} className="flex items-center space-x-2">
                     <Checkbox
                       id={goal}

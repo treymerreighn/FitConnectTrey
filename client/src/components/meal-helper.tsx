@@ -90,7 +90,8 @@ export function MealHelper() {
   };
 
   const dietaryOptions = [
-    "vegetarian", "vegan", "gluten-free", "dairy-free", "keto", "paleo"
+    "vegetarian", "vegan", "gluten-free", "dairy-free", "keto", "paleo",
+    "high-protein", "low-carb", "low-calorie"
   ];
 
   const healthGoalOptions = [

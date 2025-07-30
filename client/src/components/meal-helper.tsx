@@ -73,6 +73,22 @@ export function MealHelper() {
     generateRecipeMutation.mutate(params);
   };
 
+  const handleGeneralGenerate = () => {
+    // Generate recipe with current preferences and dietary selections
+    const params = {
+      preferences: preferences.trim() || "A healthy and balanced recipe",
+      mealType: "lunch" as any,
+      cuisineType: cuisineType || "any",
+      servings,
+      difficulty,
+      dietaryRestrictions,
+      healthGoals,
+      availableIngredients: availableIngredients ? availableIngredients.split(",").map(i => i.trim()) : [],
+    };
+
+    generateRecipeMutation.mutate(params);
+  };
+
   const handleCustomGenerate = () => {
     if (!preferences.trim()) {
       toast({
@@ -310,26 +326,51 @@ export function MealHelper() {
             )}
           </div>
 
-          {preferences.trim() && (
+          {/* Generate Recipe Buttons */}
+          <div className="space-y-3">
+            {/* Main Generate Button - Always Available */}
             <Button 
-              onClick={handleCustomGenerate}
+              onClick={handleGeneralGenerate}
               disabled={generateRecipeMutation.isPending}
-              className="w-full bg-orange-500 hover:bg-orange-600"
+              className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white"
               size="lg"
             >
               {generateRecipeMutation.isPending ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                   Creating Your Recipe...
                 </>
               ) : (
                 <>
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Generate Custom Recipe
+                  <Sparkles className="h-5 w-5 mr-2" />
+                  Generate Recipe with My Preferences
                 </>
               )}
             </Button>
-          )}
+
+            {/* Custom Generate Button - When user has typed something */}
+            {preferences.trim() && (
+              <Button 
+                onClick={handleCustomGenerate}
+                disabled={generateRecipeMutation.isPending}
+                variant="outline"
+                className="w-full border-orange-500 text-orange-600 hover:bg-orange-50"
+                size="lg"
+              >
+                {generateRecipeMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Creating Custom Recipe...
+                  </>
+                ) : (
+                  <>
+                    <ChefHat className="h-4 w-4 mr-2" />
+                    Generate "{preferences.slice(0, 30)}{preferences.length > 30 ? '...' : ''}"
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
 

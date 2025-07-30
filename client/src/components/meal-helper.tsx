@@ -16,15 +16,12 @@ import type { Recipe } from "@shared/schema";
 
 export function MealHelper() {
   const [preferences, setPreferences] = useState("");
-  const [mealType, setMealType] = useState<string>("lunch");
   const [cuisineType, setCuisineType] = useState("");
-  const [cookingTime, setCookingTime] = useState(30);
   const [servings, setServings] = useState(2);
   const [difficulty, setDifficulty] = useState("easy");
-  const [availableIngredients, setAvailableIngredients] = useState("");
   const [dietaryRestrictions, setDietaryRestrictions] = useState<string[]>([]);
-  const [healthGoals, setHealthGoals] = useState<string[]>([]);
   const [generatedRecipe, setGeneratedRecipe] = useState<Recipe | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const { toast } = useToast();
 
@@ -52,11 +49,26 @@ export function MealHelper() {
     },
   });
 
-  const handleGenerate = () => {
+  const handleQuickGenerate = (mealType: string) => {
+    const params = {
+      preferences: preferences.trim() || `A healthy ${mealType} recipe`,
+      mealType,
+      cuisineType: cuisineType || "any",
+      servings,
+      difficulty,
+      dietaryRestrictions,
+      healthGoals: [],
+      availableIngredients: [],
+    };
+
+    generateRecipeMutation.mutate(params);
+  };
+
+  const handleCustomGenerate = () => {
     if (!preferences.trim()) {
       toast({
         title: "Missing Information",
-        description: "Please tell us what you're craving or looking for",
+        description: "Please tell us what you're craving or use the quick buttons above",
         variant: "destructive",
       });
       return;
@@ -64,27 +76,20 @@ export function MealHelper() {
 
     const params = {
       preferences: preferences.trim(),
-      mealType,
+      mealType: "lunch", // default
       cuisineType: cuisineType || "any",
       servings,
-      cookingTime,
       difficulty,
       dietaryRestrictions,
-      healthGoals,
-      availableIngredients: availableIngredients ? availableIngredients.split(",").map(i => i.trim()) : [],
+      healthGoals: [],
+      availableIngredients: [],
     };
 
     generateRecipeMutation.mutate(params);
   };
 
   const dietaryOptions = [
-    "vegetarian", "vegan", "gluten-free", "dairy-free", "keto", "paleo", 
-    "low-carb", "low-fat", "high-protein", "nut-free"
-  ];
-
-  const healthGoalOptions = [
-    "weight-loss", "muscle-gain", "energy-boost", "heart-health", 
-    "digestive-health", "immune-support", "anti-inflammatory"
+    "vegetarian", "vegan", "gluten-free", "dairy-free", "keto", "paleo"
   ];
 
   return (
@@ -110,169 +115,168 @@ export function MealHelper() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Main Preferences */}
-          <div className="space-y-2">
-            <Label htmlFor="preferences">Tell us what you want to eat *</Label>
+          {/* Quick Recipe Generation */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <Button
+              onClick={() => handleQuickGenerate("breakfast")}
+              disabled={generateRecipeMutation.isPending}
+              variant="outline"
+              className="h-20 flex-col space-y-1"
+            >
+              <span className="text-2xl">🍳</span>
+              <span className="text-sm">Breakfast</span>
+            </Button>
+            <Button
+              onClick={() => handleQuickGenerate("lunch")}
+              disabled={generateRecipeMutation.isPending}
+              variant="outline"
+              className="h-20 flex-col space-y-1"
+            >
+              <span className="text-2xl">🥗</span>
+              <span className="text-sm">Lunch</span>
+            </Button>
+            <Button
+              onClick={() => handleQuickGenerate("dinner")}
+              disabled={generateRecipeMutation.isPending}
+              variant="outline"
+              className="h-20 flex-col space-y-1"
+            >
+              <span className="text-2xl">🍽️</span>
+              <span className="text-sm">Dinner</span>
+            </Button>
+            <Button
+              onClick={() => handleQuickGenerate("snack")}
+              disabled={generateRecipeMutation.isPending}
+              variant="outline"
+              className="h-20 flex-col space-y-1"
+            >
+              <span className="text-2xl">🍎</span>
+              <span className="text-sm">Snack</span>
+            </Button>
+            <Button
+              onClick={() => handleQuickGenerate("dessert")}
+              disabled={generateRecipeMutation.isPending}
+              variant="outline"
+              className="h-20 flex-col space-y-1"
+            >
+              <span className="text-2xl">🍰</span>
+              <span className="text-sm">Dessert</span>
+            </Button>
+          </div>
+
+          <div className="text-center">
+            <span className="text-gray-500 dark:text-gray-400">or</span>
+          </div>
+
+          {/* Custom Preferences (Optional) */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label className="text-lg font-medium">Tell us what you want to eat (optional)</Label>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="text-orange-500 hover:text-orange-600"
+              >
+                {showAdvanced ? "Simple" : "Advanced"}
+              </Button>
+            </div>
+            
             <Textarea
-              id="preferences"
-              placeholder="I want something spicy and filling... / I'm craving comfort food... / I need a post-workout meal... / Something quick and healthy..."
+              placeholder="I want something spicy and filling... / I'm craving comfort food... / I need a post-workout meal..."
               value={preferences}
               onChange={(e) => setPreferences(e.target.value)}
-              rows={3}
+              rows={2}
             />
-          </div>
 
-          {/* Basic Options */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>Meal Type</Label>
-              <Select value={mealType} onValueChange={setMealType}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="breakfast">Breakfast</SelectItem>
-                  <SelectItem value="lunch">Lunch</SelectItem>
-                  <SelectItem value="dinner">Dinner</SelectItem>
-                  <SelectItem value="snack">Snack</SelectItem>
-                  <SelectItem value="dessert">Dessert</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {showAdvanced && (
+              <div className="space-y-4 border-t pt-4">
+                {/* Basic Options */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Cuisine Type</Label>
+                    <Input
+                      placeholder="Italian, Asian, Mexican..."
+                      value={cuisineType}
+                      onChange={(e) => setCuisineType(e.target.value)}
+                    />
+                  </div>
 
-            <div className="space-y-2">
-              <Label>Cuisine Type</Label>
-              <Input
-                placeholder="Italian, Asian, Mexican..."
-                value={cuisineType}
-                onChange={(e) => setCuisineType(e.target.value)}
-              />
-            </div>
+                  <div className="space-y-2">
+                    <Label>Difficulty</Label>
+                    <Select value={difficulty} onValueChange={setDifficulty}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="easy">Easy</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="hard">Hard</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-            <div className="space-y-2">
-              <Label>Difficulty</Label>
-              <Select value={difficulty} onValueChange={setDifficulty}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="easy">Easy</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="hard">Hard</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Time and Servings */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="cookingTime">Max Cooking Time (minutes)</Label>
-              <Input
-                id="cookingTime"
-                type="number"
-                value={cookingTime}
-                onChange={(e) => setCookingTime(Number(e.target.value))}
-                min={5}
-                max={120}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="servings">Servings</Label>
-              <Input
-                id="servings"
-                type="number"
-                value={servings}
-                onChange={(e) => setServings(Number(e.target.value))}
-                min={1}
-                max={12}
-              />
-            </div>
-          </div>
-
-          {/* Available Ingredients */}
-          <div className="space-y-2">
-            <Label htmlFor="ingredients">Available Ingredients (optional)</Label>
-            <Input
-              id="ingredients"
-              placeholder="chicken, rice, broccoli, cheese..."
-              value={availableIngredients}
-              onChange={(e) => setAvailableIngredients(e.target.value)}
-            />
-            <p className="text-xs text-gray-500">Separate with commas</p>
-          </div>
-
-          <Separator />
-
-          {/* Dietary Restrictions */}
-          <div className="space-y-3">
-            <Label>Dietary Restrictions</Label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {dietaryOptions.map((option) => (
-                <div key={option} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={option}
-                    checked={dietaryRestrictions.includes(option)}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setDietaryRestrictions([...dietaryRestrictions, option]);
-                      } else {
-                        setDietaryRestrictions(dietaryRestrictions.filter(r => r !== option));
-                      }
-                    }}
-                  />
-                  <Label htmlFor={option} className="text-sm capitalize">
-                    {option.replace("-", " ")}
-                  </Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="servings">Servings</Label>
+                    <Input
+                      id="servings"
+                      type="number"
+                      value={servings}
+                      onChange={(e) => setServings(Number(e.target.value))}
+                      min={1}
+                      max={12}
+                    />
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Health Goals */}
-          <div className="space-y-3">
-            <Label>Health Goals</Label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {healthGoalOptions.map((goal) => (
-                <div key={goal} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={goal}
-                    checked={healthGoals.includes(goal)}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setHealthGoals([...healthGoals, goal]);
-                      } else {
-                        setHealthGoals(healthGoals.filter(g => g !== goal));
-                      }
-                    }}
-                  />
-                  <Label htmlFor={goal} className="text-sm capitalize">
-                    {goal.replace("-", " ")}
-                  </Label>
+                {/* Dietary Restrictions */}
+                <div className="space-y-3">
+                  <Label>Dietary Restrictions</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {dietaryOptions.slice(0, 6).map((option) => (
+                      <div key={option} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={option}
+                          checked={dietaryRestrictions.includes(option)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setDietaryRestrictions([...dietaryRestrictions, option]);
+                            } else {
+                              setDietaryRestrictions(dietaryRestrictions.filter(r => r !== option));
+                            }
+                          }}
+                        />
+                        <Label htmlFor={option} className="text-sm capitalize">
+                          {option.replace("-", " ")}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          <Button 
-            onClick={handleGenerate}
-            disabled={generateRecipeMutation.isPending}
-            className="w-full bg-orange-500 hover:bg-orange-600"
-            size="lg"
-          >
-            {generateRecipeMutation.isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Creating Your Recipe...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Generate My Recipe
-              </>
+              </div>
             )}
-          </Button>
+          </div>
+
+          {preferences.trim() && (
+            <Button 
+              onClick={handleCustomGenerate}
+              disabled={generateRecipeMutation.isPending}
+              className="w-full bg-orange-500 hover:bg-orange-600"
+              size="lg"
+            >
+              {generateRecipeMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Creating Your Recipe...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Generate Custom Recipe
+                </>
+              )}
+            </Button>
+          )}
         </CardContent>
       </Card>
 

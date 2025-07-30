@@ -12,7 +12,6 @@ interface MealHelperParams {
   cuisineType?: string;
   mealType: "breakfast" | "lunch" | "dinner" | "snack" | "dessert";
   servings?: number;
-  cookingTime?: number;
   difficulty?: "easy" | "medium" | "hard";
   healthGoals?: string[];
   availableIngredients?: string[];
@@ -29,7 +28,6 @@ export async function generatePersonalizedRecipe(params: MealHelperParams): Prom
     cuisineType = "any",
     mealType,
     servings = 2,
-    cookingTime = 30,
     difficulty = "easy",
     healthGoals = [],
     availableIngredients = []
@@ -42,7 +40,7 @@ PREFERENCES: ${preferences || "No specific preferences"}
 DIETARY RESTRICTIONS: ${dietaryRestrictions.length > 0 ? dietaryRestrictions.join(", ") : "None"}
 CUISINE TYPE: ${cuisineType}
 SERVINGS: ${servings}
-COOKING TIME: Maximum ${cookingTime} minutes
+COOKING TIME: Maximum 30 minutes
 DIFFICULTY: ${difficulty}
 HEALTH GOALS: ${healthGoals.length > 0 ? healthGoals.join(", ") : "General health"}
 AVAILABLE INGREDIENTS: ${availableIngredients.length > 0 ? availableIngredients.join(", ") : "Use any ingredients"}

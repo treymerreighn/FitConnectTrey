@@ -10,7 +10,7 @@ import { removeDuplicateExercises } from "./duplicate-remover";
 import { AIWorkoutIntelligence } from "./ai-fitness-coach";
 import { AINutritionCoach } from "./ai-nutrition-coach";
 import { AIProgressAnalyzer } from "./ai-progress-analyzer";
-import { generateAIRecipe } from "./ai-meal-helper";
+import { generatePersonalizedRecipe } from "./ai-meal-helper";
 
 const router = Router();
 
@@ -1064,7 +1064,7 @@ router.post("/api/meal-helper/generate", async (req, res) => {
       availableIngredients 
     } = req.body;
 
-    const recipe = await generateAIRecipe({
+    const recipe = await generatePersonalizedRecipe({
       preferences,
       mealType,
       cuisineType,

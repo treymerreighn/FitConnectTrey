@@ -34,6 +34,7 @@ export function MealHelper() {
   const [availableIngredients, setAvailableIngredients] = useState("");
   const [generatedRecipe, setGeneratedRecipe] = useState<Recipe | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [selectedMealType, setSelectedMealType] = useState<string>("");
 
   const { toast } = useToast();
 
@@ -60,6 +61,7 @@ export function MealHelper() {
   });
 
   const handleQuickGenerate = (mealType: string) => {
+    setSelectedMealType(mealType);
     const params = {
       preferences: preferences.trim() || `A healthy ${mealType} recipe`,
       mealType,
@@ -152,8 +154,8 @@ export function MealHelper() {
             <Button
               onClick={() => handleQuickGenerate("breakfast")}
               disabled={generateRecipeMutation.isPending}
-              variant="outline"
-              className="h-20 flex-col space-y-1"
+              variant={selectedMealType === "breakfast" ? "default" : "outline"}
+              className={`h-20 flex-col space-y-1 ${selectedMealType === "breakfast" ? "bg-orange-500 hover:bg-orange-600 text-white" : ""}`}
             >
               <span className="text-2xl">🍳</span>
               <span className="text-sm">Breakfast</span>
@@ -161,8 +163,8 @@ export function MealHelper() {
             <Button
               onClick={() => handleQuickGenerate("lunch")}
               disabled={generateRecipeMutation.isPending}
-              variant="outline"
-              className="h-20 flex-col space-y-1"
+              variant={selectedMealType === "lunch" ? "default" : "outline"}
+              className={`h-20 flex-col space-y-1 ${selectedMealType === "lunch" ? "bg-orange-500 hover:bg-orange-600 text-white" : ""}`}
             >
               <span className="text-2xl">🥗</span>
               <span className="text-sm">Lunch</span>
@@ -170,8 +172,8 @@ export function MealHelper() {
             <Button
               onClick={() => handleQuickGenerate("dinner")}
               disabled={generateRecipeMutation.isPending}
-              variant="outline"
-              className="h-20 flex-col space-y-1"
+              variant={selectedMealType === "dinner" ? "default" : "outline"}
+              className={`h-20 flex-col space-y-1 ${selectedMealType === "dinner" ? "bg-orange-500 hover:bg-orange-600 text-white" : ""}`}
             >
               <span className="text-2xl">🍽️</span>
               <span className="text-sm">Dinner</span>
@@ -179,8 +181,8 @@ export function MealHelper() {
             <Button
               onClick={() => handleQuickGenerate("snack")}
               disabled={generateRecipeMutation.isPending}
-              variant="outline"
-              className="h-20 flex-col space-y-1"
+              variant={selectedMealType === "snack" ? "default" : "outline"}
+              className={`h-20 flex-col space-y-1 ${selectedMealType === "snack" ? "bg-orange-500 hover:bg-orange-600 text-white" : ""}`}
             >
               <span className="text-2xl">🍎</span>
               <span className="text-sm">Snack</span>
@@ -188,8 +190,8 @@ export function MealHelper() {
             <Button
               onClick={() => handleQuickGenerate("dessert")}
               disabled={generateRecipeMutation.isPending}
-              variant="outline"
-              className="h-20 flex-col space-y-1"
+              variant={selectedMealType === "dessert" ? "default" : "outline"}
+              className={`h-20 flex-col space-y-1 ${selectedMealType === "dessert" ? "bg-orange-500 hover:bg-orange-600 text-white" : ""}`}
             >
               <span className="text-2xl">🍰</span>
               <span className="text-sm">Dessert</span>

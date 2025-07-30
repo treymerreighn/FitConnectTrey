@@ -1050,36 +1050,6 @@ router.post("/api/meal-helper/generate-multiple", async (req, res) => {
   }
 });
 
-// Meal Helper - AI Recipe Generation
-router.post("/api/meal-helper/generate", async (req, res) => {
-  try {
-    const { 
-      preferences, 
-      mealType, 
-      cuisineType, 
-      servings, 
-      difficulty, 
-      dietaryRestrictions, 
-      healthGoals, 
-      availableIngredients 
-    } = req.body;
-
-    const recipe = await generatePersonalizedRecipe({
-      preferences,
-      mealType,
-      cuisineType,
-      servings,
-      difficulty,
-      dietaryRestrictions,
-      healthGoals,
-      availableIngredients
-    });
-
-    res.json(recipe);
-  } catch (error) {
-    console.error("Meal Helper generation error:", error);
-    res.status(500).json({ error: "Failed to generate recipe" });
-  }
-});
+// Duplicate route removed - handled by the route above
 
 export default router;

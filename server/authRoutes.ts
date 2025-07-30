@@ -9,6 +9,7 @@ import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
 import { generateAIWorkout } from "./ai-workout";
 import { generateExerciseInsights, generateWorkoutVolumeInsights } from "./ai-exercise-insights";
+import { generatePersonalizedRecipe } from "./ai-meal-helper";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -515,6 +516,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: error.errors });
       }
       res.status(500).json({ error: "Failed to generate workout plan" });
+    }
+  });
+
+  // AI Meal Helper routes
+  app.post("/api/meal-helper/generate", async (req, res) => {
+    try {
+      const {
+        preferences,
+        mealType,
+        cuisineType,
+        servings,
+        cookingTime,
+        difficulty,
+        dietaryRestrictions,
+        healthGoals,
+        availableIngredients
+      } = req.body;
+
+      if (!preferences) {
+        return res.status(400).json({ message: "Preferences are required" });
+      }
+
+      const recipe = await generatePersonalizedRecipe({
+        preferences,
+        mealType: mealType || "lunch",
+        cuisineType,
+        servings: servings || 2,
+        cookingTime: cookingTime || 30,
+        difficulty: difficulty || "easy",
+        dietaryRestrictions: dietaryRestrictions || [],
+        healthGoals: healthGoals || [],
+        availableIngredients: availableIngredients || []
+      });
+
+      res.json(recipe);
+    } catch (error) {
+      console.error("Error generating personalized recipe:", error);
+      res.status(500).json({ 
+        message: "Failed to generate recipe", 
+        error: error.message 
+      });
     }
   });
 

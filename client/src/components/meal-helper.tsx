@@ -20,6 +20,7 @@ export function MealHelper() {
   const [servings, setServings] = useState(2);
   const [difficulty, setDifficulty] = useState("easy");
   const [dietaryRestrictions, setDietaryRestrictions] = useState<string[]>([]);
+  const [healthGoals, setHealthGoals] = useState<string[]>([]);
   const [generatedRecipe, setGeneratedRecipe] = useState<Recipe | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -81,7 +82,7 @@ export function MealHelper() {
       servings,
       difficulty,
       dietaryRestrictions,
-      healthGoals: [],
+      healthGoals,
       availableIngredients: [],
     };
 
@@ -90,6 +91,11 @@ export function MealHelper() {
 
   const dietaryOptions = [
     "vegetarian", "vegan", "gluten-free", "dairy-free", "keto", "paleo"
+  ];
+
+  const healthGoalOptions = [
+    "weight-loss", "muscle-gain", "energy-boost", "heart-health", 
+    "digestive-health", "immune-support"
   ];
 
   return (
@@ -164,6 +170,57 @@ export function MealHelper() {
             </Button>
           </div>
 
+          {/* Dietary Preferences */}
+          <div className="space-y-4">
+            <div className="space-y-3">
+              <Label className="text-lg font-medium">Dietary Preferences</Label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {dietaryOptions.map((option) => (
+                  <div key={option} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={option}
+                      checked={dietaryRestrictions.includes(option)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setDietaryRestrictions([...dietaryRestrictions, option]);
+                        } else {
+                          setDietaryRestrictions(dietaryRestrictions.filter(r => r !== option));
+                        }
+                      }}
+                    />
+                    <Label htmlFor={option} className="text-sm capitalize font-medium">
+                      {option.replace("-", " ")}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-lg font-medium">Health Goals</Label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {healthGoalOptions.map((goal) => (
+                  <div key={goal} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={goal}
+                      checked={healthGoals.includes(goal)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setHealthGoals([...healthGoals, goal]);
+                        } else {
+                          setHealthGoals(healthGoals.filter(g => g !== goal));
+                        }
+                      }}
+                    />
+                    <Label htmlFor={goal} className="text-sm capitalize font-medium">
+                      {goal.replace("-", " ")}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
           <div className="text-center">
             <span className="text-gray-500 dark:text-gray-400">or</span>
           </div>
@@ -226,31 +283,6 @@ export function MealHelper() {
                       min={1}
                       max={12}
                     />
-                  </div>
-                </div>
-
-                {/* Dietary Restrictions */}
-                <div className="space-y-3">
-                  <Label>Dietary Restrictions</Label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {dietaryOptions.slice(0, 6).map((option) => (
-                      <div key={option} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={option}
-                          checked={dietaryRestrictions.includes(option)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setDietaryRestrictions([...dietaryRestrictions, option]);
-                            } else {
-                              setDietaryRestrictions(dietaryRestrictions.filter(r => r !== option));
-                            }
-                          }}
-                        />
-                        <Label htmlFor={option} className="text-sm capitalize">
-                          {option.replace("-", " ")}
-                        </Label>
-                      </div>
-                    ))}
                   </div>
                 </div>
               </div>

@@ -21,6 +21,10 @@ export const userSchema = z.object({
   // Client relationships
   clients: z.array(z.string()).default([]),
   trainers: z.array(z.string()).default([]),
+  // Premium subscription
+  isPremium: z.boolean().default(false),
+  subscriptionTier: z.enum(["free", "premium", "pro"]).default("free"),
+  subscriptionExpiresAt: z.date().optional(),
   createdAt: z.date().default(() => new Date()),
 });
 

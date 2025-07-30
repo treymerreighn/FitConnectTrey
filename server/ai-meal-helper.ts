@@ -33,7 +33,12 @@ export async function generatePersonalizedRecipe(params: MealHelperParams): Prom
     availableIngredients = []
   } = params;
 
+  // Check if this is a regeneration request
+  const isRegeneration = (params as any).regenerate && (params as any).previousRecipeId;
+  
   const prompt = `Create a personalized healthy recipe based on these requirements:
+
+${isRegeneration ? "🔄 REGENERATION MODE: Create a completely different recipe that meets the same preferences but is unique from the previous recipe. Use different ingredients, cooking methods, and flavors while maintaining the same dietary requirements and meal type.\n" : ""}
 
 MEAL TYPE: ${mealType}
 PREFERENCES: ${preferences || "No specific preferences"}

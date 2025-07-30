@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { ChefHat, Sparkles, Clock, Users, Utensils, Heart, Loader2 } from "lucide-react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { ChefHat, Sparkles, Clock, Users, Utensils, Heart, Loader2, RefreshCw, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import type { Recipe } from "@shared/schema";
+import { useAuth } from "@/hooks/useAuth";
+import type { Recipe, User } from "@shared/schema";
 
 const dietaryOptions = [
   "vegetarian", "vegan", "gluten-free", "dairy-free", 
@@ -35,8 +36,10 @@ export function MealHelper() {
   const [generatedRecipe, setGeneratedRecipe] = useState<Recipe | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<string>("");
+  const [lastUsedParams, setLastUsedParams] = useState<any>(null);
 
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const generateRecipeMutation = useMutation({
     mutationFn: async (params: any) => {
@@ -76,6 +79,7 @@ export function MealHelper() {
       availableIngredients: availableIngredients ? availableIngredients.split(",").map(i => i.trim()) : [],
     };
 
+    setLastUsedParams(params);
     generateRecipeMutation.mutate(params);
   };
 
@@ -92,7 +96,29 @@ export function MealHelper() {
       availableIngredients: availableIngredients ? availableIngredients.split(",").map(i => i.trim()) : [],
     };
 
+    setLastUsedParams(params);
     generateRecipeMutation.mutate(params);
+  };
+
+  const handleRegenerateRecipe = () => {
+    if (!user?.isPremium) {
+      toast({
+        title: "Premium Feature",
+        description: "Recipe regeneration is available for premium users only. Upgrade to access unlimited recipe variations!",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (lastUsedParams) {
+      // Add a regeneration flag to get a different recipe with same params
+      const regenerateParams = {
+        ...lastUsedParams,
+        regenerate: true,
+        previousRecipeId: generatedRecipe?.id,
+      };
+      generateRecipeMutation.mutate(regenerateParams);
+    }
   };
 
   const handleCustomGenerate = () => {
@@ -499,6 +525,48 @@ export function MealHelper() {
                     </li>
                   ))}
                 </ul>
+              </div>
+            )}
+
+            {/* Regenerate Recipe Button - Premium Feature */}
+            {lastUsedParams && (
+              <div className="pt-4 border-t">
+                <Button 
+                  onClick={handleRegenerateRecipe}
+                  disabled={generateRecipeMutation.isPending}
+                  variant={user?.isPremium ? "outline" : "outline"}
+                  className={`w-full ${user?.isPremium 
+                    ? "border-orange-500 text-orange-600 hover:bg-orange-50" 
+                    : "border-gray-300 text-gray-500"
+                  }`}
+                  size="lg"
+                >
+                  {generateRecipeMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Generating New Recipe...
+                    </>
+                  ) : (
+                    <>
+                      {user?.isPremium ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Generate Another Recipe
+                        </>
+                      ) : (
+                        <>
+                          <Crown className="h-4 w-4 mr-2 text-yellow-500" />
+                          Regenerate Recipe (Premium)
+                        </>
+                      )}
+                    </>
+                  )}
+                </Button>
+                {!user?.isPremium && (
+                  <p className="text-xs text-gray-500 text-center mt-2">
+                    Upgrade to premium for unlimited recipe variations!
+                  </p>
+                )}
               </div>
             )}
           </CardContent>

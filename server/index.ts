@@ -7,12 +7,26 @@ import { initializeDatabase } from "./db";
 import { storage } from "./storage";
 import { buildFreshExerciseLibrary } from "./fresh-exercise-builder";
 import { expandExerciseLibrary } from "./expand-exercise-library";
+import { applyProductionOptimizations, setupMemoryMonitoring, setupGracefulShutdown } from "./production-optimizations";
+import { requestTimer, requestSizeLimiter, simpleRateLimit, healthCheck } from "./middleware/performance";
 
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // Reasonable payload limit
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.static("public"));
+
+// Apply production optimizations
+applyProductionOptimizations(app);
+
+// Performance middleware
+app.use(requestTimer);
+app.use(requestSizeLimiter);
+app.use('/api', simpleRateLimit(200, 60000)); // 200 requests per minute for API routes
+
+// Health check endpoint
+app.get('/health', healthCheck);
 
 // Error handling middleware
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -64,8 +78,12 @@ async function startServer() {
       await setupVite(app, server);
     }
 
-    server.listen(PORT, "0.0.0.0", () => {
+    server.listen(Number(PORT), "0.0.0.0", () => {
       log(`Server running at http://0.0.0.0:${PORT}`);
+      
+      // Setup production monitoring
+      setupMemoryMonitoring();
+      setupGracefulShutdown(server);
     });
   } catch (error) {
     console.error("Failed to start server:", error);

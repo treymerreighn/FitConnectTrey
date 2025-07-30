@@ -1,61 +1,85 @@
 {
-  "name": "FitConnect - Social Fitness",
+  "name": "FitConnect - Social Fitness Platform",
   "short_name": "FitConnect",
-  "description": "Connect with fitness enthusiasts, share workouts, track progress, and achieve your goals with the power of community.",
+  "description": "AI-powered social fitness platform with smart workout tracking, progress analytics, and community features",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#22c55e",
-  "orientation": "portrait-primary",
-  "scope": "/",
-  "categories": ["health", "fitness", "social"],
+  "orientation": "portrait",
+  "categories": ["health", "fitness", "lifestyle"],
   "lang": "en",
+  "screenshots": [
+    {
+      "src": "/images/screenshot-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/images/screenshot-desktop.png", 
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-96x96.png", 
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128", 
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png", 
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable any"
     }
   ],
-  "screenshots": [
-    {
-      "src": "/screenshot-mobile.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow"
-    }
+  "features": [
+    "AI-powered workout generation",
+    "Smart exercise progression tracking", 
+    "Real-time progress analytics",
+    "Social fitness community",
+    "Photo progress tracking",
+    "Personalized nutrition coaching"
   ],
-  "shortcuts": [
-    {
-      "name": "Log Workout",
-      "short_name": "Workout",
-      "description": "Quickly log a new workout",
-      "url": "/log-workout",
-      "icons": [
-        {
-          "src": "/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
-    },
-    {
-      "name": "Track Progress",
-      "short_name": "Progress",
-      "description": "View your fitness progress",
-      "url": "/progress",
-      "icons": [
-        {
-          "src": "/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
-    }
-  ]
+  "prefer_related_applications": false
 }

@@ -10,6 +10,7 @@ import { removeDuplicateExercises } from "./duplicate-remover";
 import { AIWorkoutIntelligence } from "./ai-fitness-coach";
 import { AINutritionCoach } from "./ai-nutrition-coach";
 import { AIProgressAnalyzer } from "./ai-progress-analyzer";
+import { generateAIRecipe } from "./ai-meal-helper";
 
 const router = Router();
 
@@ -1046,6 +1047,38 @@ router.post("/api/meal-helper/generate-multiple", async (req, res) => {
       message: "Failed to generate recipes", 
       error: error.message 
     });
+  }
+});
+
+// Meal Helper - AI Recipe Generation
+router.post("/api/meal-helper/generate", async (req, res) => {
+  try {
+    const { 
+      preferences, 
+      mealType, 
+      cuisineType, 
+      servings, 
+      difficulty, 
+      dietaryRestrictions, 
+      healthGoals, 
+      availableIngredients 
+    } = req.body;
+
+    const recipe = await generateAIRecipe({
+      preferences,
+      mealType,
+      cuisineType,
+      servings,
+      difficulty,
+      dietaryRestrictions,
+      healthGoals,
+      availableIngredients
+    });
+
+    res.json(recipe);
+  } catch (error) {
+    console.error("Meal Helper generation error:", error);
+    res.status(500).json({ error: "Failed to generate recipe" });
   }
 });
 

@@ -21,6 +21,7 @@ export function MealHelper() {
   const [difficulty, setDifficulty] = useState("easy");
   const [dietaryRestrictions, setDietaryRestrictions] = useState<string[]>([]);
   const [healthGoals, setHealthGoals] = useState<string[]>([]);
+  const [availableIngredients, setAvailableIngredients] = useState("");
   const [generatedRecipe, setGeneratedRecipe] = useState<Recipe | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -58,8 +59,8 @@ export function MealHelper() {
       servings,
       difficulty,
       dietaryRestrictions,
-      healthGoals: [],
-      availableIngredients: [],
+      healthGoals,
+      availableIngredients: availableIngredients ? availableIngredients.split(",").map(i => i.trim()) : [],
     };
 
     generateRecipeMutation.mutate(params);
@@ -83,7 +84,7 @@ export function MealHelper() {
       difficulty,
       dietaryRestrictions,
       healthGoals,
-      availableIngredients: [],
+      availableIngredients: availableIngredients ? availableIngredients.split(",").map(i => i.trim()) : [],
     };
 
     generateRecipeMutation.mutate(params);
@@ -224,6 +225,18 @@ export function MealHelper() {
 
           <div className="text-center">
             <span className="text-gray-500 dark:text-gray-400">or</span>
+          </div>
+
+          {/* Available Ingredients */}
+          <div className="space-y-2">
+            <Label htmlFor="ingredients" className="text-lg font-medium">What ingredients do you have? (optional)</Label>
+            <Input
+              id="ingredients"
+              placeholder="chicken, rice, broccoli, cheese, garlic..."
+              value={availableIngredients}
+              onChange={(e) => setAvailableIngredients(e.target.value)}
+            />
+            <p className="text-xs text-gray-500">Separate with commas</p>
           </div>
 
           {/* Custom Preferences (Optional) */}

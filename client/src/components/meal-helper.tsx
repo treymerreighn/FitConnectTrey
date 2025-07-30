@@ -43,10 +43,11 @@ export function MealHelper() {
       return response;
     },
     onSuccess: (recipe: Recipe) => {
+      console.log("Recipe received:", recipe);
       setGeneratedRecipe(recipe);
       toast({
         title: "Recipe Generated!",
-        description: `Created "${recipe.name}" just for you`,
+        description: `Created "${recipe.name || 'your custom recipe'}" just for you`,
       });
     },
     onError: (error: any) => {
@@ -124,7 +125,7 @@ export function MealHelper() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-32">
       <div className="text-center space-y-2">
         <div className="flex items-center justify-center space-x-2">
           <ChefHat className="h-8 w-8 text-orange-500" />
@@ -380,7 +381,7 @@ export function MealHelper() {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2 text-orange-700 dark:text-orange-300">
               <ChefHat className="h-5 w-5" />
-              <span>{generatedRecipe.name}</span>
+              <span>{generatedRecipe.name || "Custom Recipe"}</span>
               <Badge variant="secondary" className="bg-orange-100 text-orange-800">
                 AI Generated
               </Badge>

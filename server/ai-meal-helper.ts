@@ -88,11 +88,12 @@ Respond with a JSON object in this exact format:
     });
 
     const recipeData = JSON.parse(response.choices[0].message.content || "{}");
+    console.log("Raw OpenAI response:", recipeData);
     
     const recipe: Recipe = {
       id: nanoid(),
-      name: recipeData.name,
-      description: recipeData.description,
+      name: recipeData.name || `Healthy ${mealType} Recipe`,
+      description: recipeData.description || "A delicious and nutritious meal",
       ingredients: recipeData.ingredients || [],
       instructions: recipeData.instructions || [],
       prepTime: recipeData.prepTime || 15,
@@ -112,6 +113,8 @@ Respond with a JSON object in this exact format:
       tips: recipeData.tips || [],
       createdAt: new Date(),
     };
+    
+    console.log("Final recipe object:", recipe);
 
     console.log(`✅ Generated personalized recipe: ${recipe.name}`);
     return recipe;

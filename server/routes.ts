@@ -1050,6 +1050,76 @@ router.post("/api/meal-helper/generate-multiple", async (req, res) => {
   }
 });
 
-// Duplicate route removed - handled by the route above
+// Community meals endpoints
+router.post("/api/meals/share", async (req, res) => {
+  try {
+    const { caption, ingredients = [], calories, protein, carbs, fat, fiber, imageUrl, postToFeed = true } = req.body;
+    
+    const communityMeal = {
+      id: require("nanoid").nanoid(),
+      userId: "44595091", // Current user ID
+      caption,
+      imageUrl,
+      ingredients,
+      calories,
+      protein,
+      carbs,
+      fat,
+      fiber,
+      likes: [],
+      comments: [],
+      isPostedToFeed: postToFeed,
+      createdAt: new Date(),
+    };
+
+    // If posting to feed, also create a post
+    if (postToFeed) {
+      const post = {
+        id: require("nanoid").nanoid(),
+        userId: "44595091",
+        type: "nutrition" as const,
+        caption,
+        images: imageUrl ? [imageUrl] : [],
+        likes: [],
+        comments: [],
+        createdAt: new Date(),
+        nutritionData: {
+          mealType: "shared_meal",
+          calories: calories || 0,
+          protein: protein || 0,
+          carbs: carbs || 0,
+          fat: fat || 0,
+          fiber: fiber || 0,
+          ingredients,
+        }
+      };
+      await storage.createPost(post);
+    }
+
+    // Store the community meal
+    await storage.createCommunityMeal(communityMeal);
+    
+    res.json(communityMeal);
+  } catch (error: any) {
+    console.error("Error sharing meal:", error);
+    res.status(500).json({ 
+      message: "Failed to share meal", 
+      error: error.message 
+    });
+  }
+});
+
+router.get("/api/community-meals", async (req, res) => {
+  try {
+    const meals = await storage.getAllCommunityMeals();
+    res.json(meals);
+  } catch (error: any) {
+    console.error("Error fetching community meals:", error);
+    res.status(500).json({ 
+      message: "Failed to fetch community meals", 
+      error: error.message 
+    });
+  }
+});
 
 export default router;

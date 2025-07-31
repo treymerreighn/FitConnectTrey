@@ -1,4 +1,4 @@
-import type { User, Post, Comment, Connection, ProgressEntry, Exercise, WorkoutSession, ExerciseProgress, Recipe, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, InsertWorkoutSession, InsertExerciseProgress } from "@shared/schema";
+import type { User, Post, Comment, Connection, ProgressEntry, Exercise, WorkoutSession, ExerciseProgress, Recipe, CommunityMeal, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, InsertWorkoutSession, InsertExerciseProgress } from "@shared/schema";
 import { nanoid } from "nanoid";
 import { PgStorage } from "./pg-storage";
 
@@ -91,6 +91,13 @@ export interface IStorage {
   getRecipesByDietaryTags(tags: string[]): Promise<Recipe[]>;
   searchRecipes(query: string): Promise<Recipe[]>;
   getRandomRecipes(count: number): Promise<Recipe[]>;
+  
+  // Community meal operations
+  createCommunityMeal(meal: CommunityMeal): Promise<CommunityMeal>;
+  getCommunityMealById(id: string): Promise<CommunityMeal | null>;
+  getAllCommunityMeals(): Promise<CommunityMeal[]>;
+  updateCommunityMeal(id: string, updates: Partial<CommunityMeal>): Promise<CommunityMeal>;
+  deleteCommunityMeal(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -103,6 +110,7 @@ export class MemStorage implements IStorage {
   private workoutSessions: Map<string, WorkoutSession> = new Map();
   private exerciseProgress: Map<string, ExerciseProgress> = new Map();
   private recipes: Map<string, Recipe> = new Map();
+  private communityMeals: Map<string, CommunityMeal> = new Map();
 
   constructor() {
     this.seedData();
@@ -978,6 +986,35 @@ export class MemStorage implements IStorage {
     const allRecipes = Array.from(this.recipes.values());
     const shuffled = allRecipes.sort(() => 0.5 - Math.random());
     return shuffled.slice(0, count);
+  }
+
+  // Community meal operations
+  async createCommunityMeal(meal: CommunityMeal): Promise<CommunityMeal> {
+    this.communityMeals.set(meal.id, meal);
+    return meal;
+  }
+
+  async getCommunityMealById(id: string): Promise<CommunityMeal | null> {
+    return this.communityMeals.get(id) || null;
+  }
+
+  async getAllCommunityMeals(): Promise<CommunityMeal[]> {
+    return Array.from(this.communityMeals.values())
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async updateCommunityMeal(id: string, updates: Partial<CommunityMeal>): Promise<CommunityMeal> {
+    const meal = this.communityMeals.get(id);
+    if (!meal) {
+      throw new Error("Community meal not found");
+    }
+    const updatedMeal = { ...meal, ...updates };
+    this.communityMeals.set(id, updatedMeal);
+    return updatedMeal;
+  }
+
+  async deleteCommunityMeal(id: string): Promise<boolean> {
+    return this.communityMeals.delete(id);
   }
 }
 

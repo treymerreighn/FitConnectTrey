@@ -1,18 +1,22 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, UserPlus, Users, Brain } from "lucide-react";
+import { Search, UserPlus, Users, Brain, Share2, Heart, MessageCircle, Utensils } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { CURRENT_USER_ID } from "@/lib/constants";
-import type { User, Recipe } from "@shared/schema";
+import type { User, Recipe, CommunityMeal } from "@shared/schema";
+import MealHelper from "@/components/meal-helper";
+import ShareMealModal from "@/components/share-meal-modal";
 
 export default function SearchPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [isShareMealModalOpen, setIsShareMealModalOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: users = [] } = useQuery<User[]>({
@@ -208,30 +212,244 @@ export default function SearchPage() {
         </TabsContent>
 
         <TabsContent value="meal-helper" className="space-y-4 mt-4">
-          <MealHelperTab />
+          <MealHelperTabContent 
+            onShareMeal={() => setIsShareMealModalOpen(true)}
+          />
+        </TabsContent>
+      </Tabs>
+
+      <ShareMealModal 
+        isOpen={isShareMealModalOpen}
+        onClose={() => setIsShareMealModalOpen(false)}
+      />
+    </div>
+  );
+}
+
+function MealHelperTabContent({ onShareMeal }: { onShareMeal: () => void }) {
+  const [activeTab, setActiveTab] = useState("ai-helper");
+
+  const { data: communityMeals = [] } = useQuery<CommunityMeal[]>({
+    queryKey: ["/api/community-meals"],
+  });
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="text-center py-6">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          Meal Helper & Recipes
+        </h2>
+        <p className="text-gray-600 dark:text-gray-400">
+          Get personalized AI-generated recipes and discover meals shared by our community
+        </p>
+      </div>
+
+      {/* Sub-tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="ai-helper" className="flex items-center gap-2">
+            <Brain className="w-4 h-4" />
+            AI Meal Helper
+          </TabsTrigger>
+          <TabsTrigger value="recipe-library" className="flex items-center gap-2">
+            📚 Recipe Library
+          </TabsTrigger>
+          <TabsTrigger value="community-meals" className="flex items-center gap-2">
+            👥 Community Meals
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="ai-helper" className="mt-4">
+          <MealHelper />
+        </TabsContent>
+
+        <TabsContent value="recipe-library" className="mt-4">
+          <HealthyRecipesTab />
+        </TabsContent>
+
+        <TabsContent value="community-meals" className="mt-4">
+          <CommunityMealSharing 
+            meals={communityMeals}
+            onShareMeal={onShareMeal}
+          />
         </TabsContent>
       </Tabs>
     </div>
   );
 }
 
-function MealHelperTab() {
+function CommunityMealSharing({ meals, onShareMeal }: { meals: CommunityMeal[]; onShareMeal: () => void }) {
+  const { data: users = [] } = useQuery<User[]>({
+    queryKey: ["/api/users"],
+  });
+
+  const getUserById = (id: string) => users.find(user => user.id === id);
+
+  if (meals.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+            <Utensils className="h-8 w-8 text-gray-400" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+              No community meals yet
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
+              Be the first to share a healthy meal with the community!
+            </p>
+          </div>
+          <Button 
+            onClick={onShareMeal}
+            className="bg-green-600 hover:bg-green-700 text-white"
+            size="lg"
+          >
+            <Share2 className="h-4 w-4 mr-2" />
+            Share Your Meal
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-4">
-      <div className="text-center p-6 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
-        <Brain className="h-12 w-12 text-orange-500 mx-auto mb-3" />
-        <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100 mb-2">
-          AI Meal Helper
-        </h3>
-        <p className="text-gray-600 dark:text-gray-400 mb-4">
-          Tell us what you're craving and get a personalized healthy recipe instantly
-        </p>
+    <div className="space-y-6">
+      {/* Header with Share Button */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Community Meal Sharing
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Free meals and recipes shared by our FitConnect community
+          </p>
+        </div>
         <Button 
-          onClick={() => window.location.href = '/recipes'}
-          className="bg-orange-500 hover:bg-orange-600"
+          onClick={onShareMeal}
+          className="bg-green-600 hover:bg-green-700 text-white"
         >
-          Try Meal Helper
+          <Share2 className="h-4 w-4 mr-2" />
+          Share Your Meal
         </Button>
+      </div>
+
+      {/* Community Meals Grid */}
+      <div className="grid gap-4">
+        {meals.map((meal) => {
+          const user = getUserById(meal.userId);
+          const hasMacros = meal.calories || meal.protein || meal.carbs || meal.fat;
+          
+          return (
+            <Card key={meal.id} className="overflow-hidden">
+              <CardContent className="p-0">
+                {/* Meal Image */}
+                {meal.imageUrl && (
+                  <div className="aspect-video w-full overflow-hidden">
+                    <img 
+                      src={meal.imageUrl}
+                      alt={meal.caption}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                
+                <div className="p-4 space-y-4">
+                  {/* User Info */}
+                  <div className="flex items-center space-x-3">
+                    <UserAvatar 
+                      src={user?.avatar}
+                      name={user?.name || "Unknown User"}
+                      size="sm"
+                    />
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">
+                        {user?.name || "Unknown User"}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        @{user?.username || "unknown"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Caption */}
+                  <p className="text-gray-800 dark:text-gray-200">
+                    {meal.caption}
+                  </p>
+
+                  {/* Ingredients */}
+                  {meal.ingredients.length > 0 && (
+                    <div>
+                      <h5 className="font-medium text-gray-900 dark:text-white text-sm mb-2">
+                        Ingredients:
+                      </h5>
+                      <div className="flex flex-wrap gap-1">
+                        {meal.ingredients.slice(0, 5).map((ingredient, index) => (
+                          <Badge key={index} variant="secondary" className="text-xs">
+                            {ingredient}
+                          </Badge>
+                        ))}
+                        {meal.ingredients.length > 5 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{meal.ingredients.length - 5} more
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Nutrition Info */}
+                  {hasMacros && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      {meal.calories && (
+                        <div className="text-center">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Calories</p>
+                          <p className="font-semibold text-gray-900 dark:text-white">{meal.calories}</p>
+                        </div>
+                      )}
+                      {meal.protein && (
+                        <div className="text-center">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Protein</p>
+                          <p className="font-semibold text-gray-900 dark:text-white">{meal.protein}g</p>
+                        </div>
+                      )}
+                      {meal.carbs && (
+                        <div className="text-center">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Carbs</p>
+                          <p className="font-semibold text-gray-900 dark:text-white">{meal.carbs}g</p>
+                        </div>
+                      )}
+                      {meal.fat && (
+                        <div className="text-center">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Fat</p>
+                          <p className="font-semibold text-gray-900 dark:text-white">{meal.fat}g</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
+                    <div className="flex items-center space-x-4">
+                      <button className="flex items-center space-x-1 text-gray-600 dark:text-gray-400 hover:text-red-500 transition-colors">
+                        <Heart className="h-4 w-4" />
+                        <span className="text-sm">{meal.likes.length}</span>
+                      </button>
+                      <button className="flex items-center space-x-1 text-gray-600 dark:text-gray-400 hover:text-blue-500 transition-colors">
+                        <MessageCircle className="h-4 w-4" />
+                        <span className="text-sm">{meal.comments.length}</span>
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {new Date(meal.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );

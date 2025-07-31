@@ -58,6 +58,26 @@ export const recipeSchema = z.object({
 
 export type Recipe = z.infer<typeof recipeSchema>;
 
+// Community Meal schema for user-shared meals
+export const communityMealSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  caption: z.string(),
+  imageUrl: z.string().optional(),
+  ingredients: z.array(z.string()).default([]),
+  calories: z.number().optional(),
+  protein: z.number().optional(), // in grams
+  carbs: z.number().optional(), // in grams
+  fat: z.number().optional(), // in grams
+  fiber: z.number().optional(), // in grams
+  likes: z.array(z.string()).default([]),
+  comments: z.array(z.string()).default([]),
+  isPostedToFeed: z.boolean().default(true),
+  createdAt: z.date().default(() => new Date()),
+});
+
+export type CommunityMeal = z.infer<typeof communityMealSchema>;
+
 // Post base schema
 export const postSchema = z.object({
   id: z.string(),

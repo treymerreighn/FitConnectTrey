@@ -71,10 +71,10 @@ export default function ShareMealModal({ isOpen, onClose, recipeData }: ShareMea
     mutationFn: async (data: ShareMealFormData & { imageUrl?: string }) => {
       return apiRequest("POST", "/api/meals/share", data);
     },
-    onSuccess: () => {
+    onSuccess: (result, variables) => {
       toast({
         title: "Meal Shared Successfully!",
-        description: data.postToFeed 
+        description: variables.postToFeed 
           ? "Your meal has been shared with the community!" 
           : "Your meal has been saved to your profile!",
       });

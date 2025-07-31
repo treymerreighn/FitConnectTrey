@@ -11,6 +11,7 @@ import { generateAIWorkout } from "./ai-workout";
 import { generateExerciseInsights, generateWorkoutVolumeInsights } from "./ai-exercise-insights";
 import { generatePersonalizedRecipe } from "./ai-meal-helper";
 import { z } from "zod";
+import { nanoid } from "nanoid";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -555,6 +556,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error generating personalized recipe:", error);
       res.status(500).json({ 
         message: "Failed to generate recipe", 
+        error: error.message 
+      });
+    }
+  });
+
+  // Community meals endpoints
+  app.post("/api/meals/share", async (req, res) => {
+    try {
+      const { caption, ingredients = [], calories, protein, carbs, fat, fiber, imageUrl, postToFeed = true } = req.body;
+      
+      const communityMeal = {
+        id: nanoid(),
+        userId: "44595091", // Current user ID
+        caption,
+        imageUrl,
+        ingredients,
+        calories,
+        protein,
+        carbs,
+        fat,
+        fiber,
+        likes: [],
+        comments: [],
+        isPostedToFeed: postToFeed,
+        createdAt: new Date(),
+      };
+
+      // If posting to feed, also create a post
+      if (postToFeed) {
+        const post = {
+          id: nanoid(),
+          userId: "44595091",
+          type: "nutrition" as const,
+          caption,
+          images: imageUrl ? [imageUrl] : [],
+          likes: [],
+          comments: [],
+          createdAt: new Date(),
+          nutritionData: {
+            mealType: "shared_meal",
+            calories: calories || 0,
+            protein: protein || 0,
+            carbs: carbs || 0,
+            fat: fat || 0,
+            fiber: fiber || 0,
+            ingredients,
+          }
+        };
+        await storage.createPost(post);
+      }
+
+      // Store the community meal
+      await storage.createCommunityMeal(communityMeal);
+      
+      res.json(communityMeal);
+    } catch (error: any) {
+      console.error("Error sharing meal:", error);
+      res.status(500).json({ 
+        message: "Failed to share meal", 
+        error: error.message 
+      });
+    }
+  });
+
+  app.get("/api/community-meals", async (req, res) => {
+    try {
+      const meals = await storage.getAllCommunityMeals();
+      res.json(meals);
+    } catch (error: any) {
+      console.error("Error fetching community meals:", error);
+      res.status(500).json({ 
+        message: "Failed to fetch community meals", 
         error: error.message 
       });
     }

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ChefHat, Sparkles, Clock, Users, Utensils, Heart, Loader2, RefreshCw, Crown } from "lucide-react";
+import { ChefHat, Sparkles, Clock, Users, Utensils, Heart, Loader2, RefreshCw, Crown, Share2 } from "lucide-react";
+import ShareMealModal from "./share-meal-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,6 +38,7 @@ export function MealHelper() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<string>("");
   const [lastUsedParams, setLastUsedParams] = useState<any>(null);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   const { toast } = useToast();
   const { user } = useAuth();
@@ -528,9 +530,21 @@ export function MealHelper() {
               </div>
             )}
 
-            {/* Regenerate Recipe Button - Premium Feature */}
-            {lastUsedParams && (
-              <div className="pt-4 border-t">
+            {/* Action Buttons */}
+            <div className="pt-4 border-t space-y-3">
+              {/* Share Your Meal Button */}
+              <Button 
+                onClick={() => setIsShareModalOpen(true)}
+                variant="default"
+                className="w-full bg-green-600 hover:bg-green-700"
+                size="lg"
+              >
+                <Share2 className="h-4 w-4 mr-2" />
+                Share Your Meal
+              </Button>
+
+              {/* Regenerate Recipe Button - Premium Feature */}
+              {lastUsedParams && (
                 <Button 
                   onClick={handleRegenerateRecipe}
                   disabled={generateRecipeMutation.isPending}
@@ -562,16 +576,32 @@ export function MealHelper() {
                     </>
                   )}
                 </Button>
-                {!user?.isPremium && (
-                  <p className="text-xs text-gray-500 text-center mt-2">
-                    Upgrade to premium for unlimited recipe variations!
-                  </p>
-                )}
-              </div>
-            )}
+              )}
+
+              {!user?.isPremium && lastUsedParams && (
+                <p className="text-xs text-gray-500 text-center">
+                  Upgrade to premium for unlimited recipe variations!
+                </p>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
+
+      {/* Share Meal Modal */}
+      <ShareMealModal 
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        recipeData={generatedRecipe ? {
+          name: generatedRecipe.name,
+          ingredients: generatedRecipe.ingredients,
+          calories: generatedRecipe.calories,
+          protein: generatedRecipe.protein,
+          carbs: generatedRecipe.carbs,
+          fat: generatedRecipe.fat,
+          fiber: generatedRecipe.fiber,
+        } : undefined}
+      />
     </div>
   );
 }

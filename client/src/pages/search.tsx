@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, UserPlus, Users, Brain, Share2, Heart, MessageCircle, Utensils } from "lucide-react";
+import { Search, UserPlus, Users, Brain, Share2, Heart, MessageCircle, Utensils, Crown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -25,6 +25,11 @@ export default function SearchPage() {
 
   const { data: currentUser } = useQuery<User>({
     queryKey: [`/api/users/${CURRENT_USER_ID}`],
+  });
+
+  // Fetch community meals
+  const { data: communityMeals = [] } = useQuery<CommunityMeal[]>({
+    queryKey: ["/api/community-meals"],
   });
 
   const followMutation = useMutation({
@@ -59,14 +64,18 @@ export default function SearchPage() {
       </header>
 
       <Tabs defaultValue="users" className="px-4 py-4">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="users" className="flex items-center gap-2">
             <Users className="w-4 h-4" />
             Find Users
           </TabsTrigger>
+          <TabsTrigger value="community-meals" className="flex items-center gap-2">
+            <Utensils className="w-4 h-4 text-green-600" />
+            Community Meals
+          </TabsTrigger>
           <TabsTrigger value="meal-helper" className="flex items-center gap-2">
             <Brain className="w-4 h-4 text-orange-500" />
-            Meal Helper
+            AI Meal Helper
           </TabsTrigger>
         </TabsList>
 
@@ -209,7 +218,174 @@ export default function SearchPage() {
           </div>
         </TabsContent>
 
+        <TabsContent value="community-meals" className="space-y-4 mt-4">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Community Meals</h2>
+              <Button 
+                onClick={() => setIsShareMealModalOpen(true)}
+                variant="outline" 
+                size="sm"
+                className="border-green-600 text-green-600 hover:bg-green-50"
+              >
+                <Share2 className="h-4 w-4 mr-2" />
+                Share Meal
+              </Button>
+            </div>
+            
+            {communityMeals.length === 0 ? (
+              <Card className="p-8 text-center">
+                <CardContent>
+                  <Utensils className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    No community meals yet
+                  </h3>
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">
+                    Be the first to share a delicious meal with the community!
+                  </p>
+                  <Button 
+                    onClick={() => setIsShareMealModalOpen(true)}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Share Your Meal
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4">
+                {communityMeals.map((meal) => (
+                  <Card key={meal.id} className="overflow-hidden">
+                    <CardContent className="p-0">
+                      {/* Meal Image */}
+                      {meal.imageUrl && (
+                        <div className="aspect-video relative">
+                          <img
+                            src={meal.imageUrl}
+                            alt={meal.caption}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      
+                      {/* Meal Content */}
+                      <div className="p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center space-x-3">
+                            <UserAvatar
+                              src={users.find(u => u.id === meal.userId)?.avatar}
+                              name={users.find(u => u.id === meal.userId)?.name || "Unknown User"}
+                              size="sm"
+                            />
+                            <div>
+                              <p className="font-medium text-gray-900 dark:text-white text-sm">
+                                {users.find(u => u.id === meal.userId)?.name || "Unknown User"}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {new Date(meal.createdAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Caption */}
+                        <p className="text-gray-900 dark:text-white mb-3 text-sm leading-relaxed">
+                          {meal.caption}
+                        </p>
+                        
+                        {/* Ingredients */}
+                        {meal.ingredients && meal.ingredients.length > 0 && (
+                          <div className="mb-3">
+                            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                              Ingredients:
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {meal.ingredients.slice(0, 3).map((ingredient, index) => (
+                                <Badge key={index} variant="secondary" className="text-xs">
+                                  {ingredient}
+                                </Badge>
+                              ))}
+                              {meal.ingredients.length > 3 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  +{meal.ingredients.length - 3} more
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Nutrition Info */}
+                        {(meal.calories || meal.protein) && (
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+                            {meal.calories && (
+                              <div className="text-center py-2 bg-gray-50 dark:bg-gray-800 rounded">
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Calories</p>
+                                <p className="font-medium text-sm text-gray-900 dark:text-white">
+                                  {meal.calories}
+                                </p>
+                              </div>
+                            )}
+                            {meal.protein && (
+                              <div className="text-center py-2 bg-gray-50 dark:bg-gray-800 rounded">
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Protein</p>
+                                <p className="font-medium text-sm text-gray-900 dark:text-white">
+                                  {meal.protein}g
+                                </p>
+                              </div>
+                            )}
+                            {meal.carbs && (
+                              <div className="text-center py-2 bg-gray-50 dark:bg-gray-800 rounded">
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Carbs</p>
+                                <p className="font-medium text-sm text-gray-900 dark:text-white">
+                                  {meal.carbs}g
+                                </p>
+                              </div>
+                            )}
+                            {meal.fat && (
+                              <div className="text-center py-2 bg-gray-50 dark:bg-gray-800 rounded">
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Fat</p>
+                                <p className="font-medium text-sm text-gray-900 dark:text-white">
+                                  {meal.fat}g
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Actions */}
+                        <div className="flex items-center space-x-4 pt-2 border-t border-gray-100 dark:border-gray-700">
+                          <Button variant="ghost" size="sm" className="text-gray-500 hover:text-red-500">
+                            <Heart className="h-4 w-4 mr-1" />
+                            <span className="text-xs">{meal.likes?.length || 0}</span>
+                          </Button>
+                          <Button variant="ghost" size="sm" className="text-gray-500 hover:text-blue-500">
+                            <MessageCircle className="h-4 w-4 mr-1" />
+                            <span className="text-xs">{meal.comments?.length || 0}</span>
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
         <TabsContent value="meal-helper" className="space-y-4 mt-4">
+          <div className="bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded-lg p-4 mb-4">
+            <div className="flex items-center space-x-2 mb-2">
+              <Brain className="h-5 w-5 text-orange-600" />
+              <h3 className="font-semibold text-orange-900 dark:text-orange-100">AI Meal Helper - Premium Feature</h3>
+            </div>
+            <p className="text-sm text-orange-800 dark:text-orange-200 mb-3">
+              Generate personalized healthy recipes with AI based on your dietary preferences and goals.
+            </p>
+            <Button className="bg-orange-600 hover:bg-orange-700 text-white">
+              <Crown className="h-4 w-4 mr-2 text-yellow-300" />
+              Upgrade to Premium
+            </Button>
+          </div>
           <MealHelper />
         </TabsContent>
       </Tabs>

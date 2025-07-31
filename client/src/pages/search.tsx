@@ -11,7 +11,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { CURRENT_USER_ID } from "@/lib/constants";
 import type { User, Recipe, CommunityMeal } from "@shared/schema";
-import MealHelper from "@/components/meal-helper";
+import { MealHelper } from "@/components/meal-helper";
 import ShareMealModal from "@/components/share-meal-modal";
 
 export default function SearchPage() {
@@ -31,10 +31,7 @@ export default function SearchPage() {
     mutationFn: async (targetUserId: string) => {
       const isFollowing = currentUser?.following.includes(targetUserId);
       const endpoint = isFollowing ? "unfollow" : "follow";
-      return apiRequest(`/api/users/${targetUserId}/${endpoint}`, {
-        method: "POST",
-        body: { followerId: CURRENT_USER_ID },
-      });
+      return apiRequest("POST", `/api/users/${targetUserId}/${endpoint}`, { followerId: CURRENT_USER_ID });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
@@ -84,7 +81,7 @@ export default function SearchPage() {
             />
           </div>
 
-      <div className="px-4 py-6">
+          <div className="px-4 py-6">
         {/* Search Results */}
         {searchTerm && (
           <div className="mb-6">
@@ -209,12 +206,11 @@ export default function SearchPage() {
             )}
           </div>
         )}
+          </div>
         </TabsContent>
 
         <TabsContent value="meal-helper" className="space-y-4 mt-4">
-          <MealHelperTabContent 
-            onShareMeal={() => setIsShareMealModalOpen(true)}
-          />
+          <MealHelper />
         </TabsContent>
       </Tabs>
 

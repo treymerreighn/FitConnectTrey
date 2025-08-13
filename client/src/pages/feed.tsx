@@ -11,22 +11,28 @@ import type { Post, User } from "@shared/schema";
 export default function Feed() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   
-  const { data: posts = [], isLoading: postsLoading } = useQuery<Post[]>({
+  const { data: posts = [], isLoading: postsLoading, error: postsError } = useQuery<Post[]>({
     queryKey: ["/api/posts"],
+    refetchOnMount: 'always',
     refetchOnWindowFocus: true,
     staleTime: 0,
+    gcTime: 0,
   });
 
-  const { data: users = [] } = useQuery<User[]>({
+  const { data: users = [], error: usersError } = useQuery<User[]>({
     queryKey: ["/api/users"],
+    refetchOnMount: 'always',
     refetchOnWindowFocus: true,
     staleTime: 0,
+    gcTime: 0,
   });
 
   // Debug logging
   console.log("Posts data:", posts);
   console.log("Posts loading:", postsLoading);
+  console.log("Posts error:", postsError);
   console.log("Users data:", users);
+  console.log("Users error:", usersError);
   
   // Debug API calls
   useEffect(() => {

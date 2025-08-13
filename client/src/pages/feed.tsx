@@ -13,18 +13,22 @@ export default function Feed() {
   
   const { data: posts = [], isLoading: postsLoading, error: postsError } = useQuery<Post[]>({
     queryKey: ["/api/posts"],
+    enabled: true,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
     staleTime: 0,
     gcTime: 0,
+    retry: false,
   });
 
   const { data: users = [], error: usersError } = useQuery<User[]>({
     queryKey: ["/api/users"],
+    enabled: true,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
     staleTime: 0,
     gcTime: 0,
+    retry: false,
   });
 
   // Debug logging
@@ -33,6 +37,14 @@ export default function Feed() {
   console.log("Posts error:", postsError);
   console.log("Users data:", users);
   console.log("Users error:", usersError);
+  
+  // Log full error details
+  if (postsError) {
+    console.error("Posts error details:", JSON.stringify(postsError, null, 2));
+  }
+  if (usersError) {
+    console.error("Users error details:", JSON.stringify(usersError, null, 2));
+  }
   
   // Debug API calls
   useEffect(() => {

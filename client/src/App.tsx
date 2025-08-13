@@ -1,5 +1,6 @@
 import { Route, Switch } from "wouter";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { Home, Search, Dumbbell, TrendingUp, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,7 +25,7 @@ import RecipesPage from "./pages/recipes";
 import Landing from "./pages/landing";
 import SearchPage from "./pages/search";
 
-const queryClient = new QueryClient();
+
 
 function BottomNavigation() {
   const [location] = useLocation();

@@ -17,11 +17,28 @@ export function PostCard({ post }: PostCardProps) {
   const queryClient = useQueryClient();
   const [showComments, setShowComments] = useState(false);
   
+  // ALL HOOKS MUST COME FIRST - NO CONDITIONAL LOGIC ABOVE HOOKS
   const { data: user } = useQuery<User>({
     queryKey: [`/api/users/${post.userId}`],
     refetchOnWindowFocus: true,
     staleTime: 0,
     retry: 3,
+  });
+
+  const { data: comments = [] } = useQuery({
+    queryKey: [`/api/posts/${post.id}/comments`],
+    enabled: showComments,
+  });
+
+  const likeMutation = useMutation({
+    mutationFn: async () => {
+      const isLiked = post.likes.includes(CURRENT_USER_ID);
+      const endpoint = isLiked ? "unlike" : "like";
+      return apiRequest("POST", `/api/posts/${post.id}/${endpoint}`, { userId: CURRENT_USER_ID });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+    },
   });
 
   // Debug logging for user data
@@ -48,22 +65,6 @@ export function PostCard({ post }: PostCardProps) {
       </Card>
     );
   }
-
-  const { data: comments = [] } = useQuery({
-    queryKey: [`/api/posts/${post.id}/comments`],
-    enabled: showComments,
-  });
-
-  const likeMutation = useMutation({
-    mutationFn: async () => {
-      const isLiked = post.likes.includes(CURRENT_USER_ID);
-      const endpoint = isLiked ? "unlike" : "like";
-      return apiRequest("POST", `/api/posts/${post.id}/${endpoint}`, { userId: CURRENT_USER_ID });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
-    },
-  });
 
   const isLiked = post.likes.includes(CURRENT_USER_ID);
   const likesCount = post.likes.length;

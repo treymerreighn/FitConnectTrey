@@ -13,7 +13,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { CURRENT_USER_ID, WORKOUT_TYPES, MEAL_TYPES, PROGRESS_TYPES } from "@/lib/constants";
 import { useToast } from "@/hooks/use-toast";
-import { Dumbbell, Apple, TrendingUp } from "lucide-react";
+import { Dumbbell, Apple, TrendingUp, ExternalLink } from "lucide-react";
+import { useLocation } from "wouter";
 
 interface CreatePostModalProps {
   isOpen: boolean;
@@ -63,6 +64,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
   const [selectedType, setSelectedType] = useState<"workout" | "nutrition" | "progress" | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
 
   const form = useForm<PostFormData>({
     resolver: zodResolver(postSchema),
@@ -131,6 +133,12 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
   };
 
   const handleTypeSelect = (type: "workout" | "nutrition" | "progress") => {
+    if (type === "workout") {
+      // Navigate to workout builder instead of using simple form
+      handleClose();
+      setLocation("/build-workout");
+      return;
+    }
     setSelectedType(type);
     form.setValue("type", type);
   };
@@ -150,11 +158,15 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
             <div className="grid grid-cols-1 gap-4">
               <Button
                 variant="outline"
-                className="h-16 flex flex-col items-center justify-center space-y-2 bg-fit-green/5 border-fit-green/20 hover:bg-fit-green/10"
+                className="h-20 flex flex-col items-center justify-center space-y-2 bg-fit-green/5 border-fit-green/20 hover:bg-fit-green/10 relative"
                 onClick={() => handleTypeSelect("workout")}
               >
-                <Dumbbell className="h-6 w-6 text-fit-green" />
+                <div className="flex items-center space-x-2">
+                  <Dumbbell className="h-6 w-6 text-fit-green" />
+                  <ExternalLink className="h-4 w-4 text-fit-green/70" />
+                </div>
                 <span className="font-medium text-fit-green">Workout</span>
+                <span className="text-xs text-fit-green/70">Build with Exercise Library</span>
               </Button>
               <Button
                 variant="outline"

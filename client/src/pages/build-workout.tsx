@@ -1105,18 +1105,24 @@ export default function BuildWorkout() {
                         "Content-Type": "application/json",
                       },
                       body: JSON.stringify({
+                        userId: "44595091", // Current user ID
                         type: "workout",
-                        content: workoutPlan.description || `Check out my workout: ${workoutPlan.name || 'Custom Workout'}!`,
+                        caption: workoutPlan.description || `Check out my workout: ${workoutPlan.name || 'Custom Workout'}! 💪`,
                         workoutData: {
-                          name: workoutPlan.name || 'Custom Workout',
+                          workoutType: workoutPlan.name || 'Custom Workout',
+                          duration: Math.round(workoutPlan.estimatedDuration),
+                          calories: Math.round(workoutPlan.estimatedDuration * 6), // Estimate 6 calories per minute
                           exercises: workoutPlan.exercises.map(ex => ({
                             name: ex.name,
-                            sets: ex.targetSets || 3,
-                            reps: ex.targetReps || 10,
-                            muscleGroups: ex.muscleGroups
+                            sets: Array.from({ length: ex.targetSets || 3 }, (_, i) => ({
+                              reps: ex.targetReps || 10,
+                              rest: ex.restTime || 60
+                            })),
+                            notes: `Target: ${ex.targetSets || 3} sets × ${ex.targetReps || 10} reps`
                           })),
-                          duration: workoutPlan.estimatedDuration,
-                          targetBodyParts: selectedBodyParts
+                          // Legacy fields for backward compatibility
+                          sets: workoutPlan.exercises.reduce((total, ex) => total + (ex.targetSets || 3), 0),
+                          reps: `${workoutPlan.exercises.length} exercises`
                         }
                       }),
                     });

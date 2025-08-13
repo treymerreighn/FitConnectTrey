@@ -21,6 +21,15 @@ export function PostCard({ post }: PostCardProps) {
     queryKey: [`/api/users/${post.userId}`],
   });
 
+  // Debug logging for user data
+  console.log("Post user ID:", post.userId);
+  console.log("User data for post:", user);
+
+  // If user data is missing, don't render the post
+  if (!user) {
+    return null;
+  }
+
   const { data: comments = [] } = useQuery({
     queryKey: [`/api/posts/${post.id}/comments`],
     enabled: showComments,

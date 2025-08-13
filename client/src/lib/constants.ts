@@ -1,4 +1,4 @@
-export const CURRENT_USER_ID = "user1"; // Mock current user for demo purposes
+export const CURRENT_USER_ID = "44595091"; // Current authenticated user
 
 export const POST_TYPES = {
   WORKOUT: "workout",

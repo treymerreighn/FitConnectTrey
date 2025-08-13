@@ -15,6 +15,10 @@ export default function Feed() {
     queryKey: ["/api/posts"],
   });
 
+  // Debug logging
+  console.log("Posts data:", posts);
+  console.log("Posts loading:", postsLoading);
+
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ["/api/users"],
   });
@@ -26,7 +30,7 @@ export default function Feed() {
     ).filter(Boolean) as User[];
     
     // Add current user at the beginning
-    const currentUser = users.find(user => user.id === "user1");
+    const currentUser = users.find(user => user.id === "44595091");
     if (currentUser) {
       return [currentUser, ...recentPosters.filter(user => user.id !== currentUser.id)];
     }

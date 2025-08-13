@@ -35,7 +35,7 @@ export default function RecipesPage() {
   });
 
   // Filter recipes based on search and filters
-  const filteredRecipes = allRecipes.filter((recipe: Recipe) => {
+  const filteredRecipes = (allRecipes as Recipe[]).filter((recipe: Recipe) => {
     const matchesSearch = searchTerm === "" || 
       recipe.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       recipe.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -158,14 +158,14 @@ export default function RecipesPage() {
             </div>
 
             {/* Featured Recipes */}
-            {featuredRecipes.length > 0 && (
+            {(featuredRecipes as Recipe[]).length > 0 && (
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
                   <Star className="h-5 w-5 mr-2 text-yellow-500" />
                   Featured Recipes
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {featuredRecipes.slice(0, 6).map((recipe: Recipe) => (
+                  {(featuredRecipes as Recipe[]).slice(0, 6).map((recipe: Recipe) => (
                     <RecipeCard key={recipe.id} recipe={recipe} featured />
                   ))}
                 </div>
@@ -214,7 +214,7 @@ export default function RecipesPage() {
               </p>
             </div>
 
-            {userMealPosts.length === 0 ? (
+            {(userMealPosts as any[]).length === 0 ? (
               <div className="text-center py-12">
                 <Users className="h-12 w-12 mx-auto text-gray-400 mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
@@ -227,7 +227,7 @@ export default function RecipesPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {userMealPosts.map((post: any) => (
+                {(userMealPosts as any[]).map((post: any) => (
                   <UserMealCard key={post.id} post={post} />
                 ))}
               </div>

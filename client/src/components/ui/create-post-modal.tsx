@@ -139,6 +139,12 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
       setLocation("/build-workout");
       return;
     }
+    if (type === "nutrition") {
+      // Navigate to meal generator instead of using simple form
+      handleClose();
+      setLocation("/recipes");
+      return;
+    }
     setSelectedType(type);
     form.setValue("type", type);
   };
@@ -170,11 +176,15 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
               </Button>
               <Button
                 variant="outline"
-                className="h-16 flex flex-col items-center justify-center space-y-2 bg-fit-blue/5 border-fit-blue/20 hover:bg-fit-blue/10"
+                className="h-20 flex flex-col items-center justify-center space-y-2 bg-fit-blue/5 border-fit-blue/20 hover:bg-fit-blue/10 relative"
                 onClick={() => handleTypeSelect("nutrition")}
               >
-                <Apple className="h-6 w-6 text-fit-blue" />
+                <div className="flex items-center space-x-2">
+                  <Apple className="h-6 w-6 text-fit-blue" />
+                  <ExternalLink className="h-4 w-4 text-fit-blue/70" />
+                </div>
                 <span className="font-medium text-fit-blue">Nutrition</span>
+                <span className="text-xs text-fit-blue/70">AI Meal Generator</span>
               </Button>
               <Button
                 variant="outline"

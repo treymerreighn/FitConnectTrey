@@ -145,6 +145,12 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
       setLocation("/recipes");
       return;
     }
+    if (type === "progress") {
+      // Navigate to progress tracker instead of using simple form
+      handleClose();
+      setLocation("/progress");
+      return;
+    }
     setSelectedType(type);
     form.setValue("type", type);
   };
@@ -188,11 +194,15 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
               </Button>
               <Button
                 variant="outline"
-                className="h-16 flex flex-col items-center justify-center space-y-2 bg-fit-gold/5 border-fit-gold/20 hover:bg-fit-gold/10"
+                className="h-20 flex flex-col items-center justify-center space-y-2 bg-fit-gold/5 border-fit-gold/20 hover:bg-fit-gold/10 relative"
                 onClick={() => handleTypeSelect("progress")}
               >
-                <TrendingUp className="h-6 w-6 text-fit-gold" />
+                <div className="flex items-center space-x-2">
+                  <TrendingUp className="h-6 w-6 text-fit-gold" />
+                  <ExternalLink className="h-4 w-4 text-fit-gold/70" />
+                </div>
                 <span className="font-medium text-fit-gold">Progress</span>
+                <span className="text-xs text-fit-gold/70">Track Your Journey</span>
               </Button>
             </div>
           </div>

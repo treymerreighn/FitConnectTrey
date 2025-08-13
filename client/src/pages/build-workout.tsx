@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Plus, Trash2, Play, Share, Sparkles, Target, Clock, Dumbbell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -242,6 +242,7 @@ const MOCK_EXERCISES: Exercise[] = [
 export default function BuildWorkout() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   // Fetch exercises from the database
   const { data: exercises = [] } = useQuery({
@@ -1135,6 +1136,9 @@ export default function BuildWorkout() {
                       title: "Workout Shared!",
                       description: "Your workout has been posted to the community"
                     });
+                    
+                    // Invalidate posts cache to refresh feed
+                    queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
                     
                     setShowPostOptions(false);
                     setLocation("/");

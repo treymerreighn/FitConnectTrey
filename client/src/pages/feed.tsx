@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Heart, MessageCircle, Dumbbell, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,15 +13,29 @@ export default function Feed() {
   
   const { data: posts = [], isLoading: postsLoading } = useQuery<Post[]>({
     queryKey: ["/api/posts"],
+    refetchOnWindowFocus: true,
+    staleTime: 0,
+  });
+
+  const { data: users = [] } = useQuery<User[]>({
+    queryKey: ["/api/users"],
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
 
   // Debug logging
   console.log("Posts data:", posts);
   console.log("Posts loading:", postsLoading);
-
-  const { data: users = [] } = useQuery<User[]>({
-    queryKey: ["/api/users"],
-  });
+  console.log("Users data:", users);
+  
+  // Debug API calls
+  useEffect(() => {
+    console.log("Making direct API test...");
+    fetch("/api/posts")
+      .then(res => res.json())
+      .then(data => console.log("Direct API result:", data))
+      .catch(err => console.error("Direct API error:", err));
+  }, []);
 
   const getActiveUsers = () => {
     // Show users who have posted recently (for stories)

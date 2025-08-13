@@ -19,15 +19,34 @@ export function PostCard({ post }: PostCardProps) {
   
   const { data: user } = useQuery<User>({
     queryKey: [`/api/users/${post.userId}`],
+    refetchOnWindowFocus: true,
+    staleTime: 0,
+    retry: 3,
   });
 
   // Debug logging for user data
   console.log("Post user ID:", post.userId);
   console.log("User data for post:", user);
 
-  // If user data is missing, don't render the post
+  // If user data is missing, show loading state instead of hiding post
   if (!user) {
-    return null;
+    return (
+      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+        <CardHeader className="pb-3">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gray-300 rounded-full animate-pulse" />
+            <div className="flex-1">
+              <div className="w-24 h-4 bg-gray-300 rounded animate-pulse mb-1" />
+              <div className="w-16 h-3 bg-gray-300 rounded animate-pulse" />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="w-full h-4 bg-gray-300 rounded animate-pulse mb-2" />
+          <div className="w-3/4 h-4 bg-gray-300 rounded animate-pulse" />
+        </CardContent>
+      </Card>
+    );
   }
 
   const { data: comments = [] } = useQuery({

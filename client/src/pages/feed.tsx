@@ -172,10 +172,10 @@ export default function Feed() {
       {/* Floating Action Button */}
       <div className="fixed bottom-24 right-4 z-40">
         <Button 
-          className="w-14 h-14 bg-fit-green hover:bg-fit-green/90 text-white rounded-full shadow-lg"
+          className="w-16 h-16 bg-gradient-to-r from-fit-green to-emerald-500 hover:from-fit-green/90 hover:to-emerald-500/90 text-white rounded-full shadow-xl hover:shadow-2xl transition-all duration-200 hover:scale-105"
           onClick={() => setShowCreateModal(true)}
         >
-          <Plus className="w-6 h-6" />
+          <Plus className="w-7 h-7" />
         </Button>
       </div>
 

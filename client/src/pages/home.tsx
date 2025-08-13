@@ -147,14 +147,14 @@ export default function Home() {
                 Your feed is empty
               </h3>
               <p className="text-gray-500 dark:text-gray-200 mb-6 max-w-sm mx-auto">
-                Follow some users or create your first post to get started with your fitness journey!
+                Start sharing your workouts, nutrition, and progress with the fitness community!
               </p>
               <Button 
-                className="bg-fit-green hover:bg-fit-green/90 text-white"
+                className="bg-gradient-to-r from-fit-green to-emerald-500 hover:from-fit-green/90 hover:to-emerald-500/90 text-white px-6 py-3 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
                 onClick={() => setShowCreateModal(true)}
               >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Your First Post
+                <Plus className="w-5 h-5 mr-2" />
+                Share Your Fitness Journey
               </Button>
             </div>
           ) : (
@@ -170,10 +170,10 @@ export default function Home() {
       {/* Floating Action Button */}
       <div className="fixed bottom-24 right-4 z-40">
         <Button 
-          className="w-14 h-14 bg-fit-green hover:bg-fit-green/90 text-white rounded-full shadow-lg"
+          className="w-16 h-16 bg-gradient-to-r from-fit-green to-emerald-500 hover:from-fit-green/90 hover:to-emerald-500/90 text-white rounded-full shadow-xl hover:shadow-2xl transition-all duration-200 hover:scale-105"
           onClick={() => setShowCreateModal(true)}
         >
-          <Plus className="w-6 h-6" />
+          <Plus className="w-7 h-7" />
         </Button>
       </div>
 

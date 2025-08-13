@@ -1,4 +1,4 @@
-import type { User, Post, Comment, Connection, ProgressEntry, Exercise, WorkoutSession, ExerciseProgress, Recipe, CommunityMeal, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, InsertWorkoutSession, InsertExerciseProgress } from "@shared/schema";
+import type { User, Post, Comment, Connection, ProgressEntry, Exercise, WorkoutSession, ExerciseProgress, Recipe, CommunityMeal, ProgressInsight, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, InsertWorkoutSession, InsertExerciseProgress, InsertProgressInsight } from "@shared/schema";
 import { nanoid } from "nanoid";
 import { PgStorage } from "./pg-storage";
 
@@ -98,6 +98,12 @@ export interface IStorage {
   getAllCommunityMeals(): Promise<CommunityMeal[]>;
   updateCommunityMeal(id: string, updates: Partial<CommunityMeal>): Promise<CommunityMeal>;
   deleteCommunityMeal(id: string): Promise<boolean>;
+
+  // Progress insights operations - AI photo analysis (premium feature)  
+  createProgressInsight(insight: InsertProgressInsight): Promise<ProgressInsight>;
+  getProgressInsightsByUserId(userId: string): Promise<ProgressInsight[]>;
+  getProgressInsight(id: string): Promise<ProgressInsight | null>;
+  deleteProgressInsight(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -111,6 +117,7 @@ export class MemStorage implements IStorage {
   private exerciseProgress: Map<string, ExerciseProgress> = new Map();
   private recipes: Map<string, Recipe> = new Map();
   private communityMeals: Map<string, CommunityMeal> = new Map();
+  private progressInsights: Map<string, ProgressInsight> = new Map();
 
   constructor() {
     this.seedData();
@@ -476,6 +483,8 @@ export class MemStorage implements IStorage {
         bio: "New to FitConnect! 💪",
         avatar: userData.profileImageUrl,
         isVerified: false,
+        isPremium: true, // Enable premium access for AI insights testing
+        subscriptionTier: "premium",
         followers: [],
         following: [],
         certifications: [],
@@ -1015,6 +1024,31 @@ export class MemStorage implements IStorage {
 
   async deleteCommunityMeal(id: string): Promise<boolean> {
     return this.communityMeals.delete(id);
+  }
+
+  // Progress insights methods for AI-powered photo analysis (premium feature)
+  async createProgressInsight(insight: InsertProgressInsight): Promise<ProgressInsight> {
+    const newInsight: ProgressInsight = {
+      id: nanoid(),
+      ...insight,
+      createdAt: new Date(),
+    };
+    this.progressInsights.set(newInsight.id, newInsight);
+    return newInsight;
+  }
+
+  async getProgressInsightsByUserId(userId: string): Promise<ProgressInsight[]> {
+    return Array.from(this.progressInsights.values())
+      .filter(insight => insight.userId === userId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async getProgressInsight(id: string): Promise<ProgressInsight | null> {
+    return this.progressInsights.get(id) || null;
+  }
+
+  async deleteProgressInsight(id: string): Promise<boolean> {
+    return this.progressInsights.delete(id);
   }
 }
 

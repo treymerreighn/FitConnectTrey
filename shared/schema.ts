@@ -78,6 +78,34 @@ export const communityMealSchema = z.object({
 
 export type CommunityMeal = z.infer<typeof communityMealSchema>;
 
+// Progress insights schema for AI analysis of progress photos
+export const progressInsightSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  imageUrl: z.string(),
+  analysisData: z.object({
+    overallAssessment: z.string(),
+    muscleDefinition: z.object({
+      score: z.number().min(1).max(10),
+      notes: z.string(),
+    }),
+    posture: z.object({
+      score: z.number().min(1).max(10),
+      notes: z.string(),
+    }),
+    bodyComposition: z.object({
+      assessment: z.string(),
+      changes: z.array(z.string()),
+    }),
+    recommendations: z.array(z.string()),
+    motivationalMessage: z.string(),
+  }),
+  createdAt: z.date().default(() => new Date()),
+});
+
+export type ProgressInsight = z.infer<typeof progressInsightSchema>;
+export type InsertProgressInsight = Omit<ProgressInsight, 'id' | 'createdAt'>;
+
 // Post base schema
 export const postSchema = z.object({
   id: z.string(),

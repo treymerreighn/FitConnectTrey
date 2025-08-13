@@ -1154,4 +1154,128 @@ router.get("/api/community-meals", async (req, res) => {
   }
 });
 
+// Progress Insights API - AI-powered photo analysis (premium feature)
+router.post('/api/progress-insights', async (req, res) => {
+  try {
+    const { imageUrl, userId } = req.body;
+    
+    if (!imageUrl || !userId) {
+      return res.status(400).json({ error: 'Image URL and user ID are required' });
+    }
+
+    // Check if user has premium access
+    const user = await storage.getUserById(userId);
+    if (!user || (!user.isPremium && user.subscriptionTier === 'free')) {
+      return res.status(403).json({ error: 'Premium subscription required for AI insights' });
+    }
+
+    // Convert image URL to base64 for OpenAI analysis
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+      return res.status(400).json({ error: 'Failed to fetch image from URL' });
+    }
+    
+    const buffer = await response.arrayBuffer();
+    const base64Image = Buffer.from(buffer).toString('base64');
+    
+    // Get previous insights for context - extract analysis data from stored insights
+    const storedInsights = await storage.getProgressInsightsByUserId(userId);
+    const previousInsights = storedInsights.map(insight => insight.analysisData).slice(0, 2);
+    
+    // Analyze the image using OpenAI
+    const { analyzeProgressPhoto } = await import('./ai-progress-insights');
+    const analysisData = await analyzeProgressPhoto(base64Image, previousInsights);
+    
+    // Store the insight in database
+    const insight = await storage.createProgressInsight({
+      userId,
+      imageUrl,
+      analysisData,
+    });
+
+    res.json(insight);
+  } catch (error: any) {
+    console.error('Error analyzing progress photo:', error);
+    res.status(500).json({ error: 'Failed to analyze progress photo' });
+  }
+});
+
+// Compare two progress photos
+router.post('/api/progress-insights/compare', async (req, res) => {
+  try {
+    const { currentImageUrl, previousImageUrl, userId, timePeriod } = req.body;
+    
+    if (!currentImageUrl || !previousImageUrl || !userId) {
+      return res.status(400).json({ error: 'Both image URLs and user ID are required' });
+    }
+
+    // Check premium access
+    const user = await storage.getUserById(userId);
+    if (!user || (!user.isPremium && user.subscriptionTier === 'free')) {
+      return res.status(403).json({ error: 'Premium subscription required for AI insights' });
+    }
+
+    // Fetch and convert both images to base64
+    const [currentResponse, previousResponse] = await Promise.all([
+      fetch(currentImageUrl),
+      fetch(previousImageUrl)
+    ]);
+
+    if (!currentResponse.ok || !previousResponse.ok) {
+      return res.status(400).json({ error: 'Failed to fetch one or both images' });
+    }
+
+    const currentBuffer = await currentResponse.arrayBuffer();
+    const previousBuffer = await previousResponse.arrayBuffer();
+    
+    const currentBase64 = Buffer.from(currentBuffer).toString('base64');
+    const previousBase64 = Buffer.from(previousBuffer).toString('base64');
+
+    // Compare photos using OpenAI
+    const { compareProgressPhotos } = await import('./ai-progress-insights');
+    const analysisData = await compareProgressPhotos(currentBase64, previousBase64, timePeriod || '1 month');
+    
+    // Store the comparison insight
+    const insight = await storage.createProgressInsight({
+      userId,
+      imageUrl: currentImageUrl,
+      analysisData,
+    });
+
+    res.json(insight);
+  } catch (error: any) {
+    console.error('Error comparing progress photos:', error);
+    res.status(500).json({ error: 'Failed to compare progress photos' });
+  }
+});
+
+// Get user's progress insights history
+router.get('/api/progress-insights/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const insights = await storage.getProgressInsightsByUserId(userId);
+    res.json(insights);
+  } catch (error: any) {
+    console.error('Error fetching progress insights:', error);
+    res.status(500).json({ error: 'Failed to fetch progress insights' });
+  }
+});
+
+// Delete a progress insight
+router.delete('/api/progress-insights/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await storage.deleteProgressInsight(id);
+    
+    if (!deleted) {
+      return res.status(404).json({ error: 'Progress insight not found' });
+    }
+
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('Error deleting progress insight:', error);
+    res.status(500).json({ error: 'Failed to delete progress insight' });
+  }
+});
+
 export default router;

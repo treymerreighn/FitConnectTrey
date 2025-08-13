@@ -19,6 +19,7 @@ import WorkoutSession from "./pages/workout-session";
 import BuildWorkout from "./pages/build-workout";
 import AdminDashboard from "./pages/admin-dashboard";
 import Progress from "./pages/progress";
+import ProgressInsightsPage from "./pages/progress-insights";
 import ExerciseProgress from "./pages/exercise-progress";
 import TestUpload from "./pages/test-upload";
 import RecipesPage from "./pages/recipes";
@@ -87,6 +88,7 @@ function Router() {
           <Route path="/build-workout" component={BuildWorkout} />
 
           <Route path="/progress" component={Progress} />
+          <Route path="/progress-insights" component={ProgressInsightsPage} />
           <Route path="/exercise-progress" component={ExerciseProgress} />
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/test-upload" component={TestUpload} />

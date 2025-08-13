@@ -49,6 +49,29 @@ router.post("/api/users", async (req, res) => {
   }
 });
 
+// Post interactions
+router.post("/api/posts/:id/like", async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const post = await storage.likePost(req.params.id, userId);
+    res.json(post);
+  } catch (error) {
+    console.error("Failed to like post:", error);
+    res.status(500).json({ error: "Failed to like post" });
+  }
+});
+
+router.post("/api/posts/:id/unlike", async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const post = await storage.unlikePost(req.params.id, userId);
+    res.json(post);
+  } catch (error) {
+    console.error("Failed to unlike post:", error);
+    res.status(500).json({ error: "Failed to unlike post" });
+  }
+});
+
 // Posts
 router.get("/api/posts", async (req, res) => {
   try {
@@ -116,10 +139,19 @@ router.get("/api/workouts/completed/:userId", async (req, res) => {
 
 router.post("/api/posts", async (req, res) => {
   try {
-    const postData = insertPostSchema.parse(req.body);
+    const postData = {
+      ...req.body,
+      images: req.body.image ? [req.body.image] : [],
+      createdAt: new Date(),
+      likes: [],
+      comments: []
+    };
+    delete postData.image; // Remove the single image field since we use images array
+    
     const post = await storage.createPost(postData);
     res.status(201).json(post);
   } catch (error) {
+    console.error("Failed to create post:", error);
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: error.errors });
     }

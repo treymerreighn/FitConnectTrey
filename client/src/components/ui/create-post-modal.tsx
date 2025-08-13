@@ -105,10 +105,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
         } : undefined,
       };
 
-      return apiRequest("/api/posts", {
-        method: "POST",
-        body: postData,
-      });
+      return apiRequest("POST", "/api/posts", postData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/posts"] });

@@ -30,10 +30,7 @@ export function PostCard({ post }: PostCardProps) {
     mutationFn: async () => {
       const isLiked = post.likes.includes(CURRENT_USER_ID);
       const endpoint = isLiked ? "unlike" : "like";
-      return apiRequest(`/api/posts/${post.id}/${endpoint}`, {
-        method: "POST",
-        body: { userId: CURRENT_USER_ID },
-      });
+      return apiRequest("POST", `/api/posts/${post.id}/${endpoint}`, { userId: CURRENT_USER_ID });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
@@ -136,10 +133,10 @@ export function PostCard({ post }: PostCardProps) {
           <p className="text-sm text-[#f0f0f0]">{post.caption}</p>
         </div>
       </CardHeader>
-      {post.image && (
+      {post.images && post.images.length > 0 && (
         <div className="px-0">
           <img 
-            src={post.image} 
+            src={post.images[0]} 
             alt="Post content" 
             className="w-full h-80 object-cover"
           />

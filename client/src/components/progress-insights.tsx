@@ -140,11 +140,36 @@ export function ProgressInsights({ userId = CURRENT_USER_ID }: ProgressInsightsP
     analyzeMutation.mutate({ imageUrl });
   };
 
+  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Create a temporary URL for the uploaded image
+      const url = URL.createObjectURL(file);
+      setImageUrl(url);
+    }
+  };
+
+  const handleCurrentPhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setCurrentImageUrl(url);
+    }
+  };
+
+  const handlePreviousPhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setPreviousImageUrl(url);
+    }
+  };
+
   const handleCompare = () => {
     if (!currentImageUrl.trim() || !previousImageUrl.trim()) {
       toast({
         title: "Both Images Required",
-        description: "Please provide URLs for both current and previous images.",
+        description: "Please upload both current and previous images.",
         variant: "destructive",
       });
       return;
@@ -211,18 +236,53 @@ export function ProgressInsights({ userId = CURRENT_USER_ID }: ProgressInsightsP
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="imageUrl">Image URL</Label>
-                  <Input
-                    id="imageUrl"
-                    placeholder="https://example.com/your-progress-photo.jpg"
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                  />
+                  <Label>Upload Progress Photo</Label>
+                  <div className="mt-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                      id="progress-photo-upload"
+                    />
+                    <label
+                      htmlFor="progress-photo-upload"
+                      className="flex items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
+                      <div className="text-center">
+                        <Camera className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Click to upload progress photo
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          JPG, PNG, or WebP (max 10MB)
+                        </p>
+                      </div>
+                    </label>
+                    
+                    {imageUrl && (
+                      <div className="mt-3">
+                        <img
+                          src={imageUrl}
+                          alt="Progress photo preview"
+                          className="w-full h-40 object-cover rounded-lg"
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setImageUrl("")}
+                          className="mt-2 w-full"
+                        >
+                          Remove Photo
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <Button 
                   onClick={handleAnalyze} 
                   className="w-full"
-                  disabled={analyzeMutation.isPending}
+                  disabled={analyzeMutation.isPending || !imageUrl}
                 >
                   {analyzeMutation.isPending ? (
                     <>
@@ -253,22 +313,69 @@ export function ProgressInsights({ userId = CURRENT_USER_ID }: ProgressInsightsP
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="currentImage">Current Photo URL</Label>
-                  <Input
-                    id="currentImage"
-                    placeholder="https://example.com/current-photo.jpg"
-                    value={currentImageUrl}
-                    onChange={(e) => setCurrentImageUrl(e.target.value)}
-                  />
+                  <Label>Current Progress Photo</Label>
+                  <div className="mt-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleCurrentPhotoUpload}
+                      className="hidden"
+                      id="current-photo-upload"
+                    />
+                    <label
+                      htmlFor="current-photo-upload"
+                      className="flex items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
+                      <div className="text-center">
+                        <Camera className="w-6 h-6 text-gray-400 mx-auto mb-1" />
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Upload current photo
+                        </p>
+                      </div>
+                    </label>
+                    {currentImageUrl && (
+                      <div className="mt-2">
+                        <img
+                          src={currentImageUrl}
+                          alt="Current progress photo"
+                          className="w-full h-32 object-cover rounded-lg"
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
+                
                 <div>
-                  <Label htmlFor="previousImage">Previous Photo URL</Label>
-                  <Input
-                    id="previousImage"
-                    placeholder="https://example.com/previous-photo.jpg"
-                    value={previousImageUrl}
-                    onChange={(e) => setPreviousImageUrl(e.target.value)}
-                  />
+                  <Label>Previous Progress Photo</Label>
+                  <div className="mt-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePreviousPhotoUpload}
+                      className="hidden"
+                      id="previous-photo-upload"
+                    />
+                    <label
+                      htmlFor="previous-photo-upload"
+                      className="flex items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
+                      <div className="text-center">
+                        <Camera className="w-6 h-6 text-gray-400 mx-auto mb-1" />
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Upload previous photo
+                        </p>
+                      </div>
+                    </label>
+                    {previousImageUrl && (
+                      <div className="mt-2">
+                        <img
+                          src={previousImageUrl}
+                          alt="Previous progress photo"
+                          className="w-full h-32 object-cover rounded-lg"
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="timePeriod">Time Period</Label>
@@ -289,7 +396,7 @@ export function ProgressInsights({ userId = CURRENT_USER_ID }: ProgressInsightsP
                 <Button 
                   onClick={handleCompare} 
                   className="w-full"
-                  disabled={compareMutation.isPending}
+                  disabled={compareMutation.isPending || !currentImageUrl || !previousImageUrl}
                 >
                   {compareMutation.isPending ? (
                     <>

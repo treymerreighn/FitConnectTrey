@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Camera, TrendingUp, Brain, Calendar, Weight, Eye, EyeOff, Share2, Sparkles, BarChart3 } from "lucide-react";
+import { Plus, Camera, TrendingUp, Brain, Calendar, Weight, Eye, EyeOff, Share2, Sparkles, BarChart3, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -242,6 +242,13 @@ export default function Progress() {
           </div>
           
           <div className="flex items-center gap-2">
+            <Link href="/progress-insights" asChild>
+              <Button variant="outline" className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-none hover:from-purple-600 hover:to-pink-600">
+                <Brain className="w-4 h-4 mr-2" />
+                AI Insights
+                <Crown className="w-3 h-3 ml-1" />
+              </Button>
+            </Link>
             <Link href="/exercise-progress" asChild>
               <Button
                 variant="outline"

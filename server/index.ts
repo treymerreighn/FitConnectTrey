@@ -41,32 +41,22 @@ async function startServer() {
     // Initialize database
     await initializeDatabase();
     
-    // Build exercise library
-    if (process.env.OPENAI_API_KEY) {
-      // Check if we already have a good exercise library
-      const existingExercises = await storage.getAllExercises();
-      if (existingExercises.length >= 30) {
-        console.log(`✅ Exercise library already has ${existingExercises.length} exercises - server ready!`);
-      } else {
-        console.log("🚀 Building fresh exercise library with OpenAI in background...");
-        // Build library in background to not block server startup
-        setTimeout(async () => {
-          try {
-            await buildFreshExerciseLibrary();
-            await expandExerciseLibrary();
-            console.log("🎯 Complete exercise library ready!");
-            
-            // Seed workout data for demo
-            const { seedWorkoutData } = await import("./seed-workout-data");
-            await seedWorkoutData();
-          } catch (error) {
-            console.log("⚠️ Exercise generation failed, using existing library");
-          }
-        }, 1000);
-      }
-    } else {
-      console.log("❌ No OpenAI API key found - cannot build exercise library");
-      throw new Error("OpenAI API key required for exercise library generation");
+    // Check exercise library status (but don't auto-generate)
+    const existingExercises = await storage.getAllExercises();
+    console.log(`✅ Exercise library has ${existingExercises.length} exercises - server ready!`);
+    
+    // Only generate exercises if explicitly requested via environment variable
+    if (process.env.FORCE_EXERCISE_GENERATION === 'true' && process.env.OPENAI_API_KEY) {
+      console.log("🚀 Force regenerating exercise library...");
+      setTimeout(async () => {
+        try {
+          await buildFreshExerciseLibrary();
+          await expandExerciseLibrary();
+          console.log("🎯 Complete exercise library regenerated!");
+        } catch (error) {
+          console.log("⚠️ Exercise generation failed, using existing library");
+        }
+      }, 1000);
     }
     
     // Register routes with authentication

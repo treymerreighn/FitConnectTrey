@@ -102,10 +102,9 @@ export default function ExerciseLibrary() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch exercises from database
+  // Fetch exercises from database - standardized to use default queryFn
   const { data: exercisesData = [] } = useQuery({
     queryKey: ["/api/exercises"],
-    queryFn: () => fetch("/api/exercises").then(res => res.json()),
   });
 
 

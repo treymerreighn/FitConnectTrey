@@ -33,15 +33,13 @@ export default function Workouts() {
     }),
   });
 
-  // Workout posts query
-  const { data: posts, isLoading: postsLoading } = useQuery({
+  // Workout posts query - standardized to use default queryFn
+  const { data: posts = [], isLoading: postsLoading } = useQuery({
     queryKey: ["/api/posts"],
-    queryFn: () => fetch("/api/posts").then(res => res.json()),
   });
 
-  const { data: trendingWorkouts, isLoading: trendingLoading } = useQuery({
-    queryKey: ["/api/posts", "trending", trendingPeriod],
-    queryFn: () => fetch(`/api/posts/trending?hours=${trendingPeriod}`).then(res => res.json()),
+  const { data: trendingWorkouts = [], isLoading: trendingLoading } = useQuery({
+    queryKey: [`/api/posts/trending?hours=${trendingPeriod}`],
   });
 
   const workoutPosts = posts?.filter((post: Post) => post.type === "workout") || [];

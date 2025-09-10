@@ -36,7 +36,37 @@ export function PostCard({ post }: PostCardProps) {
       const endpoint = isLiked ? "unlike" : "like";
       return apiRequest("POST", `/api/posts/${post.id}/${endpoint}`, { userId: CURRENT_USER_ID });
     },
-    onSuccess: () => {
+    onMutate: async () => {
+      // Optimistic update for instant feedback
+      await queryClient.cancelQueries({ queryKey: ["/api/posts"] });
+      
+      const previousPosts = queryClient.getQueryData(["/api/posts"]);
+      
+      queryClient.setQueryData(["/api/posts"], (old: any) => {
+        if (!old) return old;
+        return old.map((p: any) => {
+          if (p.id === post.id) {
+            const isLiked = p.likes.includes(CURRENT_USER_ID);
+            return {
+              ...p,
+              likes: isLiked 
+                ? p.likes.filter((id: string) => id !== CURRENT_USER_ID)
+                : [...p.likes, CURRENT_USER_ID]
+            };
+          }
+          return p;
+        });
+      });
+      
+      return { previousPosts };
+    },
+    onError: (err, variables, context) => {
+      // Rollback optimistic update on error
+      if (context?.previousPosts) {
+        queryClient.setQueryData(["/api/posts"], context.previousPosts);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
     },
   });

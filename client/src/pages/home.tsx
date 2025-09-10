@@ -4,8 +4,8 @@ import { Heart, MessageCircle, Dumbbell, Plus, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/ui/user-avatar";
-import { PostCard } from "@/components/post-card";
-import { CreatePostModal } from "@/components/create-post-modal";
+import { PostCard } from "@/components/ui/post-card";
+import { CreatePostModal } from "@/components/ui/create-post-modal";
 import { Stories } from "@/components/stories";
 import type { Post, User } from "@shared/schema";
 
@@ -18,7 +18,6 @@ export default function Home() {
     refetchOnWindowFocus: true,
   });
   
-  console.log("Posts data:", posts, "Loading:", postsLoading, "Error:", postsError);
 
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ["/api/users"],

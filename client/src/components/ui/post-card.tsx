@@ -20,9 +20,8 @@ export function PostCard({ post }: PostCardProps) {
   // ALL HOOKS MUST COME FIRST - NO CONDITIONAL LOGIC ABOVE HOOKS
   const { data: user } = useQuery<User>({
     queryKey: [`/api/users/${post.userId}`],
-    refetchOnWindowFocus: true,
-    staleTime: 0,
-    retry: 3,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 2,
   });
 
   const { data: comments = [] } = useQuery({
@@ -41,9 +40,6 @@ export function PostCard({ post }: PostCardProps) {
     },
   });
 
-  // Debug logging for user data
-  console.log("Post user ID:", post.userId);
-  console.log("User data for post:", user);
 
   // If user data is missing, show loading state instead of hiding post
   if (!user) {

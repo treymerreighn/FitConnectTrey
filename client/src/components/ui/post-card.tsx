@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { UserAvatar } from "./user-avatar";
+import { OptimizedImage } from "../OptimizedImage";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { CURRENT_USER_ID } from "@/lib/constants";
@@ -160,9 +161,11 @@ export function PostCard({ post }: PostCardProps) {
       </CardHeader>
       {post.images && post.images.length > 0 && (
         <div className="px-0">
-          <img 
+          <OptimizedImage 
             src={post.images[0]} 
             alt="Post content" 
+            width={600}
+            height={320}
             className="w-full h-80 object-cover"
           />
         </div>

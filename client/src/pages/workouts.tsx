@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Dumbbell, Clock, Flame, Target, Plus, TrendingUp, Search, Filter, Star, BookOpen, Play, Users, Database } from "lucide-react";
+import { Dumbbell, Clock, Flame, Target, Plus, TrendingUp, Search, Filter, Star, BookOpen, Play, Users, Database, X, PlusCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,11 +9,35 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { insertExerciseSchema, exerciseSchema, type InsertExercise } from "@shared/schema";
+import { z } from "zod";
 import { PostCard } from "@/components/ui/post-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
 import { useLocation } from "wouter";
 import type { Post, Exercise } from "@shared/schema";
+
+// Create exercise form schema with proper validation
+const createExerciseFormSchema = insertExerciseSchema.extend({
+  instructions: z.array(z.string().min(1, "Instruction cannot be empty")).min(1, "At least one instruction is required"),
+  tips: z.array(z.string().min(1, "Tip cannot be empty")).optional(),
+  safetyNotes: z.array(z.string().min(1, "Safety note cannot be empty")).optional(),
+  variations: z.array(z.string().min(1, "Variation cannot be empty")).optional(),
+  tags: z.array(z.string().min(1, "Tag cannot be empty")).optional(),
+  equipment: z.array(z.string().min(1, "Equipment cannot be empty")).min(1, "At least one equipment item is required"),
+  muscleGroups: z.array(z.enum([
+    "chest", "back", "shoulders", "biceps", "triceps", "forearms",
+    "abs", "obliques", "lower_back", "glutes", "quadriceps", 
+    "hamstrings", "calves", "traps", "lats", "delts"
+  ])).min(1, "Select at least one muscle group"),
+});
+
+type CreateExerciseFormData = z.infer<typeof createExerciseFormSchema>;
 
 export default function Workouts() {
   const [location, setLocation] = useLocation();
@@ -22,6 +46,28 @@ export default function Workouts() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState("");
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Form for creating exercises
+  const form = useForm<CreateExerciseFormData>({
+    resolver: zodResolver(createExerciseFormSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      category: "strength",
+      muscleGroups: [],
+      equipment: [],
+      difficulty: "beginner",
+      instructions: [""],
+      tips: [],
+      safetyNotes: [],
+      variations: [],
+      tags: [],
+    },
+  });
 
   // Exercise library query - using default queryFn pattern
   const buildExercisesUrl = () => {
@@ -47,12 +93,51 @@ export default function Workouts() {
     queryKey: [`/api/posts/trending?hours=${trendingPeriod}`],
   });
 
+  // Create exercise mutation
+  const createExerciseMutation = useMutation({
+    mutationFn: async (data: CreateExerciseFormData) => {
+      const exerciseData = {
+        ...data,
+        isUserCreated: true,
+        isApproved: false, // User-created exercises require approval
+      };
+      return await api.createExercise(exerciseData);
+    },
+    onSuccess: () => {
+      // Invalidate all exercise queries using predicate to match URL-based keys
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          return Array.isArray(query.queryKey) && 
+                 typeof query.queryKey[0] === 'string' && 
+                 query.queryKey[0].startsWith('/api/exercises');
+        }
+      });
+      setIsCreateDialogOpen(false);
+      form.reset();
+      toast({
+        title: "Exercise Created! 🎉",
+        description: "Your exercise has been submitted and is pending approval.",
+      });
+    },
+    onError: (error: any) => {
+      // Handle fetch-based errors properly
+      const errorMessage = error?.message || error?.toString() || "Please try again";
+      toast({
+        title: "Failed to create exercise",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    },
+  });
+
   const workoutPosts = posts.filter((post: Post) => post.type === "workout");
 
+  // Extract muscle groups from schema to ensure type safety and completeness
   const muscleGroups = [
-    "chest", "back", "shoulders", "biceps", "triceps", "quadriceps", 
-    "hamstrings", "glutes", "calves", "abs", "obliques", "lats", "traps", "delts"
-  ];
+    "chest", "back", "shoulders", "biceps", "triceps", "forearms",
+    "abs", "obliques", "lower_back", "glutes", "quadriceps", 
+    "hamstrings", "calves", "traps", "lats", "delts"
+  ] as const;
 
   const categories = ["strength", "cardio", "flexibility", "sports", "functional"];
 
@@ -114,6 +199,391 @@ export default function Workouts() {
             <Plus className="h-5 w-5 mr-2" />
             Log Workout
           </Button>
+
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                variant="outline"
+                size="lg"
+                className="px-6 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 border-green-200 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-950"
+                data-testid="create-exercise-trigger"
+              >
+                <PlusCircle className="h-5 w-5 mr-2" />
+                Create Exercise
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-xl">
+                  <PlusCircle className="h-6 w-6 text-green-500" />
+                  Create New Exercise
+                </DialogTitle>
+                <DialogDescription>
+                  Share your favorite exercise with the community! All submissions are reviewed before being added to the library.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit((data) => createExerciseMutation.mutate(data))} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Exercise Name */}
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Exercise Name *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., Push-ups, Bench Press..." {...field} data-testid="exercise-name-input" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    {/* Category */}
+                    <FormField
+                      control={form.control}
+                      name="category"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Category *</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="exercise-category-select">
+                                <SelectValue placeholder="Select category" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {categories.map(category => (
+                                <SelectItem key={category} value={category}>
+                                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Description */}
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description *</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Brief description of the exercise and its benefits..." 
+                            className="min-h-[80px]"
+                            {...field} 
+                            data-testid="exercise-description-input"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Difficulty */}
+                    <FormField
+                      control={form.control}
+                      name="difficulty"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Difficulty Level *</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="exercise-difficulty-select">
+                                <SelectValue placeholder="Select difficulty" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="beginner">Beginner</SelectItem>
+                              <SelectItem value="intermediate">Intermediate</SelectItem>
+                              <SelectItem value="advanced">Advanced</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Muscle Groups */}
+                    <FormField
+                      control={form.control}
+                      name="muscleGroups"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Primary Muscle Groups *</FormLabel>
+                          <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 border rounded">
+                            {muscleGroups.map((muscle) => (
+                              <label key={muscle} className="flex items-center space-x-2 text-sm">
+                                <input
+                                  type="checkbox"
+                                  checked={field.value.includes(muscle)}
+                                  onChange={(e) => {
+                                    const newValue = e.target.checked
+                                      ? [...field.value, muscle]
+                                      : field.value.filter((m) => m !== muscle);
+                                    field.onChange(newValue);
+                                  }}
+                                  className="rounded"
+                                  data-testid={`muscle-group-${muscle}`}
+                                />
+                                <span className="capitalize">{muscle}</span>
+                              </label>
+                            ))}
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Equipment */}
+                  <FormField
+                    control={form.control}
+                    name="equipment"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Equipment Required *</FormLabel>
+                        <div className="space-y-2">
+                          {field.value.map((item, index) => (
+                            <div key={index} className="flex gap-2">
+                              <Input
+                                placeholder="e.g., dumbbells, barbell, bodyweight..."
+                                value={item}
+                                onChange={(e) => {
+                                  const newEquipment = [...field.value];
+                                  newEquipment[index] = e.target.value;
+                                  field.onChange(newEquipment);
+                                }}
+                                data-testid={`equipment-input-${index}`}
+                              />
+                              {field.value.length > 1 && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const newEquipment = field.value.filter((_, i) => i !== index);
+                                    field.onChange(newEquipment);
+                                  }}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => field.onChange([...field.value, ""])}
+                            data-testid="add-equipment-button"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Equipment
+                          </Button>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Instructions */}
+                  <FormField
+                    control={form.control}
+                    name="instructions"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Step-by-Step Instructions *</FormLabel>
+                        <div className="space-y-2">
+                          {field.value.map((instruction, index) => (
+                            <div key={index} className="flex gap-2">
+                              <div className="bg-blue-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 mt-2">
+                                {index + 1}
+                              </div>
+                              <Textarea
+                                placeholder={`Step ${index + 1}: Describe the movement...`}
+                                value={instruction}
+                                onChange={(e) => {
+                                  const newInstructions = [...field.value];
+                                  newInstructions[index] = e.target.value;
+                                  field.onChange(newInstructions);
+                                }}
+                                className="min-h-[60px]"
+                                data-testid={`instruction-input-${index}`}
+                              />
+                              {field.value.length > 1 && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const newInstructions = field.value.filter((_, i) => i !== index);
+                                    field.onChange(newInstructions);
+                                  }}
+                                  className="mt-2"
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => field.onChange([...field.value, ""])}
+                            data-testid="add-instruction-button"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Step
+                          </Button>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Tips */}
+                  <FormField
+                    control={form.control}
+                    name="tips"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Form Tips (Optional)</FormLabel>
+                        <div className="space-y-2">
+                          {field.value?.map((tip, index) => (
+                            <div key={index} className="flex gap-2">
+                              <Input
+                                placeholder="Helpful tip for proper form..."
+                                value={tip}
+                                onChange={(e) => {
+                                  const newTips = [...(field.value || [])];
+                                  newTips[index] = e.target.value;
+                                  field.onChange(newTips);
+                                }}
+                                data-testid={`tip-input-${index}`}
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  const newTips = field.value?.filter((_, i) => i !== index) || [];
+                                  field.onChange(newTips);
+                                }}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => field.onChange([...(field.value || []), ""])}
+                            data-testid="add-tip-button"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Tip
+                          </Button>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Safety Notes */}
+                  <FormField
+                    control={form.control}
+                    name="safetyNotes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Safety Notes (Optional)</FormLabel>
+                        <div className="space-y-2">
+                          {field.value?.map((note, index) => (
+                            <div key={index} className="flex gap-2">
+                              <Input
+                                placeholder="Important safety consideration..."
+                                value={note}
+                                onChange={(e) => {
+                                  const newNotes = [...(field.value || [])];
+                                  newNotes[index] = e.target.value;
+                                  field.onChange(newNotes);
+                                }}
+                                data-testid={`safety-note-input-${index}`}
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  const newNotes = field.value?.filter((_, i) => i !== index) || [];
+                                  field.onChange(newNotes);
+                                }}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => field.onChange([...(field.value || []), ""])}
+                            data-testid="add-safety-note-button"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Safety Note
+                          </Button>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Form Actions */}
+                  <div className="flex items-center justify-end gap-4 pt-6 border-t">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsCreateDialogOpen(false)}
+                      disabled={createExerciseMutation.isPending}
+                      data-testid="cancel-exercise-button"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={createExerciseMutation.isPending}
+                      className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
+                      data-testid="submit-exercise-button"
+                    >
+                      {createExerciseMutation.isPending ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Creating...
+                        </>
+                      ) : (
+                        <>
+                          <PlusCircle className="h-4 w-4 mr-2" />
+                          Create Exercise
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
 
         </div>
 

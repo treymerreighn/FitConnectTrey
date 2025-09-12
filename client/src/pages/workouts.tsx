@@ -139,11 +139,12 @@ export default function Workouts() {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="pl-10"
+                        data-testid="exercise-search-input"
                       />
                     </div>
                   </div>
                   <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger className="w-full lg:w-[180px]">
+                    <SelectTrigger className="w-full lg:w-[180px]" data-testid="category-filter">
                       <SelectValue placeholder="Category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -156,7 +157,7 @@ export default function Workouts() {
                     </SelectContent>
                   </Select>
                   <Select value={selectedMuscleGroup} onValueChange={setSelectedMuscleGroup}>
-                    <SelectTrigger className="w-full lg:w-[180px]">
+                    <SelectTrigger className="w-full lg:w-[180px]" data-testid="muscle-group-filter">
                       <SelectValue placeholder="Muscle Group" />
                     </SelectTrigger>
                     <SelectContent>

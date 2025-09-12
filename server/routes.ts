@@ -496,20 +496,36 @@ router.get("/api/exercises", async (req, res) => {
   try {
     const { category, muscleGroup, search } = req.query;
     
-    let exercises;
-    if (search) {
-      exercises = await storage.searchExercises(search as string);
-    } else if (category) {
-      exercises = await storage.getExercisesByCategory(category as string);
-    } else if (muscleGroup) {
-      exercises = await storage.getExercisesByMuscleGroup(muscleGroup as string);
-    } else {
-      exercises = await storage.getAllExercises();
+    // Get all exercises first
+    let exercises = await storage.getAllExercises();
+    
+    // Apply filters in sequence
+    if (search && typeof search === 'string') {
+      const searchLower = search.toLowerCase();
+      exercises = exercises.filter(exercise => 
+        exercise.name.toLowerCase().includes(searchLower) ||
+        exercise.description.toLowerCase().includes(searchLower) ||
+        exercise.muscleGroups.some(muscle => muscle.toLowerCase().includes(searchLower))
+      );
+    }
+    
+    if (category && typeof category === 'string') {
+      exercises = exercises.filter(exercise => 
+        exercise.category.toLowerCase() === category.toLowerCase()
+      );
+    }
+    
+    if (muscleGroup && typeof muscleGroup === 'string') {
+      exercises = exercises.filter(exercise => 
+        exercise.muscleGroups.some(muscle => 
+          muscle.toLowerCase() === muscleGroup.toLowerCase()
+        )
+      );
     }
     
     // Remove duplicates before sending to frontend
     const uniqueExercises = removeDuplicateExercises(exercises);
-    console.log(`🧹 API: Removed duplicates: ${exercises.length} → ${uniqueExercises.length} exercises`);
+    console.log(`🧹 API: Found ${exercises.length} exercises after filtering (search: "${search}", category: "${category}", muscleGroup: "${muscleGroup}")`);
     
     res.json(uniqueExercises);
   } catch (error) {

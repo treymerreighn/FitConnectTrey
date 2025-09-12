@@ -34,15 +34,15 @@ export default function Workouts() {
   });
 
   // Workout posts query - standardized to use default queryFn
-  const { data: posts = [], isLoading: postsLoading } = useQuery({
+  const { data: posts = [], isLoading: postsLoading } = useQuery<Post[]>({
     queryKey: ["/api/posts"],
   });
 
-  const { data: trendingWorkouts = [], isLoading: trendingLoading } = useQuery({
+  const { data: trendingWorkouts = [], isLoading: trendingLoading } = useQuery<Post[]>({
     queryKey: [`/api/posts/trending?hours=${trendingPeriod}`],
   });
 
-  const workoutPosts = posts?.filter((post: Post) => post.type === "workout") || [];
+  const workoutPosts = posts.filter((post: Post) => post.type === "workout");
 
   const muscleGroups = [
     "chest", "back", "shoulders", "biceps", "triceps", "quadriceps", 
@@ -190,38 +190,46 @@ export default function Workouts() {
                 ))
               ) : exercises && exercises.length > 0 ? (
                 exercises.map((exercise) => (
-                  <Card key={exercise.id} className="border-0 shadow-lg hover:shadow-xl transition-shadow duration-200 cursor-pointer">
+                  <Card key={exercise.id} className="group border-0 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:scale-[1.02]">
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
-                        <CardTitle className="text-lg">{exercise.name}</CardTitle>
-                        <Badge className={getDifficultyColor(exercise.difficulty)}>
+                        <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{exercise.name}</CardTitle>
+                        <Badge className={`${getDifficultyColor(exercise.difficulty)} font-medium`}>
                           {exercise.difficulty}
                         </Badge>
                       </div>
-                      <CardDescription className="text-sm line-clamp-2">
+                      <CardDescription className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed">
                         {exercise.description}
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="flex flex-wrap gap-1">
+                      <div className="flex flex-wrap gap-2">
                         {exercise.muscleGroups.slice(0, 3).map((muscle) => (
-                          <Badge key={muscle} variant="secondary" className="text-xs">
+                          <Badge key={muscle} variant="secondary" className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors">
                             {muscle}
                           </Badge>
                         ))}
                         {exercise.muscleGroups.length > 3 && (
-                          <Badge variant="secondary" className="text-xs">
-                            +{exercise.muscleGroups.length - 3}
+                          <Badge variant="secondary" className="text-xs px-2 py-1 bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300">
+                            +{exercise.muscleGroups.length - 3} more
                           </Badge>
                         )}
                       </div>
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
                         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                          <Target className="h-4 w-4" />
-                          {exercise.category}
+                          <Target className="h-4 w-4 text-blue-500" />
+                          <span className="capitalize font-medium">{exercise.category}</span>
                         </div>
                         <Dialog>
                           <DialogTrigger asChild>
+                            <Button 
+                              size="sm" 
+                              className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200"
+                            >
+                              <Play className="h-4 w-4 mr-1" />
+                              Quick View
+                            </Button>
+                          </DialogTrigger>
                             <Button 
                               size="sm" 
                               onClick={() => setSelectedExercise(exercise)}

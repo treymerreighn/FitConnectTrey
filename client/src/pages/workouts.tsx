@@ -23,14 +23,19 @@ export default function Workouts() {
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState("");
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
 
-  // Exercise library query
-  const { data: exercises, isLoading: exercisesLoading } = useQuery({
-    queryKey: ["/api/exercises", { search: searchQuery, category: selectedCategory, muscleGroup: selectedMuscleGroup }],
-    queryFn: () => api.getExercises({ 
-      search: searchQuery || undefined, 
-      category: selectedCategory && selectedCategory !== "all" ? selectedCategory : undefined, 
-      muscleGroup: selectedMuscleGroup && selectedMuscleGroup !== "all" ? selectedMuscleGroup : undefined 
-    }),
+  // Exercise library query - using default queryFn pattern
+  const buildExercisesUrl = () => {
+    const params = new URLSearchParams();
+    if (searchQuery) params.append("search", searchQuery);
+    if (selectedCategory && selectedCategory !== "all") params.append("category", selectedCategory);
+    if (selectedMuscleGroup && selectedMuscleGroup !== "all") params.append("muscleGroup", selectedMuscleGroup);
+    
+    const queryString = params.toString();
+    return `/api/exercises${queryString ? `?${queryString}` : ""}`;
+  };
+
+  const { data: exercises, isLoading: exercisesLoading } = useQuery<Exercise[]>({
+    queryKey: [buildExercisesUrl()],
   });
 
   // Workout posts query - standardized to use default queryFn

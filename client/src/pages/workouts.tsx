@@ -746,7 +746,7 @@ export default function Workouts() {
                                 </div>
                               )}
 
-                              {exercise.tips.length > 0 && (
+                              {exercise.tips && exercise.tips.length > 0 && (
                                 <div>
                                   <h4 className="font-semibold mb-2 flex items-center gap-2">
                                     <Star className="h-4 w-4" />
@@ -764,7 +764,7 @@ export default function Workouts() {
 
 
 
-                              {exercise.variations.length > 0 && (
+                              {exercise.variations && exercise.variations.length > 0 && (
                                 <div>
                                   <h4 className="font-semibold mb-2">Variations</h4>
                                   <div className="flex flex-wrap gap-2">
@@ -777,7 +777,7 @@ export default function Workouts() {
                                 </div>
                               )}
 
-                              {exercise.equipment.length > 0 && (
+                              {exercise.equipment && exercise.equipment.length > 0 && (
                                 <div>
                                   <h4 className="font-semibold mb-2">Equipment Needed</h4>
                                   <div className="flex flex-wrap gap-2">

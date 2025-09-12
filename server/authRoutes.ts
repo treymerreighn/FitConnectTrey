@@ -267,39 +267,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Exercise library API
-  app.get("/api/exercises", async (req, res) => {
-    try {
-      const { category, muscleGroup, search } = req.query;
-      let exercises = await storage.getAllExercises();
-      
-      // Filter by category
-      if (category && typeof category === 'string') {
-        exercises = exercises.filter(ex => ex.category === category);
-      }
-      
-      // Filter by muscle group
-      if (muscleGroup && typeof muscleGroup === 'string') {
-        exercises = exercises.filter(ex => 
-          ex.muscleGroups && ex.muscleGroups.includes(muscleGroup)
-        );
-      }
-      
-      // Search by name
-      if (search && typeof search === 'string') {
-        const searchLower = search.toLowerCase();
-        exercises = exercises.filter(ex => 
-          ex.name.toLowerCase().includes(searchLower) ||
-          (ex.description && ex.description.toLowerCase().includes(searchLower))
-        );
-      }
-      
-      res.json(exercises);
-    } catch (error) {
-      console.error("Error fetching exercises:", error);
-      res.status(500).json({ error: "Failed to fetch exercises" });
-    }
-  });
+  // Note: /api/exercises GET endpoint removed - now handled in routes.ts with proper search filtering
 
   app.get("/api/exercises/:id", async (req, res) => {
     try {
@@ -522,7 +490,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         mealType: mealType || "lunch",
         cuisineType,
         servings: servings || 2,
-        cookingTime: cookingTime || 30,
         difficulty: difficulty || "easy",
         dietaryRestrictions: dietaryRestrictions || [],
         healthGoals: healthGoals || [],
@@ -530,11 +497,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       res.json(recipe);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error generating personalized recipe:", error);
       res.status(500).json({ 
         message: "Failed to generate recipe", 
-        error: error.message 
+        error: error instanceof Error ? error.message : "Unknown error"
       });
     }
   });

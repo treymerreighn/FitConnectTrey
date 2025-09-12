@@ -9,7 +9,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | null>;
   updateUser(id: string, updates: Partial<User>): Promise<User>;
   getAllUsers(): Promise<User[]>;
-  upsertUser(user: { id: string; email: string | null; firstName: string | null; lastName: string | null; profileImageUrl: string | null; }): Promise<User>;
+  upsertUser(user: { id: string; email: string | undefined; firstName: string | undefined; lastName: string | undefined; profileImageUrl: string | undefined; }): Promise<User>;
   
   // Posts
   createPost(post: InsertPost): Promise<Post>;
@@ -274,6 +274,8 @@ export class MemStorage implements IStorage {
         hourlyRate: 75,
         clients: ["user3", "user4"],
         trainers: [],
+        isPremium: true,
+        subscriptionTier: "premium",
         createdAt: new Date('2024-01-15'),
       },
       {
@@ -294,6 +296,8 @@ export class MemStorage implements IStorage {
         hourlyRate: 85,
         clients: ["user1", "user3"],
         trainers: [],
+        isPremium: true,
+        subscriptionTier: "premium",
         createdAt: new Date('2024-01-10'),
       },
       {
@@ -311,6 +315,8 @@ export class MemStorage implements IStorage {
         specialties: [],
         clients: [],
         trainers: ["user1", "user2"],
+        isPremium: false,
+        subscriptionTier: "free",
         createdAt: new Date('2024-01-20'),
       },
       {
@@ -328,6 +334,8 @@ export class MemStorage implements IStorage {
         specialties: [],
         clients: [],
         trainers: ["user1"],
+        isPremium: false,
+        subscriptionTier: "free",
         createdAt: new Date('2024-01-25'),
       },
     ];
@@ -456,7 +464,7 @@ export class MemStorage implements IStorage {
     return Array.from(this.users.values());
   }
 
-  async upsertUser(userData: { id: string; email: string | null; firstName: string | null; lastName: string | null; profileImageUrl: string | null; }): Promise<User> {
+  async upsertUser(userData: { id: string; email: string | undefined; firstName: string | undefined; lastName: string | undefined; profileImageUrl: string | undefined; }): Promise<User> {
     const existingUser = this.users.get(userData.id);
     
     if (existingUser) {
@@ -821,8 +829,8 @@ export class MemStorage implements IStorage {
   async getWorkoutTemplates(filters?: { category?: string; difficulty?: string; bodyPart?: string }): Promise<Post[]> {
     const allPosts = Array.from(this.posts.values());
     return allPosts.filter(post => 
-      post.type === "workout_template" || 
-      (post.workoutData && post.isTemplate)
+      post.type === "workout" && 
+      (post.workoutData && (post.workoutData as any).isTemplate)
     );
   }
 

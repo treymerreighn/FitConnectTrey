@@ -555,10 +555,10 @@ router.post("/api/exercises", async (req, res) => {
     const validatedData = insertExerciseSchema.parse(req.body);
     const exercise = await storage.createExercise(validatedData);
     res.status(201).json(exercise);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error creating exercise:", error);
-    if (error.name === "ZodError") {
-      return res.status(400).json({ error: "Invalid exercise data", details: error.errors });
+    if (error instanceof Error && error.name === "ZodError") {
+      return res.status(400).json({ error: "Invalid exercise data", details: (error as any).errors });
     }
     res.status(500).json({ error: "Failed to create exercise" });
   }
@@ -571,9 +571,9 @@ router.put("/api/exercises/:id", async (req, res) => {
     
     const exercise = await storage.updateExercise(id, updates);
     res.json(exercise);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error updating exercise:", error);
-    if (error.message === "Exercise not found") {
+    if (error instanceof Error && error.message === "Exercise not found") {
       return res.status(404).json({ error: "Exercise not found" });
     }
     res.status(500).json({ error: "Failed to update exercise" });
@@ -601,9 +601,9 @@ router.post("/api/exercises/:id/approve", async (req, res) => {
     const { id } = req.params;
     const exercise = await storage.approveUserExercise(id);
     res.json(exercise);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error approving exercise:", error);
-    if (error.message === "Exercise not found") {
+    if (error instanceof Error && error.message === "Exercise not found") {
       return res.status(404).json({ error: "Exercise not found" });
     }
     res.status(500).json({ error: "Failed to approve exercise" });
@@ -914,6 +914,8 @@ async function initializeBasicRecipes() {
       prepTime: 5, cookTime: 0, servings: 1, difficulty: "easy", cuisineType: "american",
       dietaryTags: ["vegetarian", "gluten-free", "high-fiber"], calories: 280, protein: 8, carbs: 45, fat: 6, fiber: 10,
       category: "breakfast", isAiGenerated: false, createdAt: new Date(),
+      tips: ["Use steel-cut oats for better texture", "Top with fresh berries for antioxidants"],
+      healthBenefits: ["High in fiber and beta-glucan for heart health", "Provides sustained energy release"],
     },
     {
       id: "quinoa-power-bowl",
@@ -924,6 +926,8 @@ async function initializeBasicRecipes() {
       prepTime: 15, cookTime: 15, servings: 2, difficulty: "easy", cuisineType: "mediterranean",
       dietaryTags: ["vegan", "gluten-free", "high-protein"], calories: 380, protein: 14, carbs: 45, fat: 16, fiber: 8,
       category: "lunch", isAiGenerated: false, createdAt: new Date(),
+      tips: ["Prepare quinoa in advance for quick assembly", "Add avocado for extra healthy fats"],
+      healthBenefits: ["Complete protein from quinoa", "Rich in healthy fats and fiber"],
     },
     {
       id: "baked-salmon-vegetables",
@@ -934,6 +938,8 @@ async function initializeBasicRecipes() {
       prepTime: 10, cookTime: 20, servings: 1, difficulty: "medium", cuisineType: "american",
       dietaryTags: ["gluten-free", "high-protein", "omega-3"], calories: 420, protein: 35, carbs: 20, fat: 22, fiber: 8,
       category: "dinner", isAiGenerated: false, createdAt: new Date(),
+      tips: ["Check salmon is flaky and opaque when done", "Don't overcook to keep it moist"],
+      healthBenefits: ["Rich in omega-3 fatty acids for heart health", "High-quality protein for muscle building"],
     },
     {
       id: "green-smoothie-bowl",
@@ -944,6 +950,8 @@ async function initializeBasicRecipes() {
       prepTime: 10, cookTime: 0, servings: 1, difficulty: "easy", cuisineType: "tropical",
       dietaryTags: ["vegan", "gluten-free", "antioxidant-rich"], calories: 320, protein: 8, carbs: 52, fat: 12, fiber: 12,
       category: "breakfast", isAiGenerated: false, createdAt: new Date(),
+      tips: ["Freeze bananas ahead of time for creamier texture", "Add protein powder for extra nutrition"],
+      healthBenefits: ["Packed with antioxidants from berries and greens", "Natural energy from fruits"],
     },
     {
       id: "dark-chocolate-energy-bites",
@@ -954,6 +962,8 @@ async function initializeBasicRecipes() {
       prepTime: 20, cookTime: 0, servings: 6, difficulty: "easy", cuisineType: "american",
       dietaryTags: ["vegan", "gluten-free", "high-protein"], calories: 95, protein: 4, carbs: 12, fat: 5, fiber: 3,
       category: "snack", isAiGenerated: false, createdAt: new Date(),
+      tips: ["Store in refrigerator for up to 1 week", "Roll in coconut flakes for extra flavor"],
+      healthBenefits: ["Natural sweetness from dates", "Plant-based protein and healthy fats"],
     }
   ];
 
@@ -1060,7 +1070,7 @@ router.post("/api/meal-helper/generate", async (req, res) => {
       mealType: mealType || "lunch",
       cuisineType,
       servings: servings || 2,
-      cookingTime: cookingTime || 30,
+      prepTime: cookingTime || 30,
       difficulty: difficulty || "easy",
       dietaryRestrictions: dietaryRestrictions || [],
       healthGoals: healthGoals || [],
@@ -1068,11 +1078,11 @@ router.post("/api/meal-helper/generate", async (req, res) => {
     });
 
     res.json(recipe);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error generating personalized recipe:", error);
     res.status(500).json({ 
       message: "Failed to generate recipe", 
-      error: error.message 
+      error: error instanceof Error ? error.message : "Unknown error"
     });
   }
 });
@@ -1089,11 +1099,11 @@ router.post("/api/meal-helper/generate-multiple", async (req, res) => {
 
     const recipes = await generateMultipleRecipes(params, count);
     res.json(recipes);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error generating multiple recipes:", error);
     res.status(500).json({ 
       message: "Failed to generate recipes", 
-      error: error.message 
+      error: error instanceof Error ? error.message : "Unknown error"
     });
   }
 });

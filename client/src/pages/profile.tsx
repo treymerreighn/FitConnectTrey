@@ -18,7 +18,9 @@ import { CURRENT_USER_ID } from "@/lib/constants";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { uploadImage } from "@/lib/imageUpload";
-import type { User as UserType, Post } from "@shared/schema";
+import { apiRequest } from "@/lib/queryClient";
+import type { User as UserType, Post, ProgressEntry } from "@shared/schema";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 const editProfileSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -28,6 +30,268 @@ const editProfileSchema = z.object({
 });
 
 type EditProfileData = z.infer<typeof editProfileSchema>;
+
+// Progress Insights Tab Component
+function ProgressInsightsTab({ userId }: { userId: string }) {
+  const [selectedMetric, setSelectedMetric] = useState<"weight" | "bodyFat" | "muscle">("weight");
+  
+  // Fetch progress entries
+  const { data: progressEntries = [], isLoading: progressLoading } = useQuery<ProgressEntry[]>({
+    queryKey: ["/api/progress", userId],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/progress`);
+      return response.json();
+    },
+  });
+
+  // Fetch recent posts for activity tracking
+  const { data: userPosts = [] } = useQuery({
+    queryKey: ["/api/posts", "user", userId],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/posts/user/${userId}`);
+      return response.json();
+    },
+  });
+
+  if (progressLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Prepare chart data
+  const chartData = progressEntries
+    .filter(entry => entry.weight || entry.bodyFatPercentage || entry.muscleMass)
+    .map(entry => ({
+      date: format(new Date(entry.date), 'MMM dd'),
+      weight: entry.weight,
+      bodyFat: entry.bodyFatPercentage,
+      muscle: entry.muscleMass,
+    }))
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .slice(-10); // Last 10 entries
+
+  // Calculate progress stats
+  const latestEntry = progressEntries[0];
+  const firstEntry = progressEntries[progressEntries.length - 1];
+  const weightChange = latestEntry?.weight && firstEntry?.weight 
+    ? latestEntry.weight - firstEntry.weight 
+    : null;
+  
+  const workoutPosts = userPosts.filter((post: Post) => post.type === 'workout').length;
+  const progressPosts = userPosts.filter((post: Post) => post.type === 'progress').length;
+  const nutritionPosts = userPosts.filter((post: Post) => post.type === 'nutrition').length;
+
+  // Activity breakdown for pie chart
+  const activityData = [
+    { name: 'Workout Posts', value: workoutPosts, color: '#3B82F6' },
+    { name: 'Progress Posts', value: progressPosts, color: '#10B981' },
+    { name: 'Nutrition Posts', value: nutritionPosts, color: '#F59E0B' },
+  ].filter(item => item.value > 0);
+
+  return (
+    <div className="space-y-6">
+      {/* Progress Overview Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+          <CardContent className="p-4 text-center">
+            <Activity className="w-6 h-6 mx-auto mb-2 text-blue-600" />
+            <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+              {progressEntries.length}
+            </div>
+            <div className="text-xs text-blue-600 dark:text-blue-400">Progress Entries</div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20">
+          <CardContent className="p-4 text-center">
+            <Target className="w-6 h-6 mx-auto mb-2 text-green-600" />
+            <div className="text-2xl font-bold text-green-700 dark:text-green-300">
+              {latestEntry?.weight || '--'}
+            </div>
+            <div className="text-xs text-green-600 dark:text-green-400">Current Weight (lbs)</div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20">
+          <CardContent className="p-4 text-center">
+            <TrendingUp className="w-6 h-6 mx-auto mb-2 text-purple-600" />
+            <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">
+              {weightChange ? (weightChange > 0 ? '+' : '') + weightChange : '--'}
+            </div>
+            <div className="text-xs text-purple-600 dark:text-purple-400">Weight Change (lbs)</div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20">
+          <CardContent className="p-4 text-center">
+            <Brain className="w-6 h-6 mx-auto mb-2 text-orange-600" />
+            <div className="text-2xl font-bold text-orange-700 dark:text-orange-300">
+              {progressEntries.filter(e => e.aiInsights).length}
+            </div>
+            <div className="text-xs text-orange-600 dark:text-orange-400">AI Insights</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Progress Charts */}
+      {chartData.length > 0 && (
+        <Card className="border-0 shadow-xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-blue-500" />
+                Progress Trends
+              </CardTitle>
+              <div className="flex gap-2">
+                <Button
+                  variant={selectedMetric === "weight" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedMetric("weight")}
+                >
+                  Weight
+                </Button>
+                <Button
+                  variant={selectedMetric === "bodyFat" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedMetric("bodyFat")}
+                >
+                  Body Fat
+                </Button>
+                <Button
+                  variant={selectedMetric === "muscle" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedMetric("muscle")}
+                >
+                  Muscle
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Line 
+                    type="monotone" 
+                    dataKey={selectedMetric} 
+                    stroke="#3B82F6" 
+                    strokeWidth={2}
+                    dot={{ fill: '#3B82F6' }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Activity Breakdown */}
+      {activityData.length > 0 && (
+        <div className="grid md:grid-cols-2 gap-6">
+          <Card className="border-0 shadow-xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="w-5 h-5 text-green-500" />
+                Activity Breakdown
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={activityData}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={60}
+                      dataKey="value"
+                    >
+                      {activityData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="space-y-2 mt-4">
+                {activityData.map((item, index) => (
+                  <div key={index} className="flex items-center gap-2 text-sm">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span>{item.name}: {item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Recent Progress Photos */}
+          <Card className="border-0 shadow-xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Camera className="w-5 h-5 text-purple-500" />
+                Recent Progress Photos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {progressEntries.filter(entry => entry.photos.length > 0).length > 0 ? (
+                <div className="grid grid-cols-2 gap-2">
+                  {progressEntries
+                    .filter(entry => entry.photos.length > 0)
+                    .slice(0, 4)
+                    .map((entry, index) => (
+                      <img
+                        key={index}
+                        src={entry.photos[0]}
+                        alt={`Progress ${index + 1}`}
+                        className="w-full h-24 object-cover rounded-lg"
+                      />
+                    ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <Camera className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No progress photos yet</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* No Data State */}
+      {progressEntries.length === 0 && (
+        <Card className="border-dashed border-2 border-gray-200 dark:border-gray-700">
+          <CardContent className="p-12 text-center">
+            <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              Start Your Progress Journey
+            </h3>
+            <p className="text-gray-500 dark:text-gray-400 mb-4">
+              Track your fitness progress with photos, measurements, and notes
+            </p>
+            <Button 
+              className="bg-blue-500 hover:bg-blue-600 text-white"
+              onClick={() => window.location.href = '/progress'}
+            >
+              Add First Progress Entry
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
 
 export default function Profile() {
   const queryClient = useQueryClient();
@@ -58,7 +322,6 @@ export default function Profile() {
     defaultValues: {
       name: currentUser?.name || "",
       bio: currentUser?.bio || "",
-      location: currentUser?.location || "",
       fitnessGoals: currentUser?.fitnessGoals || [],
     },
   });
@@ -101,7 +364,7 @@ export default function Profile() {
       const result = await uploadImage(file);
       if (result.success) {
         await updateUserMutation.mutateAsync({ 
-          id: currentUser.id, 
+          id: currentUser?.id || CURRENT_USER_ID, 
           updates: { avatar: result.url }
         });
         toast({
@@ -119,6 +382,7 @@ export default function Profile() {
   };
 
   const onSubmit = (data: EditProfileData) => {
+    if (!currentUser) return;
     updateProfileMutation.mutate(data);
   };
 
@@ -463,15 +727,7 @@ export default function Profile() {
           </TabsContent>
 
           <TabsContent value="progress" className="space-y-4">
-            <div className="text-center py-12">
-              <TrendingUp className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                Progress insights coming soon
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400">
-                Track your fitness journey over time
-              </p>
-            </div>
+            <ProgressInsightsTab userId={CURRENT_USER_ID} />
           </TabsContent>
         </Tabs>
 

@@ -36,8 +36,16 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
+localPort = 34547
+externalPort = 3002
+
+[[ports]]
 localPort = 37059
 externalPort = 3001
+
+[[ports]]
+localPort = 45959
+externalPort = 3000
 
 [agent]
 integrations = ["javascript_log_in_with_replit==1.0.0", "javascript_openai==1.0.0", "javascript_database==1.0.0", "javascript_stripe==1.0.0", "javascript_mem_db==1.0.0"]

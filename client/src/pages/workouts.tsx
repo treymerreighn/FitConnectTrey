@@ -230,14 +230,6 @@ export default function Workouts() {
                               Quick View
                             </Button>
                           </DialogTrigger>
-                            <Button 
-                              size="sm" 
-                              onClick={() => setSelectedExercise(exercise)}
-                              className="bg-blue-500 hover:bg-blue-600"
-                            >
-                              View Details
-                            </Button>
-                          </DialogTrigger>
                           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                             <DialogHeader>
                               <DialogTitle className="flex items-center gap-2">

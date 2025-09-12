@@ -3,6 +3,7 @@ import cors from "cors";
 import { createServer } from "http";
 import { setupVite, serveStatic, log } from "./vite";
 import { registerRoutes } from "./authRoutes";
+import routes from "./routes";
 import { initializeDatabase } from "./db";
 import { storage } from "./storage";
 import { buildFreshExerciseLibrary } from "./fresh-exercise-builder";
@@ -58,6 +59,9 @@ async function startServer() {
         }
       }, 1000);
     }
+    
+    // Register main API routes first
+    app.use(routes);
     
     // Register routes with authentication
     const server = await registerRoutes(app);

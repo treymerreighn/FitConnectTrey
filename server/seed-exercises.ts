@@ -39,7 +39,7 @@ const COMPREHENSIVE_EXERCISES = [
     createdBy: "system",
     description: "Fundamental compound exercise for chest development",
     tags: ["barbell", "compound", "strength"],
-    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images: ["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"]
   },
   {
     name: "Dumbbell Flyes",
@@ -61,7 +61,7 @@ const COMPREHENSIVE_EXERCISES = [
     createdBy: "system",
     description: "Isolation exercise for chest muscle development",
     tags: ["dumbbells", "isolation", "chest"],
-    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images: ["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"]
   },
 
   // BACK EXERCISES
@@ -85,7 +85,7 @@ const COMPREHENSIVE_EXERCISES = [
     createdBy: "system",
     description: "Compound bodyweight exercise for back and biceps",
     tags: ["bodyweight", "compound", "back"],
-    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images: ["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"]
   },
   {
     name: "Bent-over Row",
@@ -107,7 +107,7 @@ const COMPREHENSIVE_EXERCISES = [
     createdBy: "system",
     description: "Compound rowing exercise for back development",
     tags: ["barbell", "compound", "back"],
-    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images: ["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"]
   },
   {
     name: "Lat Pulldown",
@@ -129,7 +129,7 @@ const COMPREHENSIVE_EXERCISES = [
     createdBy: "system",
     description: "Machine exercise targeting latissimus dorsi",
     tags: ["cable", "machine", "back"],
-    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images: ["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"]
   },
 
   // LEG EXERCISES
@@ -153,7 +153,7 @@ const COMPREHENSIVE_EXERCISES = [
     createdBy: "system",
     description: "Fundamental lower body compound movement",
     tags: ["bodyweight", "compound", "legs"],
-    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images: ["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"]
   },
   {
     name: "Deadlift",
@@ -175,7 +175,7 @@ const COMPREHENSIVE_EXERCISES = [
     createdBy: "system",
     description: "King of compound exercises targeting posterior chain",
     tags: ["barbell", "compound", "full-body"],
-    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images: ["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"]
   },
   {
     name: "Lunges",
@@ -197,7 +197,7 @@ const COMPREHENSIVE_EXERCISES = [
     createdBy: "system",
     description: "Unilateral leg exercise for strength and balance",
     tags: ["bodyweight", "unilateral", "legs"],
-    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images: ["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"]
   },
 
   // SHOULDER EXERCISES
@@ -221,7 +221,7 @@ const COMPREHENSIVE_EXERCISES = [
     createdBy: "system",
     description: "Compound exercise for shoulder development",
     tags: ["dumbbells", "compound", "shoulders"],
-    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images: ["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"]
   },
   {
     name: "Lateral Raises",
@@ -243,7 +243,7 @@ const COMPREHENSIVE_EXERCISES = [
     createdBy: "system",
     description: "Isolation exercise for side deltoids",
     tags: ["dumbbells", "isolation", "shoulders"],
-    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images: ["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"]
   },
 
   // ARM EXERCISES
@@ -267,7 +267,7 @@ const COMPREHENSIVE_EXERCISES = [
     createdBy: "system",
     description: "Classic isolation exercise for biceps",
     tags: ["dumbbells", "isolation", "arms"],
-    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images: ["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"]
   },
   {
     name: "Tricep Dips",
@@ -289,7 +289,7 @@ const COMPREHENSIVE_EXERCISES = [
     createdBy: "system",
     description: "Bodyweight exercise for triceps development",
     tags: ["bodyweight", "triceps", "arms"],
-    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images: ["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"]
   },
 
   // CORE EXERCISES
@@ -313,7 +313,7 @@ const COMPREHENSIVE_EXERCISES = [
     createdBy: "system",
     description: "Isometric core strengthening exercise",
     tags: ["bodyweight", "isometric", "core"],
-    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images: ["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"]
   },
   {
     name: "Crunches",
@@ -335,7 +335,7 @@ const COMPREHENSIVE_EXERCISES = [
     createdBy: "system",
     description: "Traditional abdominal strengthening exercise",
     tags: ["bodyweight", "abs", "core"],
-    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images: ["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"]
   },
 
   // CARDIO EXERCISES
@@ -359,7 +359,7 @@ const COMPREHENSIVE_EXERCISES = [
     createdBy: "system",
     description: "Classic cardio exercise for full body activation",
     tags: ["cardio", "bodyweight", "full-body"],
-    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images: ["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"]
   },
   {
     name: "Burpees",
@@ -381,7 +381,7 @@ const COMPREHENSIVE_EXERCISES = [
     createdBy: "system",
     description: "High-intensity full body exercise",
     tags: ["cardio", "full-body", "high-intensity"],
-    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images: ["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"]
   },
 
   // FUNCTIONAL EXERCISES
@@ -405,7 +405,7 @@ const COMPREHENSIVE_EXERCISES = [
     createdBy: "system",
     description: "Dynamic core and cardio exercise",
     tags: ["functional", "cardio", "core"],
-    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images: ["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"]
   },
   {
     name: "Bear Crawl",
@@ -427,7 +427,7 @@ const COMPREHENSIVE_EXERCISES = [
     createdBy: "system",
     description: "Full body functional movement pattern",
     tags: ["functional", "full-body", "crawling"],
-    images:[ "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"
+    images: ["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400"]
   }
 ];
 
@@ -446,6 +446,10 @@ export async function seedExerciseDatabase(): Promise<void> {
       const exerciseData = {
         ...exercise,
         videoUrl: null,
+        safetyNotes: [],
+        videos: [],
+        variations: [],
+        isUserCreated: false,
         metadata: {
           muscleActivation: exercise.muscleGroups,
           caloriesBurnedPerMinute: 8, // Average estimate

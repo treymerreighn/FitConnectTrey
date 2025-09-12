@@ -103,15 +103,6 @@ export function MealHelper() {
   };
 
   const handleRegenerateRecipe = () => {
-    if (!user?.isPremium) {
-      toast({
-        title: "Premium Feature",
-        description: "Recipe regeneration is available for premium users only. Upgrade to access unlimited recipe variations!",
-        variant: "destructive",
-      });
-      return;
-    }
-
     if (lastUsedParams) {
       // Add a regeneration flag to get a different recipe with same params
       const regenerateParams = {
@@ -543,16 +534,13 @@ export function MealHelper() {
                 Share Your Meal
               </Button>
 
-              {/* Regenerate Recipe Button - Premium Feature */}
+              {/* Regenerate Recipe Button */}
               {lastUsedParams && (
                 <Button 
                   onClick={handleRegenerateRecipe}
                   disabled={generateRecipeMutation.isPending}
-                  variant={user?.isPremium ? "outline" : "outline"}
-                  className={`w-full ${user?.isPremium 
-                    ? "border-orange-500 text-orange-600 hover:bg-orange-50" 
-                    : "border-gray-300 text-gray-500"
-                  }`}
+                  variant="outline"
+                  className="w-full border-orange-500 text-orange-600 hover:bg-orange-50"
                   size="lg"
                 >
                   {generateRecipeMutation.isPending ? (
@@ -562,26 +550,11 @@ export function MealHelper() {
                     </>
                   ) : (
                     <>
-                      {user?.isPremium ? (
-                        <>
-                          <RefreshCw className="h-4 w-4 mr-2" />
-                          Generate Another Recipe
-                        </>
-                      ) : (
-                        <>
-                          <Crown className="h-4 w-4 mr-2 text-yellow-500" />
-                          Regenerate Recipe (Premium)
-                        </>
-                      )}
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Generate Another Recipe
                     </>
                   )}
                 </Button>
-              )}
-
-              {!user?.isPremium && lastUsedParams && (
-                <p className="text-xs text-gray-500 text-center">
-                  Upgrade to premium for unlimited recipe variations!
-                </p>
               )}
             </div>
           </CardContent>

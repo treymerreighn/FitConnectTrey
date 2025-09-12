@@ -196,10 +196,6 @@ export function ProgressInsights({ userId = CURRENT_USER_ID }: ProgressInsightsP
         <div className="flex items-center gap-2">
           <Brain className="w-6 h-6 text-purple-600" />
           <h2 className="text-2xl font-bold">AI Progress Insights</h2>
-          <Badge variant="outline" className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-none">
-            <Crown className="w-3 h-3 mr-1" />
-            Premium
-          </Badge>
         </div>
         <div className="animate-pulse space-y-4">
           <div className="h-48 bg-gray-200 rounded-lg"></div>
@@ -216,10 +212,6 @@ export function ProgressInsights({ userId = CURRENT_USER_ID }: ProgressInsightsP
         <div className="flex items-center gap-2">
           <Brain className="w-6 h-6 text-purple-600" />
           <h2 className="text-2xl font-bold">AI Progress Insights</h2>
-          <Badge variant="outline" className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-none">
-            <Crown className="w-3 h-3 mr-1" />
-            Premium
-          </Badge>
         </div>
 
         <div className="flex gap-2">

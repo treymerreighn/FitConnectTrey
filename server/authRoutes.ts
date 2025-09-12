@@ -103,29 +103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/exercises", async (req, res) => {
-    try {
-      console.log("Fetching exercises...");
-      const { search, category, muscleGroup } = req.query;
-      let exercises;
-      
-      // Direct SQL query to get exercises from database
-      const exerciseResults = await db.execute(sql`
-        SELECT id, name, category, muscle_groups as "muscleGroups", equipment, difficulty, 
-               description, instructions, tips, images, videos, variations, tags, 
-               is_approved as "isApproved", created_by as "createdBy", created_at as "createdAt"
-        FROM exercises 
-        WHERE is_approved = true
-      `);
-      exercises = exerciseResults.rows;
-      
-      console.log(`Found ${exercises.length} exercises`);
-      res.json(exercises);
-    } catch (error) {
-      console.error("Error fetching exercises:", error);
-      res.status(500).json({ error: "Failed to fetch exercises" });
-    }
-  });
+  // Note: /api/exercises GET endpoint is now handled in routes.ts with proper search filtering
 
   app.post('/api/exercises', isAuthenticated, async (req: any, res) => {
     try {

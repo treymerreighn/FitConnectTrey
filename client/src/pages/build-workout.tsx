@@ -32,7 +32,6 @@ interface WorkoutPlan {
   name: string;
   description: string;
   exercises: Exercise[];
-  targetBodyParts: string[];
   estimatedDuration: number;
   difficulty: "Beginner" | "Intermediate" | "Advanced";
 }
@@ -126,76 +125,6 @@ const calculateWorkoutDifficulty = (exercises: Exercise[]): "Beginner" | "Interm
   return "Advanced";
 };
 
-const generateSmartWorkout = (
-  availableExercises: Exercise[], 
-  targetDuration: number, 
-  difficulty: "Beginner" | "Intermediate" | "Advanced",
-  bodyParts: string[],
-  targetExerciseCount?: number
-) => {
-  const filteredExercises = availableExercises.filter(ex => {
-    // Filter by difficulty
-    if (difficulty === "Beginner" && ex.difficulty === "Advanced") return false;
-    if (difficulty === "Advanced" && ex.difficulty === "Beginner") return false;
-    
-    // Filter by body parts if specified
-    if (bodyParts.length > 0) {
-      return ex.muscleGroups.some((mg: string) => 
-        bodyParts.some((bp: string) => mg.toLowerCase().includes(bp.toLowerCase()))
-      );
-    }
-    
-    return true;
-  });
-
-  const selectedExercises: Exercise[] = [];
-  let currentDuration = 0;
-  let pushCount = 0;
-  let pullCount = 0;
-  let hasCore = false;
-
-  // Prioritize balance while staying within time and exercise count limits
-  for (const exercise of filteredExercises) {
-    if (currentDuration >= targetDuration) break;
-    if (targetExerciseCount && selectedExercises.length >= targetExerciseCount) break;
-    if (selectedExercises.some((ex: Exercise) => ex.id === exercise.id)) continue;
-
-    const isPush = exercise.muscleGroups.some((mg: string) => 
-      ['chest', 'shoulders', 'triceps', 'quadriceps'].includes(mg.toLowerCase())
-    );
-    const isPull = exercise.muscleGroups.some((mg: string) => 
-      ['back', 'biceps', 'hamstrings', 'glutes'].includes(mg.toLowerCase())
-    );
-    const isCore = exercise.muscleGroups.some((mg: string) => 
-      mg.toLowerCase().includes('abs') || mg.toLowerCase().includes('core')
-    );
-
-    // Smart selection logic
-    let shouldAdd = false;
-    
-    if (isCore && !hasCore && selectedExercises.length >= 2) {
-      shouldAdd = true;
-      hasCore = true;
-    } else if (isPush && pushCount <= pullCount) {
-      shouldAdd = true;
-      pushCount++;
-    } else if (isPull && pullCount <= pushCount) {
-      shouldAdd = true;
-      pullCount++;
-    } else if (selectedExercises.length < 2) {
-      shouldAdd = true;
-      if (isPush) pushCount++;
-      if (isPull) pullCount++;
-    }
-
-    if (shouldAdd) {
-      selectedExercises.push(exercise);
-      currentDuration = calculateWorkoutDuration(selectedExercises);
-    }
-  }
-
-  return selectedExercises;
-};
 
 const MOCK_EXERCISES: Exercise[] = [
   {
@@ -255,17 +184,13 @@ export default function BuildWorkout() {
     name: "",
     description: "",
     exercises: [],
-    targetBodyParts: [],
     estimatedDuration: 0,
     difficulty: "Beginner"
   });
   
   const [showExerciseLibrary, setShowExerciseLibrary] = useState(false);
-  const [showAIBuilder, setShowAIBuilder] = useState(false);
   const [showSaveOptions, setShowSaveOptions] = useState(false);
   const [showPostOptions, setShowPostOptions] = useState(false);
-  const [aiPrompt, setAiPrompt] = useState("");
-  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
   // Exercise library search and filter states
   const [exerciseSearchTerm, setExerciseSearchTerm] = useState("");
@@ -366,68 +291,6 @@ export default function BuildWorkout() {
     }));
   };
 
-  const generateAIWorkout = async (targetDuration: number) => {
-    setIsGeneratingAI(true);
-    
-    try {
-      // Calculate logical exercise count based on duration
-      const exerciseCount = Math.max(4, Math.min(8, Math.floor(targetDuration / 6))); // 6-7 minutes per exercise
-      
-      // Use smart generation logic for balanced workouts
-      const smartWorkout = generateSmartWorkout(
-        exercises.length > 0 ? exercises : MOCK_EXERCISES,
-        targetDuration,
-        "Intermediate",
-        selectedBodyParts,
-        exerciseCount
-      );
-
-      setWorkoutPlan({
-        name: `${targetDuration}-Minute AI Workout`,
-        description: `AI-generated balanced workout with ${smartWorkout.length} exercises targeting your selected body parts`,
-        exercises: smartWorkout,
-        targetBodyParts: selectedBodyParts,
-        estimatedDuration: calculateWorkoutDuration(smartWorkout),
-        difficulty: calculateWorkoutDifficulty(smartWorkout)
-      });
-      
-      setIsGeneratingAI(false);
-      setShowAIBuilder(false);
-      
-      toast({
-        title: "AI Workout Generated!",
-        description: `Created ${smartWorkout.length} exercises for ${Math.round(calculateWorkoutDuration(smartWorkout))} minutes`
-      });
-    } catch (error) {
-      console.error("Failed to generate AI workout:", error);
-      setIsGeneratingAI(false);
-      
-      // Fallback to basic generation
-      const fallbackWorkout = generateSmartWorkout(
-        exercises.length > 0 ? exercises : MOCK_EXERCISES,
-        targetDuration,
-        "Intermediate", 
-        selectedBodyParts,
-        Math.floor(targetDuration / 6)
-      );
-      
-      setWorkoutPlan({
-        name: `${targetDuration}-Minute Workout`,
-        description: `Balanced workout with ${fallbackWorkout.length} exercises`,
-        exercises: fallbackWorkout,
-        targetBodyParts: selectedBodyParts,
-        estimatedDuration: calculateWorkoutDuration(fallbackWorkout),
-        difficulty: calculateWorkoutDifficulty(fallbackWorkout)
-      });
-      
-      setShowAIBuilder(false);
-      
-      toast({
-        title: "Workout Generated!",
-        description: `Created balanced ${Math.round(calculateWorkoutDuration(fallbackWorkout))}-minute workout`
-      });
-    }
-  };
 
   const startWorkout = () => {
     const exerciseIds = workoutPlan.exercises.map(ex => ex.id).join(',');
@@ -476,17 +339,6 @@ export default function BuildWorkout() {
             <h1 className="text-xl font-bold">Build Workout</h1>
           </div>
           
-          <div className="flex space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowAIBuilder(true)}
-              className="border-purple-500 text-purple-400 hover:bg-purple-500/10"
-            >
-              <Sparkles className="h-4 w-4 mr-2" />
-              AI Generate
-            </Button>
-          </div>
         </div>
       </div>
 
@@ -511,14 +363,10 @@ export default function BuildWorkout() {
                 <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2 text-gray-300">No exercises added yet</h3>
                 <p className="text-gray-400 mb-4">Use the Add Exercise button to browse and filter exercises for your workout</p>
-                <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                <div className="flex justify-center">
                   <Button onClick={() => setShowExerciseLibrary(true)}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add Exercise
-                  </Button>
-                  <Button variant="outline" onClick={() => setShowAIBuilder(true)}>
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    AI Generate
                   </Button>
                 </div>
               </CardContent>
@@ -990,84 +838,6 @@ export default function BuildWorkout() {
         </DialogContent>
       </Dialog>
 
-      {/* AI Workout Builder Modal */}
-      <Dialog open={showAIBuilder} onOpenChange={setShowAIBuilder}>
-        <DialogContent className="sm:max-w-md bg-gray-800 border-gray-700 text-white">
-          <DialogHeader>
-            <DialogTitle className="flex items-center">
-              <Sparkles className="h-5 w-5 mr-2 text-purple-400" />
-              AI Workout Generator
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>What would you like to focus on today?</Label>
-              <Textarea
-                placeholder="e.g., I want to build upper body strength, focus on chest and shoulders, beginner-friendly workout..."
-                value={aiPrompt}
-                onChange={(e) => setAiPrompt(e.target.value)}
-                className="bg-gray-700 border-gray-600 mt-2"
-                rows={4}
-              />
-            </div>
-            
-            <div>
-              <Label>Workout Duration</Label>
-              <div className="grid grid-cols-3 gap-2 mt-2">
-                {[30, 45, 60].map(duration => (
-                  <Button
-                    key={duration}
-                    variant="outline"
-                    onClick={() => generateAIWorkout(duration)}
-                    disabled={isGeneratingAI}
-                    className="border-purple-500 text-purple-400 hover:bg-purple-500/20"
-                  >
-                    {duration}min
-                  </Button>
-                ))}
-              </div>
-              <p className="text-xs text-gray-400 mt-2">
-                30min: 4-5 exercises • 45min: 6-8 exercises • 60min: 8-10 exercises
-              </p>
-            </div>
-            
-            <div>
-              <Label>Selected Body Parts</Label>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {selectedBodyParts.map(bodyPartId => {
-                  const bodyPart = BODY_PARTS.find(bp => bp.id === bodyPartId);
-                  return (
-                    <Badge key={bodyPartId} variant="secondary">
-                      {bodyPart?.icon} {bodyPart?.name}
-                    </Badge>
-                  );
-                })}
-                {selectedBodyParts.length === 0 && (
-                  <p className="text-sm text-gray-400">Select body parts above for targeted workouts</p>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <Label>Additional Focus (Optional)</Label>
-              <Textarea
-                placeholder="e.g., focus on strength, include cardio, beginner-friendly..."
-                value={aiPrompt}
-                onChange={(e) => setAiPrompt(e.target.value)}
-                className="bg-gray-700 border-gray-600 mt-2"
-                rows={3}
-              />
-            </div>
-            
-            {isGeneratingAI && (
-              <div className="flex items-center justify-center py-4">
-                <div className="animate-spin h-6 w-6 mr-3 border-2 border-purple-400 border-t-transparent rounded-full" />
-                <span className="text-purple-400">Generating balanced workout...</span>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Save Workout Modal */}
       <Dialog open={showSaveOptions} onOpenChange={setShowSaveOptions}>

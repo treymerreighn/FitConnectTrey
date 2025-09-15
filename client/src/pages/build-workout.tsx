@@ -268,6 +268,10 @@ export default function BuildWorkout() {
   const [aiPrompt, setAiPrompt] = useState("");
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
+  // Exercise library search and filter states
+  const [exerciseSearchTerm, setExerciseSearchTerm] = useState("");
+  const [selectedEquipmentFilter, setSelectedEquipmentFilter] = useState<string>("all");
+
   const filteredExercises = (exercises.length > 0 ? exercises : MOCK_EXERCISES).filter((exercise: Exercise) => {
     if (selectedBodyParts.length === 0) return true;
     return exercise.muscleGroups.some((muscle: string) => 
@@ -770,23 +774,102 @@ export default function BuildWorkout() {
         setShowExerciseLibrary(open);
         if (!open) {
           setSelectedCategory(null);
+          setExerciseSearchTerm("");
+          setSelectedEquipmentFilter("all");
         }
       }}>
-        <DialogContent className="sm:max-w-2xl bg-gray-800 border-gray-700 text-white max-h-[80vh] overflow-hidden">
+        <DialogContent className="sm:max-w-3xl bg-gray-800 border-gray-700 text-white max-h-[85vh] overflow-hidden">
           <DialogHeader>
-            <DialogTitle className="flex items-center">
-              {selectedCategory && (
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => setSelectedCategory(null)}
-                  className="mr-2 p-1"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-              )}
-              {selectedCategory ? `${selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1).replace('_', ' ')} Exercises` : "By Muscle Groups"}
+            <DialogTitle className="flex items-center justify-between">
+              <div className="flex items-center">
+                {selectedCategory && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setSelectedCategory(null)}
+                    className="mr-2 p-1"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                )}
+                {selectedCategory ? `${selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1).replace('_', ' ')} Exercises` : "Exercise Library"}
+              </div>
             </DialogTitle>
+            
+            {/* Search and Filter Section */}
+            <div className="space-y-4 pt-4">
+              {/* Search Bar */}
+              <div className="relative">
+                <Input
+                  placeholder="Search exercises by name or muscle group..."
+                  value={exerciseSearchTerm}
+                  onChange={(e) => setExerciseSearchTerm(e.target.value)}
+                  className="bg-gray-700 border-gray-600 text-white pl-10"
+                  data-testid="exercise-search-input"
+                />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+              </div>
+              
+              {/* Equipment Filter */}
+              <div className="flex flex-wrap gap-2">
+                <span className="text-sm text-gray-400 self-center mr-2">Equipment:</span>
+                {[
+                  { id: "all", name: "All", icon: "🔄" },
+                  { id: "bodyweight", name: "Bodyweight", icon: "🏃" },
+                  { id: "dumbbells", name: "Dumbbells", icon: "🏋️" },
+                  { id: "barbell", name: "Barbell", icon: "💪" },
+                  { id: "resistance", name: "Bands", icon: "🎯" },
+                  { id: "machine", name: "Machine", icon: "⚙️" }
+                ].map(equipment => (
+                  <Button
+                    key={equipment.id}
+                    variant={selectedEquipmentFilter === equipment.id ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedEquipmentFilter(equipment.id)}
+                    className={`text-xs ${selectedEquipmentFilter === equipment.id 
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                      : 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                    }`}
+                    data-testid={`equipment-filter-${equipment.id}`}
+                  >
+                    <span className="mr-1">{equipment.icon}</span>
+                    {equipment.name}
+                  </Button>
+                ))}
+              </div>
+              
+              {/* Results count */}
+              <div className="text-sm text-gray-400">
+                {(() => {
+                  const filteredCount = (exercises.length > 0 ? exercises : MOCK_EXERCISES).filter((exercise: Exercise) => {
+                    const matchesSearch = exerciseSearchTerm === "" || 
+                      exercise.name.toLowerCase().includes(exerciseSearchTerm.toLowerCase()) ||
+                      exercise.muscleGroups.some((mg: string) => mg.toLowerCase().includes(exerciseSearchTerm.toLowerCase()));
+                    
+                    const matchesEquipment = selectedEquipmentFilter === "all" || 
+                      exercise.equipment.some((eq: string) => {
+                        if (selectedEquipmentFilter === "bodyweight") return eq.toLowerCase().includes("bodyweight") || eq.toLowerCase().includes("none");
+                        if (selectedEquipmentFilter === "dumbbells") return eq.toLowerCase().includes("dumbbell");
+                        if (selectedEquipmentFilter === "barbell") return eq.toLowerCase().includes("barbell");
+                        if (selectedEquipmentFilter === "resistance") return eq.toLowerCase().includes("band") || eq.toLowerCase().includes("resistance");
+                        if (selectedEquipmentFilter === "machine") return eq.toLowerCase().includes("machine") || eq.toLowerCase().includes("cable");
+                        return false;
+                      });
+
+                    const matchesCategory = selectedCategory === null || 
+                      exercise.muscleGroups && exercise.muscleGroups.some((mg: string) => mg.toLowerCase() === selectedCategory);
+
+                    return matchesSearch && matchesEquipment && matchesCategory;
+                  }).length;
+                  
+                  return `${filteredCount} exercises found`;
+                })()}
+              </div>
+            </div>
           </DialogHeader>
           
           <div className="space-y-4 overflow-y-auto max-h-[60vh]">
@@ -840,12 +923,32 @@ export default function BuildWorkout() {
                 </div>
               </div>
             ) : (
-              // Show Exercises for Selected Muscle Group
+              // Show Exercises for Selected Muscle Group  
               <div className="space-y-3">
-                {filteredExercises
-                  .filter((exercise: Exercise) => 
-                    exercise.muscleGroups && exercise.muscleGroups.some((mg: string) => mg.toLowerCase() === selectedCategory)
-                  )
+                {(exercises.length > 0 ? exercises : MOCK_EXERCISES)
+                  .filter((exercise: Exercise) => {
+                    // Apply search filter
+                    const matchesSearch = exerciseSearchTerm === "" || 
+                      exercise.name.toLowerCase().includes(exerciseSearchTerm.toLowerCase()) ||
+                      exercise.muscleGroups.some((mg: string) => mg.toLowerCase().includes(exerciseSearchTerm.toLowerCase()));
+                    
+                    // Apply equipment filter
+                    const matchesEquipment = selectedEquipmentFilter === "all" || 
+                      exercise.equipment.some((eq: string) => {
+                        if (selectedEquipmentFilter === "bodyweight") return eq.toLowerCase().includes("bodyweight") || eq.toLowerCase().includes("none");
+                        if (selectedEquipmentFilter === "dumbbells") return eq.toLowerCase().includes("dumbbell");
+                        if (selectedEquipmentFilter === "barbell") return eq.toLowerCase().includes("barbell");
+                        if (selectedEquipmentFilter === "resistance") return eq.toLowerCase().includes("band") || eq.toLowerCase().includes("resistance");
+                        if (selectedEquipmentFilter === "machine") return eq.toLowerCase().includes("machine") || eq.toLowerCase().includes("cable");
+                        return false;
+                      });
+
+                    // Apply muscle group filter (if category is selected)
+                    const matchesCategory = selectedCategory === null || 
+                      exercise.muscleGroups && exercise.muscleGroups.some((mg: string) => mg.toLowerCase() === selectedCategory);
+
+                    return matchesSearch && matchesEquipment && matchesCategory;
+                  })
                   .sort((a: Exercise, b: Exercise) => a.name.localeCompare(b.name))
                   .map((exercise: Exercise) => (
                   <Card key={exercise.id} className="bg-gray-700 border-gray-600">
@@ -888,11 +991,29 @@ export default function BuildWorkout() {
                   </Card>
                 ))}
                 
-                {filteredExercises.filter((exercise: Exercise) => 
-                  exercise.muscleGroups && exercise.muscleGroups.some((mg: string) => mg.toLowerCase() === selectedCategory)
-                ).length === 0 && (
+                {(exercises.length > 0 ? exercises : MOCK_EXERCISES).filter((exercise: Exercise) => {
+                  const matchesSearch = exerciseSearchTerm === "" || 
+                    exercise.name.toLowerCase().includes(exerciseSearchTerm.toLowerCase()) ||
+                    exercise.muscleGroups.some((mg: string) => mg.toLowerCase().includes(exerciseSearchTerm.toLowerCase()));
+                  
+                  const matchesEquipment = selectedEquipmentFilter === "all" || 
+                    exercise.equipment.some((eq: string) => {
+                      if (selectedEquipmentFilter === "bodyweight") return eq.toLowerCase().includes("bodyweight") || eq.toLowerCase().includes("none");
+                      if (selectedEquipmentFilter === "dumbbells") return eq.toLowerCase().includes("dumbbell");
+                      if (selectedEquipmentFilter === "barbell") return eq.toLowerCase().includes("barbell");
+                      if (selectedEquipmentFilter === "resistance") return eq.toLowerCase().includes("band") || eq.toLowerCase().includes("resistance");
+                      if (selectedEquipmentFilter === "machine") return eq.toLowerCase().includes("machine") || eq.toLowerCase().includes("cable");
+                      return false;
+                    });
+
+                  const matchesCategory = selectedCategory === null || 
+                    exercise.muscleGroups && exercise.muscleGroups.some((mg: string) => mg.toLowerCase() === selectedCategory);
+
+                  return matchesSearch && matchesEquipment && matchesCategory;
+                }).length === 0 && (
                   <div className="text-center py-8">
-                    <p className="text-gray-400">No exercises found for this muscle group.</p>
+                    <p className="text-gray-400">No exercises found matching your filters.</p>
+                    <p className="text-gray-500 text-sm mt-2">Try adjusting your search or equipment filters.</p>
                   </div>
                 )}
               </div>

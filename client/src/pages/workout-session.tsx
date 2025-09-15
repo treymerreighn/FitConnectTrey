@@ -242,6 +242,8 @@ export default function WorkoutSession() {
         setRestTimer(prev => {
           if (prev <= 1) {
             setIsResting(false);
+            // Resume the main workout timer after rest is complete
+            setIsTimerRunning(true);
             toast({
               title: "Rest Complete!",
               description: "Time for your next set"
@@ -283,6 +285,9 @@ export default function WorkoutSession() {
       
       return updated;
     });
+
+    // Pause the main workout timer when recording a set
+    setIsTimerRunning(false);
 
     // Start rest timer
     const restTime = workoutExercises[exerciseIndex].sets[setIndex].restTime;

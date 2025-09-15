@@ -170,9 +170,59 @@ export default function WorkoutSession() {
     }
   ];
 
+  // Read URL parameters and load actual workout data
   useEffect(() => {
-    setWorkoutExercises(mockWorkout);
-  }, []);
+    const urlParams = new URLSearchParams(window.location.search);
+    const exerciseIds = urlParams.get('exercises');
+    const workoutPlanJson = urlParams.get('plan');
+    
+    if (exerciseIds && workoutPlanJson) {
+      try {
+        // Parse the workout plan from URL
+        const workoutPlan = JSON.parse(decodeURIComponent(workoutPlanJson));
+        
+        // Convert workout plan exercises to workout session format
+        const sessionExercises: WorkoutExercise[] = workoutPlan.exercises.map((exercise: any) => ({
+          id: exercise.id,
+          name: exercise.name,
+          category: exercise.category || 'strength',
+          muscleGroups: exercise.muscleGroups || [],
+          equipment: exercise.equipment || [],
+          difficulty: exercise.difficulty || 'Intermediate',
+          thumbnailUrl: exercise.imageUrl || 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400',
+          instructions: exercise.instructions || [],
+          sets: Array.from({ length: exercise.targetSets || 3 }, (_, index) => ({
+            setNumber: index + 1,
+            targetReps: exercise.targetReps || 8,
+            completedReps: 0,
+            weight: 0,
+            isCompleted: false,
+            restTime: exercise.restTime || 90
+          })),
+          isCompleted: false
+        }));
+        
+        setWorkoutExercises(sessionExercises);
+        setWorkoutName(workoutPlan.name || 'Custom Workout');
+        
+        console.log('Loaded workout from URL:', workoutPlan);
+        console.log('Session exercises:', sessionExercises);
+        
+      } catch (error) {
+        console.error('Failed to parse workout plan from URL:', error);
+        // Fallback to mock data if parsing fails
+        setWorkoutExercises(mockWorkout);
+        toast({
+          title: "Warning",
+          description: "Failed to load your workout plan. Using default workout.",
+          variant: "destructive"
+        });
+      }
+    } else {
+      console.log('No workout data in URL, using mock workout');
+      setWorkoutExercises(mockWorkout);
+    }
+  }, [toast]);
 
   // Timer effects
   useEffect(() => {

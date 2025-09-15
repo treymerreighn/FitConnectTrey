@@ -261,7 +261,6 @@ export default function BuildWorkout() {
   });
   
   const [showExerciseLibrary, setShowExerciseLibrary] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showAIBuilder, setShowAIBuilder] = useState(false);
   const [showSaveOptions, setShowSaveOptions] = useState(false);
   const [showPostOptions, setShowPostOptions] = useState(false);
@@ -491,31 +490,8 @@ export default function BuildWorkout() {
         </div>
       </div>
 
-      {/* Body Parts Selection */}
+      {/* Workout Plan */}
       <div className="p-4">
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold mb-3">Target Body Parts</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {BODY_PARTS.map(bodyPart => (
-              <Card
-                key={bodyPart.id}
-                className={`cursor-pointer transition-all ${
-                  selectedBodyParts.includes(bodyPart.id)
-                    ? 'bg-red-600/20 border-red-500 ring-2 ring-red-500/50'
-                    : 'bg-gray-800 border-gray-700 hover:bg-gray-750'
-                }`}
-                onClick={() => toggleBodyPart(bodyPart.id)}
-              >
-                <CardContent className="p-4 text-center">
-                  <div className="text-2xl mb-2">{bodyPart.icon}</div>
-                  <div className="font-medium text-sm">{bodyPart.name}</div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* Workout Plan */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Your Workout Plan</h2>
@@ -534,7 +510,7 @@ export default function BuildWorkout() {
               <CardContent className="p-8 text-center">
                 <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2 text-gray-300">No exercises added yet</h3>
-                <p className="text-gray-400 mb-4">Select body parts and add exercises to build your workout</p>
+                <p className="text-gray-400 mb-4">Use the Add Exercise button to browse and filter exercises for your workout</p>
                 <div className="flex flex-col sm:flex-row gap-2 justify-center">
                   <Button onClick={() => setShowExerciseLibrary(true)}>
                     <Plus className="h-4 w-4 mr-2" />
@@ -773,28 +749,14 @@ export default function BuildWorkout() {
       <Dialog open={showExerciseLibrary} onOpenChange={(open) => {
         setShowExerciseLibrary(open);
         if (!open) {
-          setSelectedCategory(null);
           setExerciseSearchTerm("");
           setSelectedEquipmentFilter("all");
+          // Keep body part selection for AI generation
         }
       }}>
         <DialogContent className="sm:max-w-3xl bg-gray-800 border-gray-700 text-white max-h-[85vh] overflow-hidden">
           <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              <div className="flex items-center">
-                {selectedCategory && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => setSelectedCategory(null)}
-                    className="mr-2 p-1"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
-                )}
-                {selectedCategory ? `${selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1).replace('_', ' ')} Exercises` : "Exercise Library"}
-              </div>
-            </DialogTitle>
+            <DialogTitle>Exercise Library</DialogTitle>
             
             {/* Search and Filter Section */}
             <div className="space-y-4 pt-4">
@@ -860,10 +822,16 @@ export default function BuildWorkout() {
                         return false;
                       });
 
-                    const matchesCategory = selectedCategory === null || 
-                      exercise.muscleGroups && exercise.muscleGroups.some((mg: string) => mg.toLowerCase() === selectedCategory);
+                    const matchesBodyPart = selectedBodyParts.length === 0 || 
+                      exercise.muscleGroups.some((muscle: string) => 
+                        selectedBodyParts.some((bodyPart: string) => 
+                          BODY_PARTS.find(bp => bp.id === bodyPart)?.exercises.some((ex: string) => 
+                            muscle.toLowerCase().includes(ex.toLowerCase().split(' ')[0])
+                          )
+                        )
+                      );
 
-                    return matchesSearch && matchesEquipment && matchesCategory;
+                    return matchesSearch && matchesEquipment && matchesBodyPart;
                   }).length;
                   
                   return `${filteredCount} exercises found`;
@@ -873,66 +841,123 @@ export default function BuildWorkout() {
           </DialogHeader>
           
           <div className="space-y-4 overflow-y-auto max-h-[60vh]">
-            {!selectedCategory ? (
-              // Show Muscle Groups
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-200 mb-4">By Muscle Groups</h3>
-                <div className="space-y-2">
-                  {[
-                    { id: "chest", name: "Chest", icon: "🫁", description: "Pectorals and upper body" },
-                    { id: "abs", name: "Abs", icon: "🎯", description: "Core and abdominals" },
-                    { id: "back", name: "Back", icon: "🪃", description: "Lats, rhomboids, traps" },
-                    { id: "lower_back", name: "Lower Back", icon: "🔙", description: "Spinal erectors" },
-                    { id: "shoulders", name: "Shoulders", icon: "🏔️", description: "Deltoids and rotator cuff" },
-                    { id: "biceps", name: "Biceps", icon: "💪", description: "Front arm muscles" },
-                    { id: "triceps", name: "Triceps", icon: "🔧", description: "Back arm muscles" },
-                    { id: "quadriceps", name: "Quadriceps", icon: "🦵", description: "Front thigh muscles" },
-                    { id: "hamstrings", name: "Hamstrings", icon: "🦵", description: "Back thigh muscles" },
-                    { id: "glutes", name: "Glutes", icon: "🍑", description: "Hip and buttock muscles" },
-                    { id: "calves", name: "Calves", icon: "🦵", description: "Lower leg muscles" }
-                  ].map(muscleGroup => {
-                    const muscleExercises = exercises.filter((ex: Exercise) => 
-                      ex.muscleGroups && ex.muscleGroups.some((mg: string) => mg.toLowerCase() === muscleGroup.id)
-                    );
-                    return (
-                      <Card 
-                        key={muscleGroup.id} 
-                        className="cursor-pointer transition-all hover:bg-gray-700 bg-gray-800 border-gray-700"
-                        onClick={() => setSelectedCategory(muscleGroup.id)}
+            {/* All Exercises with Body Part Filtering */}
+            <div className="space-y-4">
+                {/* Body Part Filter Buttons */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-gray-200">Filter by Body Part</h3>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant={selectedBodyParts.length === 0 ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedBodyParts([])}
+                      className={`text-xs ${selectedBodyParts.length === 0 
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                        : 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                      }`}
+                      data-testid="body-part-filter-all"
+                    >
+                      🔄 All
+                    </Button>
+                    {BODY_PARTS.map(bodyPart => (
+                      <Button
+                        key={bodyPart.id}
+                        variant={selectedBodyParts.includes(bodyPart.id) ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => toggleBodyPart(bodyPart.id)}
+                        className={`text-xs ${selectedBodyParts.includes(bodyPart.id) 
+                          ? 'bg-red-600 hover:bg-red-700 text-white' 
+                          : 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                        }`}
+                        data-testid={`body-part-filter-${bodyPart.id}`}
                       >
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-4">
-                              <div className="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center">
-                                <span className="text-xl">{muscleGroup.icon}</span>
-                              </div>
-                              <div>
-                                <h4 className="font-semibold text-white">{muscleGroup.name}</h4>
-                                <p className="text-sm text-gray-400">{muscleGroup.description}</p>
-                              </div>
+                        <span className="mr-1">{bodyPart.icon}</span>
+                        {bodyPart.name}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Exercise List */}
+                <div className="space-y-3">
+                  {(exercises.length > 0 ? exercises : MOCK_EXERCISES)
+                    .filter((exercise: Exercise) => {
+                      // Apply search filter
+                      const matchesSearch = exerciseSearchTerm === "" || 
+                        exercise.name.toLowerCase().includes(exerciseSearchTerm.toLowerCase()) ||
+                        exercise.muscleGroups.some((mg: string) => mg.toLowerCase().includes(exerciseSearchTerm.toLowerCase()));
+                      
+                      // Apply equipment filter
+                      const matchesEquipment = selectedEquipmentFilter === "all" || 
+                        exercise.equipment.some((eq: string) => {
+                          if (selectedEquipmentFilter === "bodyweight") return eq.toLowerCase().includes("bodyweight") || eq.toLowerCase().includes("none");
+                          if (selectedEquipmentFilter === "dumbbells") return eq.toLowerCase().includes("dumbbell");
+                          if (selectedEquipmentFilter === "barbell") return eq.toLowerCase().includes("barbell");
+                          if (selectedEquipmentFilter === "resistance") return eq.toLowerCase().includes("band") || eq.toLowerCase().includes("resistance");
+                          if (selectedEquipmentFilter === "machine") return eq.toLowerCase().includes("machine") || eq.toLowerCase().includes("cable");
+                          return false;
+                        });
+
+                      // Apply body part filter
+                      const matchesBodyPart = selectedBodyParts.length === 0 || 
+                        exercise.muscleGroups.some((muscle: string) => 
+                          selectedBodyParts.some((bodyPart: string) => 
+                            BODY_PARTS.find(bp => bp.id === bodyPart)?.exercises.some((ex: string) => 
+                              muscle.toLowerCase().includes(ex.toLowerCase().split(' ')[0])
+                            )
+                          )
+                        );
+
+                      return matchesSearch && matchesEquipment && matchesBodyPart;
+                    })
+                    .sort((a: Exercise, b: Exercise) => a.name.localeCompare(b.name))
+                    .map((exercise: Exercise) => (
+                    <Card key={exercise.id} className="bg-gray-700 border-gray-600">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-600">
+                              <img 
+                                src={exercise.thumbnailUrl} 
+                                alt={exercise.name}
+                                className="w-full h-full object-cover"
+                              />
                             </div>
-                            <div className="flex items-center space-x-2">
-                              <span className="text-sm text-gray-400">{muscleExercises.length} exercises</span>
-                              <ArrowLeft className="h-4 w-4 text-gray-400 transform rotate-180" />
+                            <div>
+                              <h4 className="font-medium text-white">{exercise.name}</h4>
+                              <p className="text-sm text-gray-400 capitalize">{exercise.difficulty}</p>
+                              <div className="flex space-x-2 mt-1">
+                                {exercise.muscleGroups.slice(0, 3).map(muscle => (
+                                  <Badge key={muscle} variant="secondary" className="text-xs">
+                                    {muscle}
+                                  </Badge>
+                                ))}
+                              </div>
                             </div>
                           </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              // Show Exercises for Selected Muscle Group  
-              <div className="space-y-3">
-                {(exercises.length > 0 ? exercises : MOCK_EXERCISES)
-                  .filter((exercise: Exercise) => {
-                    // Apply search filter
+                          <Button
+                            onClick={() => {
+                              addExerciseToWorkout(exercise);
+                              // Don't close modal - let users add multiple exercises
+                            }}
+                            disabled={workoutPlan.exercises.some(ex => ex.id === exercise.id)}
+                            size="sm"
+                            className="bg-red-600 hover:bg-red-700"
+                            data-testid={`add-exercise-${exercise.id}`}
+                          >
+                            {workoutPlan.exercises.some(ex => ex.id === exercise.id) ? "Added" : "Add"}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  
+                  {/* No results message */}
+                  {(exercises.length > 0 ? exercises : MOCK_EXERCISES).filter((exercise: Exercise) => {
                     const matchesSearch = exerciseSearchTerm === "" || 
                       exercise.name.toLowerCase().includes(exerciseSearchTerm.toLowerCase()) ||
                       exercise.muscleGroups.some((mg: string) => mg.toLowerCase().includes(exerciseSearchTerm.toLowerCase()));
                     
-                    // Apply equipment filter
                     const matchesEquipment = selectedEquipmentFilter === "all" || 
                       exercise.equipment.some((eq: string) => {
                         if (selectedEquipmentFilter === "bodyweight") return eq.toLowerCase().includes("bodyweight") || eq.toLowerCase().includes("none");
@@ -943,81 +968,24 @@ export default function BuildWorkout() {
                         return false;
                       });
 
-                    // Apply muscle group filter (if category is selected)
-                    const matchesCategory = selectedCategory === null || 
-                      exercise.muscleGroups && exercise.muscleGroups.some((mg: string) => mg.toLowerCase() === selectedCategory);
+                    const matchesBodyPart = selectedBodyParts.length === 0 || 
+                      exercise.muscleGroups.some((muscle: string) => 
+                        selectedBodyParts.some((bodyPart: string) => 
+                          BODY_PARTS.find(bp => bp.id === bodyPart)?.exercises.some((ex: string) => 
+                            muscle.toLowerCase().includes(ex.toLowerCase().split(' ')[0])
+                          )
+                        )
+                      );
 
-                    return matchesSearch && matchesEquipment && matchesCategory;
-                  })
-                  .sort((a: Exercise, b: Exercise) => a.name.localeCompare(b.name))
-                  .map((exercise: Exercise) => (
-                  <Card key={exercise.id} className="bg-gray-700 border-gray-600">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-600">
-                            <img 
-                              src={exercise.thumbnailUrl} 
-                              alt={exercise.name}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <div>
-                            <h4 className="font-medium text-white">{exercise.name}</h4>
-                            <p className="text-sm text-gray-400 capitalize">{exercise.difficulty}</p>
-                            <div className="flex space-x-2 mt-1">
-                              {exercise.muscleGroups.slice(0, 3).map(muscle => (
-                                <Badge key={muscle} variant="secondary" className="text-xs">
-                                  {muscle}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                        <Button
-                          onClick={() => {
-                            addExerciseToWorkout(exercise);
-                            setSelectedCategory(null);
-                            setShowExerciseLibrary(false);
-                          }}
-                          disabled={workoutPlan.exercises.some(ex => ex.id === exercise.id)}
-                          size="sm"
-                          className="bg-red-600 hover:bg-red-700"
-                        >
-                          {workoutPlan.exercises.some(ex => ex.id === exercise.id) ? "Added" : "Add"}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-                
-                {(exercises.length > 0 ? exercises : MOCK_EXERCISES).filter((exercise: Exercise) => {
-                  const matchesSearch = exerciseSearchTerm === "" || 
-                    exercise.name.toLowerCase().includes(exerciseSearchTerm.toLowerCase()) ||
-                    exercise.muscleGroups.some((mg: string) => mg.toLowerCase().includes(exerciseSearchTerm.toLowerCase()));
-                  
-                  const matchesEquipment = selectedEquipmentFilter === "all" || 
-                    exercise.equipment.some((eq: string) => {
-                      if (selectedEquipmentFilter === "bodyweight") return eq.toLowerCase().includes("bodyweight") || eq.toLowerCase().includes("none");
-                      if (selectedEquipmentFilter === "dumbbells") return eq.toLowerCase().includes("dumbbell");
-                      if (selectedEquipmentFilter === "barbell") return eq.toLowerCase().includes("barbell");
-                      if (selectedEquipmentFilter === "resistance") return eq.toLowerCase().includes("band") || eq.toLowerCase().includes("resistance");
-                      if (selectedEquipmentFilter === "machine") return eq.toLowerCase().includes("machine") || eq.toLowerCase().includes("cable");
-                      return false;
-                    });
-
-                  const matchesCategory = selectedCategory === null || 
-                    exercise.muscleGroups && exercise.muscleGroups.some((mg: string) => mg.toLowerCase() === selectedCategory);
-
-                  return matchesSearch && matchesEquipment && matchesCategory;
-                }).length === 0 && (
-                  <div className="text-center py-8">
-                    <p className="text-gray-400">No exercises found matching your filters.</p>
-                    <p className="text-gray-500 text-sm mt-2">Try adjusting your search or equipment filters.</p>
-                  </div>
-                )}
+                    return matchesSearch && matchesEquipment && matchesBodyPart;
+                  }).length === 0 && (
+                    <div className="text-center py-8">
+                      <p className="text-gray-400">No exercises found matching your filters.</p>
+                      <p className="text-gray-500 text-sm mt-2">Try adjusting your search, equipment, or body part filters.</p>
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
           </div>
         </DialogContent>
       </Dialog>

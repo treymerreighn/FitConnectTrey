@@ -98,6 +98,10 @@ export default function Workouts() {
     mutationFn: async (data: CreateExerciseFormData) => {
       const exerciseData = {
         ...data,
+        tips: data.tips || [],
+        safetyNotes: data.safetyNotes || [],
+        variations: data.variations || [],
+        tags: data.tags || [],
         isUserCreated: true,
         isApproved: false, // User-created exercises require approval
       };

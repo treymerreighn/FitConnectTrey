@@ -18,6 +18,7 @@ import { insertExerciseSchema, exerciseSchema, type InsertExercise } from "@shar
 import { z } from "zod";
 import { PostCard } from "@/components/ui/post-card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ExerciseImagePlaceholder } from "@/components/ui/exercise-image-placeholder";
 import { api } from "@/lib/api";
 import { useLocation } from "wouter";
 import type { Post, Exercise } from "@shared/schema";
@@ -656,7 +657,8 @@ export default function Workouts() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {exercisesLoading ? (
                 Array.from({ length: 6 }).map((_, i) => (
-                  <Card key={i} className="border-0 shadow-lg">
+                  <Card key={i} className="border-0 shadow-lg overflow-hidden">
+                    <Skeleton className="w-full h-48" />
                     <CardContent className="p-6">
                       <Skeleton className="h-6 w-3/4 mb-2" />
                       <Skeleton className="h-4 w-full mb-4" />
@@ -670,7 +672,17 @@ export default function Workouts() {
                 ))
               ) : exercises && exercises.length > 0 ? (
                 exercises.map((exercise) => (
-                  <Card key={exercise.id} className="group border-0 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:scale-[1.02]">
+                  <Card key={exercise.id} className="group border-0 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:scale-[1.02] overflow-hidden">
+                    {/* Exercise Image */}
+                    <div className="relative">
+                      <ExerciseImagePlaceholder 
+                        exercise={exercise}
+                        className="w-full rounded-t-lg"
+                        width={400}
+                        height={200}
+                      />
+                    </div>
+                    
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
                         <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{exercise.name}</CardTitle>
@@ -721,6 +733,16 @@ export default function Workouts() {
                               </DialogDescription>
                             </DialogHeader>
                             <div className="space-y-6">
+                              {/* Exercise Image in Modal */}
+                              <div className="relative">
+                                <ExerciseImagePlaceholder 
+                                  exercise={exercise}
+                                  className="w-full rounded-lg"
+                                  width={600}
+                                  height={300}
+                                />
+                              </div>
+                              
                               <div className="flex flex-wrap gap-2">
                                 <Badge className={getDifficultyColor(exercise.difficulty)}>
                                   {exercise.difficulty}

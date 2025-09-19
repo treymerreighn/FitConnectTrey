@@ -308,6 +308,30 @@ export default function WorkoutSession() {
     });
   };
 
+  // Update weight for a specific set
+  const updateSetWeight = (exerciseIndex: number, setIndex: number, weight: number) => {
+    setWorkoutExercises(prev => {
+      const updated = [...prev];
+      updated[exerciseIndex].sets[setIndex] = {
+        ...updated[exerciseIndex].sets[setIndex],
+        weight: weight
+      };
+      return updated;
+    });
+  };
+
+  // Update target reps for a specific set
+  const updateSetReps = (exerciseIndex: number, setIndex: number, reps: number) => {
+    setWorkoutExercises(prev => {
+      const updated = [...prev];
+      updated[exerciseIndex].sets[setIndex] = {
+        ...updated[exerciseIndex].sets[setIndex],
+        targetReps: reps
+      };
+      return updated;
+    });
+  };
+
   const calculateEstimatedCalories = () => {
     // Basic calorie calculation: 5 calories per minute + 2 calories per set completed
     const timeCalories = Math.floor(elapsedTime / 60) * 5;
@@ -534,14 +558,34 @@ export default function WorkoutSession() {
                                 <span className="text-sm font-medium text-gray-300">
                                   Set {set.setNumber}
                                 </span>
-                                <span className="text-sm text-gray-400">
-                                  {set.targetReps} reps
-                                </span>
-                                {set.weight > 0 && (
-                                  <span className="text-sm text-gray-400">
-                                    {set.weight} lb
-                                  </span>
-                                )}
+                                
+                                {/* Editable Reps Input */}
+                                <div className="flex items-center space-x-1">
+                                  <Input
+                                    type="number"
+                                    value={set.targetReps}
+                                    onChange={(e) => updateSetReps(originalIndex, setIndex, parseInt(e.target.value) || 0)}
+                                    className="w-16 h-7 text-xs bg-gray-600 border-gray-500 text-white text-center"
+                                    min="1"
+                                    max="999"
+                                    data-testid={`input-reps-${exercise.id}-${setIndex}`}
+                                  />
+                                  <span className="text-xs text-gray-400">reps</span>
+                                </div>
+                                
+                                {/* Editable Weight Input */}
+                                <div className="flex items-center space-x-1">
+                                  <Input
+                                    type="number"
+                                    value={set.weight}
+                                    onChange={(e) => updateSetWeight(originalIndex, setIndex, parseFloat(e.target.value) || 0)}
+                                    className="w-20 h-7 text-xs bg-gray-600 border-gray-500 text-white text-center"
+                                    min="0"
+                                    step="0.5"
+                                    data-testid={`input-weight-${exercise.id}-${setIndex}`}
+                                  />
+                                  <span className="text-xs text-gray-400">lb</span>
+                                </div>
                               </div>
 
                               <div className="flex items-center space-x-2">

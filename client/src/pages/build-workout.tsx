@@ -343,7 +343,7 @@ export default function BuildWorkout() {
       </div>
 
       {/* Workout Plan */}
-      <div className="p-4">
+      <div className="p-4 pb-32">
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Your Workout Plan</h2>

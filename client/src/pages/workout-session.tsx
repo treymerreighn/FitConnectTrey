@@ -26,6 +26,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Exercise {
   id: string;
@@ -60,6 +61,7 @@ interface WorkoutExercise extends Exercise {
 export default function WorkoutSession() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
   
   // Timer state
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -310,11 +312,13 @@ export default function WorkoutSession() {
 
   // Update weight for a specific set
   const updateSetWeight = (exerciseIndex: number, setIndex: number, weight: number) => {
+    // Validate weight is non-negative and reasonable
+    const validWeight = Math.max(0, Math.min(weight, 9999));
     setWorkoutExercises(prev => {
       const updated = [...prev];
       updated[exerciseIndex].sets[setIndex] = {
         ...updated[exerciseIndex].sets[setIndex],
-        weight: weight
+        weight: validWeight
       };
       return updated;
     });
@@ -322,11 +326,13 @@ export default function WorkoutSession() {
 
   // Update target reps for a specific set
   const updateSetReps = (exerciseIndex: number, setIndex: number, reps: number) => {
+    // Validate reps is positive and reasonable
+    const validReps = Math.max(1, Math.min(reps, 999));
     setWorkoutExercises(prev => {
       const updated = [...prev];
       updated[exerciseIndex].sets[setIndex] = {
         ...updated[exerciseIndex].sets[setIndex],
-        targetReps: reps
+        targetReps: validReps
       };
       return updated;
     });
@@ -394,6 +400,15 @@ export default function WorkoutSession() {
   });
 
   const handleFinishWorkout = () => {
+    // Prevent saving if user is not authenticated
+    if (!user?.id) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to save your workout",
+        variant: "destructive"
+      });
+      return;
+    }
     const completedSets = workoutExercises.reduce((total, exercise) => {
       return total + exercise.sets.filter(set => set.isCompleted).length;
     }, 0);
@@ -403,7 +418,7 @@ export default function WorkoutSession() {
     }, 0);
 
     const workoutData = {
-      userId: "44595091", // Current user ID - should be dynamic
+      userId: user?.id,
       name: workoutName,
       duration: elapsedTime,
       calories: estimatedCalories,

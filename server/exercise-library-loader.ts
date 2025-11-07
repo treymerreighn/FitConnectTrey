@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { Exercise } from '../shared/schema';
+import { Exercise } from '../shared/schema.ts';
 import { BASIC_EXERCISES } from './simple-exercise-builder';
 import { removeDuplicateExercises, logDuplicateRemovalStats } from './duplicate-remover';
 

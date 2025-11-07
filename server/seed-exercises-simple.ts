@@ -1,4 +1,4 @@
-import { storage } from "./storage";
+import { storage } from "./storage.ts";
 
 const BASIC_EXERCISES = [
   // CHEST EXERCISES

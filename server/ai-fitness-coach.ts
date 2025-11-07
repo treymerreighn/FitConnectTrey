@@ -1,7 +1,10 @@
 import OpenAI from "openai";
-import { storage } from "./storage";
+import { storage } from "./storage.ts";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+let openai: OpenAI | null = null;
+if (process.env.OPENAI_API_KEY) {
+  openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+}
 
 /**
  * Next-Level AI Workout Intelligence System
@@ -47,6 +50,9 @@ Respond with JSON:
   "overallStrategy": "Explanation of the sequencing strategy"
 }`;
 
+      if (!openai) {
+        throw new Error("OPENAI_API_KEY not set; AI features are disabled in this environment.");
+      }
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         messages: [
@@ -116,6 +122,9 @@ Respond with JSON:
   "reasoning": "Why these adjustments optimize the workout"
 }`;
 
+      if (!openai) {
+        throw new Error("OPENAI_API_KEY not set; AI features are disabled in this environment.");
+      }
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         messages: [
@@ -177,6 +186,9 @@ Respond with JSON:
   "riskAssessment": "Current injury/overtraining risk level"
 }`;
 
+      if (!openai) {
+        throw new Error("OPENAI_API_KEY not set; AI features are disabled in this environment.");
+      }
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         messages: [
@@ -254,6 +266,9 @@ Respond with JSON:
   "alternativeApproach": "Creative training approach if no direct substitutes exist"
 }`;
 
+      if (!openai) {
+        throw new Error("OPENAI_API_KEY not set; AI features are disabled in this environment.");
+      }
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         messages: [

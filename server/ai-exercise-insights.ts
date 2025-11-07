@@ -1,7 +1,10 @@
 import OpenAI from "openai";
 import type { ExerciseProgress } from "@shared/schema";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+let openai: OpenAI | null = null;
+if (process.env.OPENAI_API_KEY) {
+  openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+}
 
 export interface ExerciseInsight {
   exercise: string;
@@ -49,6 +52,9 @@ Focus on:
 4. Training consistency
 5. Potential plateaus or improvements needed`;
 
+    if (!openai) {
+      throw new Error("OPENAI_API_KEY not set; AI features are disabled in this environment.");
+    }
     const response = await openai.chat.completions.create({
       model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
       messages: [
@@ -170,6 +176,9 @@ Respond in JSON format with:
 - recommendations: Array of 3-4 specific recommendations
 - weeklyAverage: Calculated weekly average volume`;
 
+    if (!openai) {
+      throw new Error("OPENAI_API_KEY not set; AI features are disabled in this environment.");
+    }
     const response = await openai.chat.completions.create({
       model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
       messages: [

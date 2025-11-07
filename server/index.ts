@@ -1,15 +1,16 @@
+import 'dotenv/config';
 import express from "express";
 import cors from "cors";
 import { createServer } from "http";
-import { setupVite, serveStatic, log } from "./vite";
-import { registerRoutes } from "./authRoutes";
-import routes from "./routes";
-import { initializeDatabase } from "./db";
-import { storage } from "./storage";
-import { buildFreshExerciseLibrary } from "./fresh-exercise-builder";
-import { expandExerciseLibrary } from "./expand-exercise-library";
-import { applyProductionOptimizations, setupMemoryMonitoring, setupGracefulShutdown } from "./production-optimizations";
-import { requestTimer, requestSizeLimiter, simpleRateLimit, healthCheck } from "./middleware/performance";
+import { setupVite, serveStatic, log } from "./vite.ts";
+import { registerRoutes } from "./authRoutes.ts";
+import routes from "./routes.ts";
+import { initializeDatabase } from "./db.ts";
+import { storage } from "./storage.ts";
+import { buildFreshExerciseLibrary } from "./fresh-exercise-builder.ts";
+import { expandExerciseLibrary } from "./expand-exercise-library.ts";
+import { applyProductionOptimizations, setupMemoryMonitoring, setupGracefulShutdown } from "./production-optimizations.ts";
+import { requestTimer, requestSizeLimiter, simpleRateLimit, healthCheck } from "./middleware/performance.ts";
 
 const app = express();
 

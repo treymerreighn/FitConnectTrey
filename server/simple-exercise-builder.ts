@@ -1,4 +1,4 @@
-import { storage } from "./storage";
+import { storage } from "./storage.ts";
 
 // Build exercises without OpenAI API to get us started
 export async function buildBasicExerciseLibrary(): Promise<void> {

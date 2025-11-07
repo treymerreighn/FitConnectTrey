@@ -1,4 +1,4 @@
-import { Exercise } from '../shared/schema';
+import { Exercise } from '../shared/schema.ts';
 
 /**
  * Removes duplicate exercises based on name similarity

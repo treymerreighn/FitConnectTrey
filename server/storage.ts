@@ -1,6 +1,6 @@
-import type { User, Post, Comment, Connection, ProgressEntry, Exercise, WorkoutSession, ExerciseProgress, Recipe, CommunityMeal, ProgressInsight, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, InsertWorkoutSession, InsertExerciseProgress, InsertProgressInsight } from "@shared/schema";
+import type { User, Post, Comment, Connection, ProgressEntry, Exercise, WorkoutSession, ExerciseProgress, Recipe, CommunityMeal, ProgressInsight, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, InsertWorkoutSession, InsertExerciseProgress, InsertProgressInsight } from "../shared/schema.ts";
 import { nanoid } from "nanoid";
-import { PgStorage } from "./pg-storage";
+import { PgStorage } from "./pg-storage.ts";
 
 export interface IStorage {
   // Users
@@ -1061,4 +1061,7 @@ export class MemStorage implements IStorage {
 }
 
 // Switch between development (MemStorage) and production (PgStorage)
-export const storage = process.env.DATABASE_URL ? new PgStorage() : new MemStorage();
+// Use the Postgres-backed storage only in production environments where DATABASE_URL
+// is set. For local development we prefer the in-memory `MemStorage` to avoid
+// requiring a running remote database.
+export const storage = (process.env.DATABASE_URL && process.env.NODE_ENV === 'production') ? new PgStorage() : new MemStorage();

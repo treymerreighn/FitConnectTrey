@@ -1,16 +1,24 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
-import * as schema from "@shared/db-schema";
+import * as schema from "../shared/db-schema.ts";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL is not set");
+let sql: any = null;
+export let db: any = null;
+
+// Initialize only if DATABASE_URL is provided; otherwise skip for local/dev
+// Only connect to the remote DB in production when DATABASE_URL is provided.
+if (process.env.DATABASE_URL && process.env.NODE_ENV === 'production') {
+  sql = neon(process.env.DATABASE_URL);
+  db = drizzle(sql, { schema });
 }
 
-const sql = neon(process.env.DATABASE_URL);
-export const db = drizzle(sql, { schema });
-
-// Create tables if they don't exist
+// Create tables if they don't exist (no-op when DATABASE_URL not provided)
 export async function initializeDatabase() {
+  if (!sql) {
+    console.log("DATABASE_URL not set; skipping database initialization (using in-memory storage)");
+    return;
+  }
+
   try {
     // Create sessions table for authentication
     await sql`

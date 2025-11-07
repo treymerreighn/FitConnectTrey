@@ -1,5 +1,5 @@
-import { storage } from "./storage";
-import { removeDuplicateExercises, logDuplicateRemovalStats } from "./duplicate-remover";
+import { storage } from "./storage.ts";
+import { removeDuplicateExercises, logDuplicateRemovalStats } from "./duplicate-remover.ts";
 
 /**
  * One-time cleanup script to remove all duplicate exercises from storage

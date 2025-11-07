@@ -1,7 +1,10 @@
 import OpenAI from "openai";
-import { storage } from "./storage";
+import { storage } from "./storage.ts";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+let openai: OpenAI | null = null;
+if (process.env.OPENAI_API_KEY) {
+  openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+}
 
 interface GeneratedExercise {
   name: string;
@@ -135,6 +138,9 @@ Focus on:
 - Benefits and muscle targeting
 - Progression options for ${spec.difficulty} level`;
 
+  if (!openai) {
+    throw new Error("OPENAI_API_KEY not set; AI features are disabled in this environment.");
+  }
   const response = await openai.chat.completions.create({
     model: "gpt-4o",
     messages: [

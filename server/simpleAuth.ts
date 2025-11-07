@@ -1,5 +1,5 @@
 import type { Express, RequestHandler } from "express";
-import { storage } from "./storage";
+import { storage } from "./storage.ts";
 
 // Simple development authentication that works reliably
 const CURRENT_USER = {

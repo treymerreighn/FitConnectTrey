@@ -1,6 +1,6 @@
 import axios from 'axios';
 import fs from 'fs';
-import { Exercise } from '../shared/schema';
+import { Exercise } from '../shared/schema.ts';
 
 interface AIExerciseResponse {
   name: string;

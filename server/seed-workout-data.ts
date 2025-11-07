@@ -1,5 +1,5 @@
-import { storage } from "./storage";
-import type { InsertWorkoutSession, InsertExerciseProgress } from "@shared/schema";
+import { storage } from "./storage.ts";
+import type { InsertWorkoutSession, InsertExerciseProgress } from "../shared/schema.ts";
 
 export async function seedWorkoutData() {
   console.log("🏋️ Seeding sample workout data...");

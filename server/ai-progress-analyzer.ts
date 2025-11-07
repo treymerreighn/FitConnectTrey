@@ -1,6 +1,9 @@
 import OpenAI from "openai";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+let openai: OpenAI | null = null;
+if (process.env.OPENAI_API_KEY) {
+  openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+}
 
 /**
  * AI-Powered Progress Analysis System
@@ -55,6 +58,9 @@ Respond with JSON:
   "comparisonWithPrevious": "How this compares to previous photo if applicable"
 }`;
 
+      if (!openai) {
+        throw new Error("OPENAI_API_KEY not set; AI features are disabled in this environment.");
+      }
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         messages: [
@@ -137,6 +143,9 @@ Respond with JSON:
   "nextSteps": ["Immediate action items for next 2-4 weeks"]
 }`;
 
+      if (!openai) {
+        throw new Error("OPENAI_API_KEY not set; AI features are disabled in this environment.");
+      }
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         messages: [
@@ -211,6 +220,9 @@ Respond with JSON:
   "progressScore": 85
 }`;
 
+      if (!openai) {
+        throw new Error("OPENAI_API_KEY not set; AI features are disabled in this environment.");
+      }
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         messages: [

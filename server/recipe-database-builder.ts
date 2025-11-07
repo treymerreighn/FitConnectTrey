@@ -1,5 +1,5 @@
-import { buildRecipeDatabase } from "./ai-recipe-generator";
-import { storage } from "./storage";
+import { buildRecipeDatabase } from "./ai-recipe-generator.ts";
+import { storage } from "./storage.ts";
 
 export async function initializeRecipeDatabase() {
   try {

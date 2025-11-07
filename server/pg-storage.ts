@@ -1,8 +1,8 @@
 import { eq, ilike, and, desc, sql, inArray } from "drizzle-orm";
-import { db } from "./db";
-import { users, posts, comments, connections, progressEntries, exercises } from "@shared/db-schema";
-import { IStorage } from "./storage";
-import type { User, Post, Comment, Connection, ProgressEntry, Exercise, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise } from "@shared/schema";
+import { db } from "./db.ts";
+import { users, posts, comments, connections, progressEntries, exercises } from "../shared/db-schema.ts";
+import { IStorage } from "./storage.ts";
+import type { User, Post, Comment, Connection, ProgressEntry, Exercise, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise } from "../shared/schema.ts";
 
 export class PgStorage implements IStorage {
   constructor() {

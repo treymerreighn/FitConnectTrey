@@ -1,16 +1,16 @@
 import { Router } from "express";
 import { z } from "zod";
-import { storage } from "./storage";
-import { insertUserSchema, insertPostSchema, insertCommentSchema, insertConnectionSchema, insertProgressEntrySchema, insertExerciseSchema } from "@shared/schema";
-import { setupAuth, isAuthenticated } from "./replitAuth";
-import { generateAIWorkout } from "./ai-workout";
-import { generateExerciseDatabase, generateWorkoutTemplates } from "./ai-exercise-generator";
-import { seedExerciseDatabase } from "./seed-exercises";
-import { removeDuplicateExercises } from "./duplicate-remover";
-import { AIWorkoutIntelligence } from "./ai-fitness-coach";
-import { AINutritionCoach } from "./ai-nutrition-coach";
-import { AIProgressAnalyzer } from "./ai-progress-analyzer";
-import { generatePersonalizedRecipe } from "./ai-meal-helper";
+import { storage } from "./storage.ts";
+import { insertUserSchema, insertPostSchema, insertCommentSchema, insertConnectionSchema, insertProgressEntrySchema, insertExerciseSchema } from "../shared/schema.ts";
+import { setupAuth, isAuthenticated } from "./replitAuth.ts";
+import { generateAIWorkout } from "./ai-workout.ts";
+import { generateExerciseDatabase, generateWorkoutTemplates } from "./ai-exercise-generator.ts";
+import { seedExerciseDatabase } from "./seed-exercises.ts";
+import { removeDuplicateExercises } from "./duplicate-remover.ts";
+import { AIWorkoutIntelligence } from "./ai-fitness-coach.ts";
+import { AINutritionCoach } from "./ai-nutrition-coach.ts";
+import { AIProgressAnalyzer } from "./ai-progress-analyzer.ts";
+import { generatePersonalizedRecipe } from "./ai-meal-helper.ts";
 
 const router = Router();
 

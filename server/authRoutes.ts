@@ -1,15 +1,15 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
-import { setupSimpleAuth, isAuthenticated } from "./simpleAuth";
-import { insertPostSchema, insertCommentSchema, insertConnectionSchema, insertProgressEntrySchema, insertExerciseSchema, insertWorkoutSessionSchema, insertExerciseProgressSchema } from "@shared/schema";
+import { storage } from "./storage.ts";
+import { setupSimpleAuth, isAuthenticated } from "./simpleAuth.ts";
+import { insertPostSchema, insertCommentSchema, insertConnectionSchema, insertProgressEntrySchema, insertExerciseSchema, insertWorkoutSessionSchema, insertExerciseProgressSchema } from "../shared/schema.ts";
 import multer from "multer";
-import { AWSImageService } from "./aws-config";
-import { db } from "./db";
+import { AWSImageService } from "./aws-config.ts";
+import { db } from "./db.ts";
 import { eq, sql } from "drizzle-orm";
-import { generateAIWorkout } from "./ai-workout";
-import { generateExerciseInsights, generateWorkoutVolumeInsights } from "./ai-exercise-insights";
-import { generatePersonalizedRecipe } from "./ai-meal-helper";
+import { generateAIWorkout } from "./ai-workout.ts";
+import { generateExerciseInsights, generateWorkoutVolumeInsights } from "./ai-exercise-insights.ts";
+import { generatePersonalizedRecipe } from "./ai-meal-helper.ts";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 

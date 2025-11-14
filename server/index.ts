@@ -73,9 +73,17 @@ async function startServer() {
       await setupVite(app, server);
     }
 
+    // Handle listen errors (EADDRINUSE) gracefully with a clear message
+    server.on('error', (err: any) => {
+      if (err && err.code === 'EADDRINUSE') {
+        console.error(`Port ${PORT} is already in use. Another instance may be running.`);
+        process.exit(1);
+      }
+    });
+
     server.listen(Number(PORT), "0.0.0.0", () => {
       log(`Server running at http://0.0.0.0:${PORT}`);
-      
+
       // Setup production monitoring
       setupMemoryMonitoring();
       setupGracefulShutdown(server);

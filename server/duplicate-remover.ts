@@ -70,15 +70,15 @@ export function removeDuplicateExercises(exercises: Exercise[]): Exercise[] {
     let isDuplicate = false;
     
     // Check against existing exercises
-    for (const [existingKey, existingExercise] of uniqueExercises) {
+    uniqueExercises.forEach((existingExercise, existingKey) => {
+      if (isDuplicate) return;
       if (areNamesSimilar(exercise.name, existingExercise.name)) {
         // Found a duplicate - keep the better one
         const betterExercise = selectBetterExercise(existingExercise, exercise);
         uniqueExercises.set(existingKey, betterExercise);
         isDuplicate = true;
-        break;
       }
-    }
+    });
     
     // If not a duplicate, add it
     if (!isDuplicate) {

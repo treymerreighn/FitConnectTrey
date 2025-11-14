@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Heart, MessageCircle, Dumbbell, Plus } from "lucide-react";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import TopHeader from "@/components/TopHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { PostCard } from "@/components/ui/post-card";
@@ -10,6 +12,7 @@ import type { Post, User } from "@shared/schema";
 
 export default function Feed() {
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [, setLocation] = useLocation();
   
   const { data: posts = [], isLoading: postsLoading, error: postsError } = useQuery<Post[]>({
     queryKey: ["/api/posts"],
@@ -51,31 +54,7 @@ export default function Feed() {
   if (postsLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        {/* Header */}
-        <header className="fixed top-0 w-full bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-50">
-          <div className="flex items-center justify-between px-4 py-3">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-fit-green rounded-lg flex items-center justify-center">
-                <Dumbbell className="w-4 h-4 text-white" />
-              </div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">FitConnect</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm" className="relative">
-                <Heart className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
-                  3
-                </span>
-              </Button>
-              <Button variant="ghost" size="sm" className="relative">
-                <MessageCircle className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-fit-blue rounded-full text-xs text-white flex items-center justify-center">
-                  5
-                </span>
-              </Button>
-            </div>
-          </div>
-        </header>
+        <TopHeader />
 
         {/* Loading Content */}
         <main className="pt-16 pb-20">
@@ -114,31 +93,7 @@ export default function Feed() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <header className="fixed top-0 w-full bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-50">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-fit-green rounded-lg flex items-center justify-center">
-              <Dumbbell className="w-4 h-4 text-white" />
-            </div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">FitConnect</h1>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="sm" className="relative">
-              <Heart className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
-                3
-              </span>
-            </Button>
-            <Button variant="ghost" size="sm" className="relative">
-              <MessageCircle className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-fit-blue rounded-full text-xs text-white flex items-center justify-center">
-                5
-              </span>
-            </Button>
-          </div>
-        </div>
-      </header>
+      <TopHeader />
 
       {/* Main Content */}
       <main className="pt-16 pb-20">

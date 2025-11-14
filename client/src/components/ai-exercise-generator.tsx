@@ -53,21 +53,20 @@ export function AIExerciseGenerator({ onClose }: ExerciseGeneratorProps) {
 
   const generateBatchMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("/api/generate-exercises-with-diagrams", {
-        method: "POST"
-      });
+      const res = await apiRequest("/api/generate-exercises-with-diagrams", { method: "POST" });
+      return await res.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast({
         title: "Success! 🎉",
-        description: data.message || "Generated popular exercises with muscle diagrams",
+        description: data?.message || "Generated popular exercises with muscle diagrams",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/exercises"] });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Generation Failed",
-        description: error.message || "Failed to generate exercises",
+        description: error?.message || "Failed to generate exercises",
         variant: "destructive",
       });
     }
@@ -78,8 +77,7 @@ export function AIExerciseGenerator({ onClose }: ExerciseGeneratorProps) {
       if (!category || !difficulty || selectedMuscles.length === 0 || selectedEquipment.length === 0) {
         throw new Error("Please fill in all required fields");
       }
-
-      return await apiRequest("/api/generate-custom-exercise", {
+      const res = await apiRequest("/api/generate-custom-exercise", {
         method: "POST",
         body: {
           name: exerciseName || undefined,
@@ -89,19 +87,20 @@ export function AIExerciseGenerator({ onClose }: ExerciseGeneratorProps) {
           difficulty
         }
       });
+      return await res.json();
     },
-    onSuccess: (data) => {
-      setGeneratedExercise(data.exercise);
+    onSuccess: (data: any) => {
+      setGeneratedExercise(data?.exercise);
       toast({
         title: "Exercise Generated! 🎯",
-        description: data.message || `Generated "${data.exercise?.name}" with muscle diagram`,
+        description: data?.message || `Generated "${data?.exercise?.name}" with muscle diagram`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/exercises"] });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Generation Failed",
-        description: error.message || "Failed to generate custom exercise",
+        description: error?.message || "Failed to generate custom exercise",
         variant: "destructive",
       });
     }

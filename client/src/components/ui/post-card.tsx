@@ -8,7 +8,7 @@ import { OptimizedImage } from "../OptimizedImage";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { CURRENT_USER_ID } from "@/lib/constants";
-import type { Post, User } from "@shared/schema";
+import type { Post, User, Comment } from "@shared/schema";
 
 interface PostCardProps {
   post: Post;
@@ -25,9 +25,61 @@ export function PostCard({ post }: PostCardProps) {
     retry: 2,
   });
 
-  const { data: comments = [] } = useQuery({
+  const { data: comments = [] } = useQuery<Comment[]>({
     queryKey: [`/api/posts/${post.id}/comments`],
     enabled: showComments,
+  });
+  const { data: allUsers = [] } = useQuery<User[]>({
+    queryKey: [`/api/users`],
+    staleTime: 1000 * 60 * 5,
+  });
+  const usersMap = Object.fromEntries((allUsers || []).map(u => [u.id, u]));
+
+  const [commentText, setCommentText] = useState("");
+
+  const createCommentMutation = useMutation({
+    mutationFn: async (content: string) => {
+      // Use apiRequest directly; server expects { userId, postId, content }
+      return apiRequest("POST", `/api/posts/${post.id}/comments`, { userId: CURRENT_USER_ID, content });
+    },
+    onMutate: async (content: string) => {
+      await queryClient.cancelQueries({ queryKey: [`/api/posts/${post.id}/comments`] });
+      const previous = queryClient.getQueryData([`/api/posts/${post.id}/comments`]);
+      // Optimistically add a local comment
+      const optimistic = {
+        id: `temp-${Date.now()}`,
+        userId: CURRENT_USER_ID,
+        postId: post.id,
+        content,
+        createdAt: new Date().toISOString(),
+      } as any;
+      queryClient.setQueryData([`/api/posts/${post.id}/comments`], (old: any) => {
+        return old ? [optimistic, ...old] : [optimistic];
+      });
+      // Also update posts list comment counts
+      queryClient.setQueryData(["/api/posts"], (old: any) => {
+        if (!old) return old;
+        return old.map((p: any) => p.id === post.id ? { ...p, comments: [...(p.comments || []), optimistic.id] } : p);
+      });
+      return { previous };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData([`/api/posts/${post.id}/comments`], context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/posts", `/api/posts/${post.id}/comments`] });
+    }
+  });
+
+  const deleteCommentMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest("DELETE", `/api/posts/${post.id}/comments/${id}`);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/posts", `/api/posts/${post.id}/comments`] });
+    }
   });
 
   const likeMutation = useMutation({
@@ -194,9 +246,10 @@ export function PostCard({ post }: PostCardProps) {
           <OptimizedImage 
             src={post.images[0]} 
             alt="Post content" 
-            width={600}
-            height={320}
-            className="w-full h-80 object-cover"
+            width={800}
+            height={450}
+            className="w-full aspect-video rounded-md overflow-hidden"
+            placeholder="blur"
           />
         </div>
       )}
@@ -239,7 +292,7 @@ export function PostCard({ post }: PostCardProps) {
           </Button>
         </div>
         
-        {/* Post Details */}
+  {/* Post Details */}
         {(post.workoutData || post.nutritionData || post.progressData) && (
           <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 mt-3">
             <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2 text-sm">
@@ -332,6 +385,52 @@ export function PostCard({ post }: PostCardProps) {
                   </div>
                 </>
               )}
+            </div>
+          </div>
+        )}
+        {/* Comments Section */}
+        {showComments && (
+          <div className="mt-4">
+            <div className="space-y-3">
+              {/* New comment input */}
+              <div className="flex items-start gap-2">
+                <UserAvatar src={user?.avatar} name={user?.name} alt="You" />
+                <div className="flex-1">
+                  <textarea
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    placeholder="Write a comment..."
+                    className="w-full bg-gray-100 dark:bg-gray-800 rounded p-2 text-sm"
+                    rows={2}
+                  />
+                  <div className="flex justify-end mt-2">
+                    <Button
+                      onClick={() => {
+                        if (!commentText.trim()) return;
+                        createCommentMutation.mutate(commentText.trim());
+                        setCommentText("");
+                      }}
+                      disabled={createCommentMutation.isPending}
+                    >
+                      Comment
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Existing comments */}
+              <div className="space-y-2">
+                {comments.length === 0 ? (
+                  <div className="text-sm text-gray-500">No comments yet.</div>
+                ) : (
+                  comments.map((c: any) => (
+                    <div key={c.id} className="p-2 bg-gray-50 dark:bg-gray-900 rounded">
+                      <div className="text-xs text-gray-500">{c.userId} • {new Date(c.createdAt).toLocaleString()}</div>
+                      <div className="mt-1 text-sm">{c.content}</div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         )}

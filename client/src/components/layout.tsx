@@ -1,6 +1,8 @@
 import { Home, Search, Dumbbell, TrendingUp, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
+import { Link } from "@/components/ui/link";
+import FAB from "@/components/FAB";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -20,7 +22,8 @@ export function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {children}
-      
+          {/* Floating Action Button for mobile */}
+          <FAB />
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 w-full bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-50">
         <div className="flex items-center justify-around py-2">

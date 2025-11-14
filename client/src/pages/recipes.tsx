@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { MealHelper } from "@/components/meal-helper";
 import type { Recipe } from "@shared/schema";
+import { OptimizedImage } from "@/components/OptimizedImage";
 
 export default function RecipesPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -245,10 +246,13 @@ function RecipeCard({ recipe, featured = false }: { recipe: Recipe; featured?: b
       <CardHeader className="p-0">
         <div className="h-48 bg-gradient-to-br from-orange-400 to-red-500 rounded-t-lg flex items-center justify-center relative overflow-hidden">
           {recipe.image ? (
-            <img 
-              src={recipe.image} 
+            <OptimizedImage
+              src={recipe.image}
               alt={recipe.name}
+              width={800}
+              height={320}
               className="w-full h-full object-cover"
+              placeholder="blur"
             />
           ) : (
             <ChefHat className="h-16 w-16 text-white opacity-50" />
@@ -332,10 +336,13 @@ function UserMealCard({ post }: { post: any }) {
       <CardHeader className="p-0">
         <div className="h-48 bg-gradient-to-br from-green-400 to-blue-500 rounded-t-lg flex items-center justify-center relative overflow-hidden">
           {post.images && post.images.length > 0 ? (
-            <img 
-              src={post.images[0]} 
+            <OptimizedImage
+              src={post.images[0]}
               alt="User meal"
+              width={800}
+              height={320}
               className="w-full h-full object-cover"
+              placeholder="blur"
             />
           ) : (
             <ChefHat className="h-16 w-16 text-white opacity-50" />

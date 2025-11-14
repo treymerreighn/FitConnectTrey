@@ -72,6 +72,13 @@
     /* Enhanced shadow for depth on mobile */
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   }
+
+  /* Floating Action Button */
+  .fab {
+    background: linear-gradient(135deg, var(--fit-green), var(--fit-blue));
+    box-shadow: 0 8px 24px rgba(2,6,23,0.28);
+    border: 0;
+  }
   
   .mobile-input {
     @apply w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg;

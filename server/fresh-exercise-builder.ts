@@ -1,10 +1,5 @@
-import OpenAI from "openai";
+import { requireOpenAI } from "./openai.ts";
 import { storage } from "./storage.ts";
-
-let openai: OpenAI | null = null;
-if (process.env.OPENAI_API_KEY) {
-  openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-}
 
 interface GeneratedExercise {
   name: string;
@@ -65,23 +60,10 @@ export async function buildFreshExerciseLibrary(): Promise<void> {
         const exercisePrompt = `Generate detailed fitness exercise data for these ${batch.exercises.length} exercises: ${batch.exercises.join(", ")}
 
 For each exercise, provide:
-- name: Exact exercise name from the list
-- category: "strength", "cardio", "flexibility", "sports", or "functional"
-- muscleGroups: Array of specific muscle groups worked
-- equipment: Array of equipment needed (use "bodyweight" for no equipment)
-- difficulty: "beginner", "intermediate", or "advanced"
-- description: Brief 1-2 sentence description
-- instructions: Array of 3-4 step-by-step instructions
-- tips: Array of 2 helpful tips for proper form
-- safetyNotes: Array of 1-2 safety considerations
-- variations: Array of 1-2 exercise variations
-- imageUrl: Generate a realistic Unsplash URL
 
 Respond with JSON object: {"exercises": [exercise_array]}`;
 
-        if (!openai) {
-          throw new Error("OPENAI_API_KEY not set; AI features are disabled in this environment.");
-        }
+        const openai = requireOpenAI();
         const response = await openai.chat.completions.create({
           model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
           messages: [
@@ -115,7 +97,7 @@ Respond with JSON object: {"exercises": [exercise_array]}`;
         await new Promise(resolve => setTimeout(resolve, 1000));
         
       } catch (error) {
-        console.log(`⚠️ Failed to generate ${batch.name}:`, error.message);
+          console.log(`⚠️ Failed to generate ${batch.name}:`, (error as any).message);
       }
     }
 
@@ -151,7 +133,7 @@ Respond with JSON object: {"exercises": [exercise_array]}`;
         console.log(`✓ Added: ${exercise.name}`);
         
       } catch (error) {
-        console.log(`⚠️ Failed to save ${exerciseData.name}:`, error.message);
+          console.log(`⚠️ Failed to save ${exerciseData.name}:`, (error as any).message);
       }
     }
 

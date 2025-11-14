@@ -1,11 +1,6 @@
-import OpenAI from "openai";
+import { requireOpenAI } from "./openai.ts";
 import { nanoid } from "nanoid";
 import type { Recipe } from "../shared/schema.ts";
-
-let openai: OpenAI | null = null;
-if (process.env.OPENAI_API_KEY) {
-  openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-}
 
 interface MealHelperParams {
   preferences?: string;
@@ -77,9 +72,7 @@ Respond with a JSON object in this exact format:
   try {
     console.log("🤖 Generating personalized recipe with OpenAI...");
     
-    if (!openai) {
-      throw new Error("OPENAI_API_KEY not set; AI features are disabled in this environment.");
-    }
+    const openai = requireOpenAI();
     const response = await openai.chat.completions.create({
       model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
       messages: [

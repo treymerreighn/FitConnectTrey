@@ -8,20 +8,57 @@ async function throwIfResNotOk(res: Response) {
 }
 
 export async function apiRequest(
-  method: string,
-  url: string,
-  data?: unknown | undefined,
-): Promise<Response> {
-  const isFormData = data instanceof FormData;
-  
-  const res = await fetch(url, {
-    method,
-    headers: !isFormData && data ? { "Content-Type": "application/json" } : {},
-    body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
-    credentials: "include",
-  });
+  methodOrUrl: string,
+  urlOrOptions?: string | RequestInit | any,
+  data?: unknown,
+): Promise<any> {
+  // Two calling styles supported for backward compatibility:
+  // 1) apiRequest(method, url, data)
+  // 2) apiRequest(url, { method: 'POST', body, headers })
+  let url: string;
+  let options: RequestInit = { credentials: "include" };
 
+  if (typeof urlOrOptions === "string") {
+    // style 1
+    const method = methodOrUrl;
+    url = urlOrOptions;
+    const isFormData = data instanceof FormData;
+    options.method = method;
+    options.body = isFormData ? (data as any) : (data ? JSON.stringify(data) : undefined);
+    if (!isFormData && data) {
+      options.headers = { "Content-Type": "application/json" } as any;
+    }
+  } else {
+    // style 2
+    url = methodOrUrl;
+    const maybeOpts = (urlOrOptions || {}) as RequestInit & { body?: any };
+    options = { ...options, ...maybeOpts };
+
+    // If a non-FormData body is provided as an object, stringify it and set header
+    if (options.body && !(options.body instanceof FormData) && typeof options.body !== "string") {
+      options.body = JSON.stringify(options.body);
+      options.headers = { ...(options.headers as any), "Content-Type": "application/json" } as any;
+    }
+    // If the body is a string (likely already stringified JSON) and there's no
+    // Content-Type header, assume JSON so server parses it.
+    if (options.body && !(options.body instanceof FormData) && typeof options.body === "string") {
+      const headers = { ...(options.headers as any) } as Record<string, string>;
+      if (!headers["Content-Type"] && !headers["content-type"]) {
+        options.headers = { ...(options.headers as any), "Content-Type": "application/json" } as any;
+      }
+    }
+  }
+
+  const res = await fetch(url, options);
   await throwIfResNotOk(res);
+
+  // If response is JSON, parse and return the body to match most client call-sites
+  const contentType = res.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    return await res.json();
+  }
+
+  // Fallback: return the Response for non-JSON (e.g., file downloads)
   return res;
 }
 

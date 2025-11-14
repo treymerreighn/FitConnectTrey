@@ -20,7 +20,7 @@ import { ImageUpload } from "@/components/image-upload";
 import type { InsertPost, Exercise as ExerciseType } from "@shared/schema";
 
 interface WorkoutSet {
-  reps?: number;
+  reps: number;
   weight?: number;
   duration?: number;
   distance?: number;
@@ -149,10 +149,11 @@ export default function CreatePost() {
 
   const updateSet = (exerciseIndex: number, setIndex: number, field: keyof WorkoutSet, value: number) => {
     const updated = [...exercises];
-    updated[exerciseIndex].sets[setIndex] = { 
-      ...updated[exerciseIndex].sets[setIndex], 
-      [field]: value || undefined
-    };
+    const current = updated[exerciseIndex].sets[setIndex] || { reps: 0 };
+    updated[exerciseIndex].sets[setIndex] = {
+      ...current,
+      [field]: value,
+    } as WorkoutSet;
     setExercises(updated);
   };
 

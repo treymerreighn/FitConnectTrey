@@ -1,10 +1,5 @@
-import OpenAI from "openai";
+import { requireOpenAI } from "./openai.ts";
 import { storage } from "./storage.ts";
-
-let openai: OpenAI | null = null;
-if (process.env.OPENAI_API_KEY) {
-  openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-}
 
 interface GeneratedExercise {
   name: string;
@@ -138,9 +133,7 @@ Focus on:
 - Benefits and muscle targeting
 - Progression options for ${spec.difficulty} level`;
 
-  if (!openai) {
-    throw new Error("OPENAI_API_KEY not set; AI features are disabled in this environment.");
-  }
+  const openai = requireOpenAI();
   const response = await openai.chat.completions.create({
     model: "gpt-4o",
     messages: [
@@ -171,7 +164,8 @@ Show: Proper form and technique for ${exercise.name}, targeting ${exercise.muscl
     
 Quality: High resolution, well-lit, professional fitness photography with clean background.`;
 
-    const response = await openai.images.generate({
+  const openai = requireOpenAI();
+  const response = await openai.images.generate({
       model: "dall-e-3",
       prompt: prompt,
       n: 1,
@@ -179,7 +173,7 @@ Quality: High resolution, well-lit, professional fitness photography with clean 
       quality: "standard",
     });
 
-    return response.data[0].url || "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400";
+    return response?.data?.[0]?.url || "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400";
     
   } catch (error) {
     console.error(`Failed to generate image for ${exercise.name}:`, error);

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Search, Plus, Play, X, Filter, Brain, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { api } from "@/lib/api";
+import { OptimizedImage } from "@/components/OptimizedImage";
 import { useLocation, Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -102,12 +104,21 @@ export default function ExerciseLibrary() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch exercises from database - standardized to use default queryFn
-  const { data: exercisesData = [] } = useQuery({
-    queryKey: ["/api/exercises"],
+  // Debounced search so we don't refetch while the user is typing
+  const debouncedSearch = useDebounce(searchTerm, 400);
+
+  // Fetch exercises from database - include search and category where applicable
+  const exercisesQueryUrl = (() => {
+    const params = new URLSearchParams();
+    if (debouncedSearch) params.append('search', debouncedSearch);
+    if (selectedCategory && selectedCategory !== 'All') params.append('category', selectedCategory.toLowerCase());
+    const qs = params.toString();
+    return `/api/exercises${qs ? `?${qs}` : ''}`;
+  })();
+
+  const { data: exercisesData = [] } = useQuery<Exercise[]>({
+    queryKey: [exercisesQueryUrl],
   });
-
-
 
   const exercises = exercisesData.length > 0 ? exercisesData : MOCK_EXERCISES;
 
@@ -240,17 +251,20 @@ export default function ExerciseLibrary() {
                 {exercises.map(exercise => (
                   <Card 
                     key={exercise.id} 
-                    className="bg-gray-800 border-gray-700 cursor-pointer hover:bg-gray-750 transition-colors"
+                    className="mobile-card p-3 bg-gray-800 border-gray-700 cursor-pointer hover:bg-gray-750 transition-colors"
                     onClick={() => isSelectionMode ? toggleExerciseSelection(exercise) : setShowExerciseDetail(exercise)}
                   >
-                    <CardContent className="p-4">
+                    <CardContent className="p-3">
                       <div className="flex items-center space-x-4">
                         {/* Exercise Image */}
                         <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-700">
-                          <img 
-                            src={exercise.thumbnailUrl} 
+                          <OptimizedImage
+                            src={exercise.thumbnailUrl}
                             alt={exercise.name}
                             className="w-full h-full object-cover"
+                            width={48}
+                            height={48}
+                            placeholder="blur"
                           />
                         </div>
 
@@ -312,10 +326,11 @@ export default function ExerciseLibrary() {
             </DialogHeader>
             <div className="space-y-4">
               <div className="aspect-video rounded-lg overflow-hidden bg-gray-700">
-                <img 
-                  src={showExerciseDetail.thumbnailUrl} 
+                <OptimizedImage
+                  src={showExerciseDetail.thumbnailUrl}
                   alt={showExerciseDetail.name}
                   className="w-full h-full object-cover"
+                  placeholder="blur"
                 />
               </div>
               

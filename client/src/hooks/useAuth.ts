@@ -17,7 +17,7 @@ export function useAuth() {
     },
     retry: false,
     staleTime: 0,
-    cacheTime: 0,
+    // cacheTime removed to match current React Query types — keep staleTime=0 for fresh fetches
   });
 
   console.log("useAuth - user:", user, "isLoading:", isLoading, "error:", error);

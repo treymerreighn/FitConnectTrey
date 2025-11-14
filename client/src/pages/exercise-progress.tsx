@@ -65,7 +65,7 @@ export default function ExerciseProgressPage() {
       ? ((lastSession.weight - firstSession.weight) / firstSession.weight * 100)
       : 0;
     
-    const bestWeight = Math.max(...progressData.map(d => d.weight || 0));
+    const bestWeight = Math.max(...progressData.map((d: ExerciseProgress) => d.bestSet?.weight || 0));
     
     return {
       improvement: Math.round(improvement),

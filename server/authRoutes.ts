@@ -171,6 +171,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete a comment (only comment author or post owner)
+  app.delete("/api/posts/:postId/comments/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const postId = req.params.postId;
+      const commentId = req.params.id;
+
+      const comments = await storage.getCommentsByPostId(postId);
+      const comment = comments.find((c: any) => c.id === commentId);
+      if (!comment) return res.status(404).json({ error: "Comment not found" });
+
+      const post = await storage.getPostById(postId);
+      const isOwner = post && post.userId === userId;
+      const isAuthor = comment.userId === userId;
+      if (!isAuthor && !isOwner) return res.status(403).json({ error: "Forbidden" });
+
+      const ok = await storage.deleteComment(commentId);
+      if (ok && post) {
+        // Remove comment id from post.comments array
+        const updatedComments = (post.comments || []).filter((cid: string) => cid !== commentId);
+        await storage.updatePost(postId, { comments: updatedComments });
+      }
+
+      res.json({ success: ok });
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      res.status(500).json({ error: "Failed to delete comment" });
+    }
+  });
+
   app.post("/api/connections", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;

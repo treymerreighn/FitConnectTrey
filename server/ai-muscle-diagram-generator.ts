@@ -1,10 +1,5 @@
-import OpenAI from "openai";
+import { requireOpenAI } from "./openai.ts";
 import { storage } from "./storage.ts";
-
-let openai: OpenAI | null = null;
-if (process.env.OPENAI_API_KEY) {
-  openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-}
 
 interface MuscleGroup {
   name: string;
@@ -105,9 +100,7 @@ Focus on:
 - Realistic ${request.difficulty} level difficulty
 - Effective targeting of ${request.targetMuscles.join(", ")}`;
 
-  if (!openai) {
-    throw new Error("OPENAI_API_KEY not set; AI features are disabled in this environment.");
-  }
+  const openai = requireOpenAI();
   const response = await openai.chat.completions.create({
     model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
     messages: [
@@ -152,9 +145,7 @@ Return as JSON:
 
 Make the SVG clean, professional, and educational. Size should be approximately 400x500 pixels.`;
 
-  if (!openai) {
-    throw new Error("OPENAI_API_KEY not set; AI features are disabled in this environment.");
-  }
+  const openai = requireOpenAI();
   const response = await openai.chat.completions.create({
     model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
     messages: [

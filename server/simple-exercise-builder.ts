@@ -1,17 +1,13 @@
 import { storage } from "./storage.ts";
 
 // Build exercises without OpenAI API to get us started
-export async function buildBasicExerciseLibrary(): Promise<void> {
-  try {
-    console.log("🏗️ Building basic exercise library...");
-    
-    const basicExercises = [
+export const BASIC_EXERCISES = [
       {
         name: "Push-ups",
-        category: "strength" as const,
-        muscleGroups: ["chest", "triceps", "shoulders"] as const,
+        category: "strength",
+        muscleGroups: ["chest", "triceps", "shoulders"],
         equipment: ["bodyweight"],
-        difficulty: "beginner" as const,
+        difficulty: "beginner",
         description: "Classic bodyweight exercise targeting chest, shoulders, and triceps. Great for building upper body strength and can be modified for all fitness levels.",
         instructions: [
           "Start in a plank position with hands slightly wider than shoulders",
@@ -41,10 +37,10 @@ export async function buildBasicExerciseLibrary(): Promise<void> {
       },
       {
         name: "Squats",
-        category: "strength" as const,
-        muscleGroups: ["quadriceps", "glutes", "hamstrings"] as const,
+        category: "strength",
+        muscleGroups: ["quadriceps", "glutes", "hamstrings"],
         equipment: ["bodyweight"],
-        difficulty: "beginner" as const,
+        difficulty: "beginner",
         description: "Fundamental lower body compound movement that targets multiple leg muscles. Essential exercise for building functional strength and mobility.",
         instructions: [
           "Stand with feet shoulder-width apart, toes slightly pointed out",
@@ -74,10 +70,10 @@ export async function buildBasicExerciseLibrary(): Promise<void> {
       },
       {
         name: "Plank",
-        category: "strength" as const,
-        muscleGroups: ["abs", "shoulders", "back"] as const,
+        category: "strength",
+        muscleGroups: ["abs", "shoulders", "back"],
         equipment: ["bodyweight"],
-        difficulty: "beginner" as const,
+        difficulty: "beginner",
         description: "Isometric core strengthening exercise that builds stability and endurance. Excellent for developing a strong foundation for other exercises.",
         instructions: [
           "Start in push-up position with forearms on ground",
@@ -107,10 +103,10 @@ export async function buildBasicExerciseLibrary(): Promise<void> {
       },
       {
         name: "Lunges",
-        category: "strength" as const,
-        muscleGroups: ["quadriceps", "glutes", "hamstrings"] as const,
+        category: "strength",
+        muscleGroups: ["quadriceps", "glutes", "hamstrings"],
         equipment: ["bodyweight"],
-        difficulty: "beginner" as const,
+        difficulty: "beginner",
         description: "Unilateral lower body exercise that improves balance, coordination, and leg strength. Great for correcting muscle imbalances.",
         instructions: [
           "Stand tall with feet hip-width apart",
@@ -140,10 +136,10 @@ export async function buildBasicExerciseLibrary(): Promise<void> {
       },
       {
         name: "Mountain Climbers",
-        category: "cardio" as const,
-        muscleGroups: ["abs", "shoulders", "quadriceps"] as const,
+        category: "cardio",
+        muscleGroups: ["abs", "shoulders", "quadriceps"],
         equipment: ["bodyweight"],
-        difficulty: "intermediate" as const,
+        difficulty: "intermediate",
         description: "Dynamic full-body exercise that combines cardio and strength training. Excellent for improving cardiovascular fitness and core stability.",
         instructions: [
           "Start in plank position with hands under shoulders",
@@ -173,10 +169,10 @@ export async function buildBasicExerciseLibrary(): Promise<void> {
       },
       {
         name: "Burpees",
-        category: "cardio" as const,
-        muscleGroups: ["quadriceps", "chest", "shoulders"] as const,
+        category: "cardio",
+        muscleGroups: ["quadriceps", "chest", "shoulders"],
         equipment: ["bodyweight"],
-        difficulty: "intermediate" as const,
+        difficulty: "intermediate",
         description: "High-intensity full-body exercise that combines strength and cardio. One of the most effective exercises for overall fitness.",
         instructions: [
           "Start standing, then squat down and place hands on floor",
@@ -206,10 +202,10 @@ export async function buildBasicExerciseLibrary(): Promise<void> {
       },
       {
         name: "Dead Bug",
-        category: "strength" as const,
-        muscleGroups: ["abs", "lower_back"] as const,
+        category: "strength",
+        muscleGroups: ["abs", "lower_back"],
         equipment: ["bodyweight"],
-        difficulty: "beginner" as const,
+        difficulty: "beginner",
         description: "Core stabilization exercise that teaches proper spine alignment and helps prevent lower back pain. Excellent for beginners.",
         instructions: [
           "Lie on back with arms extended toward ceiling",
@@ -239,10 +235,10 @@ export async function buildBasicExerciseLibrary(): Promise<void> {
       },
       {
         name: "Glute Bridges",
-        category: "strength" as const,
-        muscleGroups: ["glutes", "hamstrings"] as const,
+        category: "strength",
+        muscleGroups: ["glutes", "hamstrings"],
         equipment: ["bodyweight"],
-        difficulty: "beginner" as const,
+        difficulty: "beginner",
         description: "Targeted glute exercise that also helps with hip mobility and lower back health. Perfect for activating dormant glute muscles.",
         instructions: [
           "Lie on back with knees bent, feet flat on floor",
@@ -272,10 +268,10 @@ export async function buildBasicExerciseLibrary(): Promise<void> {
       },
       {
         name: "Wall Sits",
-        category: "strength" as const,
-        muscleGroups: ["quadriceps", "glutes"] as const,
+        category: "strength",
+        muscleGroups: ["quadriceps", "glutes"],
         equipment: ["wall"],
-        difficulty: "beginner" as const,
+        difficulty: "beginner",
         description: "Isometric leg exercise that builds endurance and strength in the quadriceps and glutes. Great for building mental toughness too.",
         instructions: [
           "Stand with back against wall, feet shoulder-width apart",
@@ -305,10 +301,10 @@ export async function buildBasicExerciseLibrary(): Promise<void> {
       },
       {
         name: "High Knees",
-        category: "cardio" as const,
-        muscleGroups: ["quadriceps", "calves"] as const,
+        category: "cardio",
+        muscleGroups: ["quadriceps", "calves"],
         equipment: ["bodyweight"],
-        difficulty: "beginner" as const,
+        difficulty: "beginner",
         description: "Dynamic cardio exercise that improves coordination, agility, and cardiovascular fitness. Great warm-up exercise.",
         instructions: [
           "Stand tall with feet hip-width apart",
@@ -338,17 +334,20 @@ export async function buildBasicExerciseLibrary(): Promise<void> {
       }
     ];
 
+export async function buildBasicExerciseLibrary(): Promise<void> {
+  try {
+    console.log("🏗️ Building basic exercise library...");
     // Save each exercise to the database
-    for (const exercise of basicExercises) {
+    for (const exercise of BASIC_EXERCISES) {
       try {
-        await storage.createExercise(exercise);
+        await storage.createExercise(exercise as any);
         console.log(`✓ Added: ${exercise.name}`);
       } catch (error) {
         console.error(`Failed to save ${exercise.name}:`, error);
       }
     }
 
-    console.log(`🎯 Built ${basicExercises.length} basic exercises for the library!`);
+    console.log(`🎯 Built ${BASIC_EXERCISES.length} basic exercises for the library!`);
     
   } catch (error) {
     console.error("Failed to build basic exercise library:", error);

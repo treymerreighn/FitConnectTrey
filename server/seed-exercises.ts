@@ -459,7 +459,7 @@ export async function seedExerciseDatabase(): Promise<void> {
         }
       };
       
-      await storage.createExercise(exerciseData);
+      await storage.createExercise(exerciseData as any);
       console.log(`✓ Added: ${exercise.name}`);
     }
     

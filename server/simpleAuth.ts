@@ -7,7 +7,7 @@ const CURRENT_USER = {
   email: "steinbraden@gmail.com",
   firstName: "Stein",
   lastName: "Braden",
-  profileImageUrl: null,
+  profileImageUrl: undefined,
 };
 
 export async function setupSimpleAuth(app: Express) {

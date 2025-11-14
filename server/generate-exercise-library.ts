@@ -77,20 +77,35 @@ export async function generateComprehensiveExerciseLibrary(): Promise<void> {
       throw new Error('Invalid exercise data format received from AI');
     }
     
-    // Convert to our Exercise schema format
+    // Convert to our Exercise schema format (normalize and provide defaults)
+    const normalizeCategory = (c: string) => {
+      if (!c) return 'strength';
+      const lc = c.toLowerCase();
+      if (lc === 'core') return 'functional';
+      if (lc === 'strength' || lc === 'cardio' || lc === 'flexibility') return lc;
+      return 'functional';
+    };
+
     const formattedExercises: Exercise[] = exercises.map((exercise, index) => ({
       id: `ai-gen-${index + 1}`,
-      name: exercise.name,
-      category: exercise.category,
-      muscleGroups: exercise.muscleGroups,
-      equipment: [exercise.equipment],
-      difficulty: exercise.difficulty,
-      instructions: exercise.instructions,
-      thumbnailUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
-      targetSets: exercise.targetSets,
-      targetReps: exercise.targetReps,
-      restTime: exercise.restTime
-    }));
+      name: exercise.name || `AI Exercise ${index + 1}`,
+      category: normalizeCategory(exercise.category as string) as any,
+      muscleGroups: (exercise.muscleGroups || []).map((m: any) => String(m).toLowerCase()) as any,
+      equipment: exercise.equipment ? [String(exercise.equipment)] : [],
+      difficulty: String(exercise.difficulty || 'beginner').toLowerCase() as any,
+      description: '',
+      instructions: exercise.instructions || [],
+      tips: [],
+      safetyNotes: [],
+      images: [],
+      videos: [],
+      variations: [],
+      isUserCreated: false,
+      createdBy: 'ai-system',
+      isApproved: true,
+      tags: [],
+      createdAt: new Date()
+    })) as any;
 
     // Remove any potential duplicates within AI exercises before saving
     const { removeDuplicateExercises } = await import('./duplicate-remover');
@@ -102,9 +117,9 @@ export async function generateComprehensiveExerciseLibrary(): Promise<void> {
     
     // Import and populate database using existing function
     try {
-      const { buildAIExerciseLibrary } = await import('./ai-exercise-database-builder');
-      // Save exercises to be picked up by the database builder
-      console.log(`🎯 Preparing ${formattedExercises.length} exercises for database import...`);
+      const { buildExerciseDatabase } = await import('./ai-exercise-database-builder');
+      console.log(`🎯 Prepared ${formattedExercises.length} exercises for potential database import.`);
+      // Optionally call buildExerciseDatabase() in environments that support OpenAI
     } catch (dbError) {
       console.log('ℹ️ Database import will be handled by existing exercise builder');
     }

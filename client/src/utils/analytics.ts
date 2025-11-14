@@ -80,11 +80,11 @@ export function trackWebVitals() {
     import('web-vitals').then(({ onCLS, onFID, onFCP, onLCP, onTTFB }) => {
       const analytics = AnalyticsTracker.getInstance();
       
-      onCLS(metric => analytics.trackPerformance('CLS', metric.value));
-      onFID(metric => analytics.trackPerformance('FID', metric.value));
-      onFCP(metric => analytics.trackPerformance('FCP', metric.value));
-      onLCP(metric => analytics.trackPerformance('LCP', metric.value));
-      onTTFB(metric => analytics.trackPerformance('TTFB', metric.value));
+      onCLS((metric: any) => analytics.trackPerformance('CLS', metric.value));
+      onFID((metric: any) => analytics.trackPerformance('FID', metric.value));
+      onFCP((metric: any) => analytics.trackPerformance('FCP', metric.value));
+      onLCP((metric: any) => analytics.trackPerformance('LCP', metric.value));
+      onTTFB((metric: any) => analytics.trackPerformance('TTFB', metric.value));
     });
   }
 }

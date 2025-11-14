@@ -1,11 +1,6 @@
-import OpenAI from "openai";
+import { requireOpenAI } from "./openai.ts";
 import { storage } from "./storage.ts";
-import type { Recipe } from "@shared/schema";
-
-let openai: OpenAI | null = null;
-if (process.env.OPENAI_API_KEY) {
-  openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-}
+import type { Recipe } from "../shared/schema.ts";
 
 interface RecipeGenerationRequest {
   category: "breakfast" | "lunch" | "dinner" | "snack" | "dessert";
@@ -69,9 +64,7 @@ Respond with a JSON array of recipe objects in this exact format:
   ]
 }`;
 
-    if (!openai) {
-      throw new Error("OPENAI_API_KEY not set; AI features are disabled in this environment.");
-    }
+    const openai = requireOpenAI();
     const response = await openai.chat.completions.create({
       model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
       messages: [
@@ -115,6 +108,8 @@ Respond with a JSON array of recipe objects in this exact format:
         carbs: recipeData.carbs,
         fat: recipeData.fat,
         fiber: recipeData.fiber,
+        tips: recipeData.tips || [],
+        healthBenefits: recipeData.healthBenefits || [],
         image: undefined, // Will be generated separately
         isAiGenerated: true,
         category: category,
@@ -271,6 +266,8 @@ function getFallbackRecipes(category: string, count: number): Recipe[] {
     carbs: recipe.carbs,
     fat: recipe.fat,
     fiber: recipe.fiber,
+      tips: recipe.tips || [],
+      healthBenefits: recipe.healthBenefits || [],
     image: undefined,
     isAiGenerated: false,
     category: category as any,

@@ -1,4 +1,30 @@
 import type { User, Post, Comment, Connection, ProgressEntry, Exercise, WorkoutSession, ExerciseProgress, Recipe, CommunityMeal, ProgressInsight, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, InsertWorkoutSession, InsertExerciseProgress, InsertProgressInsight } from "../shared/schema.ts";
+// Lightweight messaging/notification types used by server storage
+export type Notification = {
+  id: string;
+  userId: string;
+  type: string;
+  text: string;
+  url?: string;
+  read?: boolean;
+  createdAt: Date;
+};
+
+export type Message = {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  content: string;
+  createdAt: Date;
+  read?: boolean;
+};
+
+export type Conversation = {
+  id: string;
+  participants: string[];
+  lastMessage?: Message;
+  createdAt: Date;
+};
 import { nanoid } from "nanoid";
 import { PgStorage } from "./pg-storage.ts";
 
@@ -9,7 +35,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | null>;
   updateUser(id: string, updates: Partial<User>): Promise<User>;
   getAllUsers(): Promise<User[]>;
-  upsertUser(user: { id: string; email: string | undefined; firstName: string | undefined; lastName: string | undefined; profileImageUrl: string | undefined; }): Promise<User>;
+  upsertUser(user: { id: string; email: string | null | undefined; firstName: string | null | undefined; lastName: string | null | undefined; profileImageUrl: string | null | undefined; }): Promise<User>;
   
   // Posts
   createPost(post: InsertPost): Promise<Post>;
@@ -49,7 +75,8 @@ export interface IStorage {
   generateAIInsights(entryId: string, photos: string[]): Promise<ProgressEntry>;
   
   // Exercise library
-  createExercise(exercise: InsertExercise): Promise<Exercise>;
+  // Accept flexible input (AI generators may produce partial shapes)
+  createExercise(exercise: any): Promise<Exercise>;
   getExerciseById(id: string): Promise<Exercise | null>;
   getAllExercises(): Promise<Exercise[]>;
   getExercisesByCategory(category: string): Promise<Exercise[]>;
@@ -84,13 +111,24 @@ export interface IStorage {
   getUserPersonalRecords(userId: string): Promise<ExerciseProgress[]>;
   
   // Recipe database operations
-  addRecipe(recipe: Recipe): Promise<Recipe>;
+  addRecipe(recipe: Partial<Recipe>): Promise<Recipe>;
   getRecipeById(id: string): Promise<Recipe | null>;
   getAllRecipes(): Promise<Recipe[]>;
   getRecipesByCategory(category: string): Promise<Recipe[]>;
   getRecipesByDietaryTags(tags: string[]): Promise<Recipe[]>;
   searchRecipes(query: string): Promise<Recipe[]>;
   getRandomRecipes(count: number): Promise<Recipe[]>;
+
+  // Notifications
+  createNotification(notification: Partial<Notification>): Promise<Notification>;
+  getNotificationsByUserId(userId: string): Promise<Notification[]>;
+  markNotificationRead(id: string): Promise<boolean>;
+
+  // Messaging / direct messages
+  createConversation(participants: string[]): Promise<Conversation>;
+  getConversationsForUser(userId: string): Promise<Conversation[]>;
+  getMessagesForConversation(conversationId: string): Promise<Message[]>;
+  sendMessage(conversationId: string, message: Partial<Message>): Promise<Message>;
   
   // Community meal operations
   createCommunityMeal(meal: CommunityMeal): Promise<CommunityMeal>;
@@ -118,6 +156,9 @@ export class MemStorage implements IStorage {
   private recipes: Map<string, Recipe> = new Map();
   private communityMeals: Map<string, CommunityMeal> = new Map();
   private progressInsights: Map<string, ProgressInsight> = new Map();
+  private notifications: Map<string, Notification[]> = new Map();
+  private conversations: Map<string, Conversation> = new Map();
+  private messages: Map<string, Message[]> = new Map();
 
   constructor() {
     this.seedData();
@@ -755,13 +796,28 @@ export class MemStorage implements IStorage {
   }
 
   // Exercise library methods
-  async createExercise(exercise: InsertExercise): Promise<Exercise> {
+  async createExercise(exercise: any): Promise<Exercise> {
     const newExercise: Exercise = {
       id: nanoid(),
-      ...exercise,
+      name: exercise.name || "Unnamed Exercise",
+      category: (exercise.category as any) || "strength",
+      muscleGroups: (exercise.muscleGroups as any) || [],
+      equipment: exercise.equipment || [],
+      difficulty: (exercise.difficulty as any) || "beginner",
+      description: exercise.description || "",
+      instructions: exercise.instructions || [],
+      tips: exercise.tips || [],
+      safetyNotes: exercise.safetyNotes || [],
+      images: exercise.images || [],
+      videos: exercise.videos || [],
+      variations: exercise.variations || [],
+      isUserCreated: exercise.isUserCreated ?? false,
+      createdBy: exercise.createdBy,
+      isApproved: exercise.isApproved ?? true,
+      tags: exercise.tags || [],
       createdAt: new Date(),
     };
-    
+
     this.exercises.set(newExercise.id, newExercise);
     return newExercise;
   }
@@ -967,9 +1023,34 @@ export class MemStorage implements IStorage {
   }
 
   // Recipe database operations
-  async addRecipe(recipe: Recipe): Promise<Recipe> {
-    this.recipes.set(recipe.id, recipe);
-    return recipe;
+  async addRecipe(recipe: Partial<Recipe>): Promise<Recipe> {
+    const newRecipe: Recipe = {
+      id: recipe.id || nanoid(),
+      name: recipe.name || "Unnamed Recipe",
+      description: recipe.description || "",
+      ingredients: recipe.ingredients || [],
+      instructions: recipe.instructions || [],
+      cookTime: recipe.cookTime || 0,
+      prepTime: recipe.prepTime || 0,
+      servings: recipe.servings || 1,
+      difficulty: (recipe.difficulty as any) || "easy",
+      cuisineType: recipe.cuisineType || undefined,
+      dietaryTags: recipe.dietaryTags || [],
+      calories: recipe.calories,
+      protein: recipe.protein,
+      carbs: recipe.carbs,
+      fat: recipe.fat,
+      fiber: recipe.fiber,
+      image: recipe.image,
+      isAiGenerated: recipe.isAiGenerated ?? true,
+      category: (recipe.category as any) || "breakfast",
+      healthBenefits: recipe.healthBenefits || [],
+      tips: recipe.tips || [],
+      createdAt: recipe.createdAt || new Date(),
+    } as Recipe;
+
+    this.recipes.set(newRecipe.id, newRecipe);
+    return newRecipe;
   }
 
   async getRecipeById(id: string): Promise<Recipe | null> {
@@ -1057,6 +1138,80 @@ export class MemStorage implements IStorage {
 
   async deleteProgressInsight(id: string): Promise<boolean> {
     return this.progressInsights.delete(id);
+  }
+
+  // Notifications
+  async createNotification(notification: Partial<Notification>): Promise<Notification> {
+    const newNotification: Notification = {
+      id: nanoid(),
+      userId: notification.userId || "",
+      type: notification.type || "generic",
+      text: notification.text || "",
+      url: notification.url,
+      read: notification.read ?? false,
+      createdAt: notification.createdAt || new Date(),
+    };
+
+    const list = this.notifications.get(newNotification.userId) || [];
+    list.unshift(newNotification);
+    this.notifications.set(newNotification.userId, list);
+    return newNotification;
+  }
+
+  async getNotificationsByUserId(userId: string): Promise<Notification[]> {
+    return this.notifications.get(userId) || [];
+  }
+
+  async markNotificationRead(id: string): Promise<boolean> {
+    for (const [userId, list] of this.notifications.entries()) {
+      const idx = list.findIndex((n: Notification) => n.id === id);
+      if (idx >= 0) {
+        list[idx].read = true;
+        this.notifications.set(userId, list);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Messaging
+  async createConversation(participants: string[]): Promise<Conversation> {
+    const id = nanoid();
+    const conv: Conversation = { id, participants, createdAt: new Date() };
+    this.conversations.set(id, conv);
+    this.messages.set(id, []);
+    return conv;
+  }
+
+  async getConversationsForUser(userId: string): Promise<Conversation[]> {
+    return Array.from(this.conversations.values()).filter(c => c.participants.includes(userId));
+  }
+
+  async getMessagesForConversation(conversationId: string): Promise<Message[]> {
+    return this.messages.get(conversationId) || [];
+  }
+
+  async sendMessage(conversationId: string, message: Partial<Message>): Promise<Message> {
+    const msg: Message = {
+      id: nanoid(),
+      conversationId,
+      senderId: message.senderId || "",
+      content: message.content || "",
+      createdAt: new Date(),
+      read: message.read ?? false,
+    };
+
+    const list = this.messages.get(conversationId) || [];
+    list.push(msg);
+    this.messages.set(conversationId, list);
+
+    const conv = this.conversations.get(conversationId);
+    if (conv) {
+      conv.lastMessage = msg;
+      this.conversations.set(conversationId, conv);
+    }
+
+    return msg;
   }
 }
 

@@ -34,7 +34,7 @@ export function logBundleInfo() {
     console.log('Main bundle loaded');
     
     // Log when major chunks load
-    const originalImport = window.__webpack_require__ || ((module: string) => import(module));
+    const originalImport = (window as any).__webpack_require__ || ((module: string) => import(module));
     
     console.groupEnd();
   }

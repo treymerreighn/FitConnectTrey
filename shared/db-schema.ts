@@ -109,3 +109,29 @@ export const exerciseProgress = pgTable("exercise_progress", {
   workoutSessionId: text("workout_session_id").references(() => workoutSessions.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
+export const notifications = pgTable("notifications", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id),
+  type: text("type"),
+  text: text("text").notNull(),
+  url: text("url"),
+  read: boolean("read").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const conversations = pgTable("conversations", {
+  id: text("id").primaryKey(),
+  participants: text("participants").array().notNull(),
+  lastMessageId: text("last_message_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const messages = pgTable("messages", {
+  id: text("id").primaryKey(),
+  conversationId: text("conversation_id").notNull().references(() => conversations.id),
+  senderId: text("sender_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  read: boolean("read").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});

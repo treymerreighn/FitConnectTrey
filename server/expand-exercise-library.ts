@@ -1,10 +1,5 @@
-import OpenAI from "openai";
+import { requireOpenAI } from "./openai.ts";
 import { storage } from "./storage.ts";
-
-let openai: OpenAI | null = null;
-if (process.env.OPENAI_API_KEY) {
-  openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-}
 
 /**
  * Expand the exercise library with additional specialized exercises
@@ -67,9 +62,7 @@ For each exercise, provide:
 
 Respond with JSON object: {"exercises": [exercise_array]}`;
 
-        if (!openai) {
-          throw new Error("OPENAI_API_KEY not set; AI features are disabled in this environment.");
-        }
+        const openai = requireOpenAI();
         const response = await openai.chat.completions.create({
           model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
           messages: [
@@ -123,7 +116,7 @@ Respond with JSON object: {"exercises": [exercise_array]}`;
               console.log(`✓ Added: ${exercise.name}`);
               
             } catch (error) {
-              console.log(`⚠️ Failed to save ${exerciseData.name}:`, error.message);
+              console.log(`⚠️ Failed to save ${exerciseData.name}:`, (error as any).message);
             }
           }
           
@@ -134,7 +127,7 @@ Respond with JSON object: {"exercises": [exercise_array]}`;
         await new Promise(resolve => setTimeout(resolve, 1000));
         
       } catch (error) {
-        console.log(`⚠️ Failed to generate ${batch.name}:`, error.message);
+        console.log(`⚠️ Failed to generate ${batch.name}:`, (error as any).message);
       }
     }
 

@@ -49,6 +49,103 @@ router.post("/api/users", async (req, res) => {
   }
 });
 
+// Notifications
+router.get("/api/notifications", async (req, res) => {
+  try {
+    const userId = (req.query as any).userId || (req as any).user?.claims?.sub || "user1";
+  const notifications = await storage.getNotificationsByUserId(userId);
+    res.json(notifications);
+  } catch (error) {
+    console.error("Error fetching notifications:", error);
+    res.status(500).json({ error: "Failed to fetch notifications" });
+  }
+});
+
+router.post("/api/notifications/mark-read", async (req, res) => {
+  try {
+    const { id } = req.body;
+  const ok = await storage.markNotificationRead(id);
+    res.json({ success: ok });
+  } catch (error) {
+    console.error("Error marking notification read:", error);
+    res.status(500).json({ error: "Failed to mark notification" });
+  }
+});
+
+// Create notification (simple endpoint for server-side events and testing)
+router.post("/api/notifications", async (req, res) => {
+  try {
+    const { userId, type, text, url } = req.body;
+    const notif = await storage.createNotification({ userId, type, text, url });
+    res.status(201).json(notif);
+  } catch (error) {
+    console.error("Error creating notification:", error);
+    res.status(500).json({ error: "Failed to create notification" });
+  }
+});
+
+// Messaging / Direct Messages
+router.get("/api/conversations", async (req, res) => {
+  try {
+    const userId = (req.query as any).userId || (req as any).user?.claims?.sub || "user1";
+  const convs = await storage.getConversationsForUser(userId);
+    res.json(convs);
+  } catch (error) {
+    console.error("Error fetching conversations:", error);
+    res.status(500).json({ error: "Failed to fetch conversations" });
+  }
+});
+
+router.get("/api/conversations/:id/messages", async (req, res) => {
+  try {
+  const msgs = await storage.getMessagesForConversation(req.params.id);
+    res.json(msgs);
+  } catch (error) {
+    console.error("Error fetching messages:", error);
+    res.status(500).json({ error: "Failed to fetch messages" });
+  }
+});
+
+router.post("/api/conversations", async (req, res) => {
+  try {
+    const { participants } = req.body;
+    if (!Array.isArray(participants) || participants.length === 0) {
+      return res.status(400).json({ error: 'participants array required' });
+    }
+
+    // Deduplicate: try to find an existing conversation with the exact same
+    // set of participants (order-insensitive). We fetch conversations for
+    // one participant (the first) and then search for a conversation where
+    // participants match exactly.
+    const first = participants[0];
+    const existing = await storage.getConversationsForUser(first);
+    const normalized = (arr: string[]) => arr.slice().sort().join(',');
+    const targetKey = normalized(participants);
+    const found = existing.find((c: any) => normalized(c.participants) === targetKey);
+    if (found) {
+      // Return existing conversation (200) so clients won't create duplicates.
+      return res.json(found);
+    }
+
+    const conv = await storage.createConversation(participants || []);
+    res.status(201).json(conv);
+  } catch (error) {
+    console.error("Error creating conversation:", error);
+    res.status(500).json({ error: "Failed to create conversation" });
+  }
+});
+
+router.post("/api/conversations/:id/messages", async (req, res) => {
+  try {
+    const { senderId, content } = req.body;
+  const msg = await storage.sendMessage(req.params.id, { senderId, content });
+    res.status(201).json(msg);
+  } catch (error) {
+    console.error("Error sending message:", error);
+    res.status(500).json({ error: "Failed to send message" });
+  }
+});
+
 // Post interactions
 router.post("/api/posts/:id/like", async (req, res) => {
   try {

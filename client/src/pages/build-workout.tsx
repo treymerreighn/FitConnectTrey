@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { OptimizedImage } from "@/components/OptimizedImage";
 
 interface Exercise {
   id: string;
@@ -197,14 +198,33 @@ export default function BuildWorkout() {
   const [selectedEquipmentFilter, setSelectedEquipmentFilter] = useState<string>("all");
 
   const filteredExercises = (exercises.length > 0 ? exercises : MOCK_EXERCISES).filter((exercise: Exercise) => {
-    if (selectedBodyParts.length === 0) return true;
-    return exercise.muscleGroups.some((muscle: string) => 
-      selectedBodyParts.some((bodyPart: string) => 
-        BODY_PARTS.find(bp => bp.id === bodyPart)?.exercises.some((ex: string) => 
-          muscle.toLowerCase().includes(ex.toLowerCase().split(' ')[0])
+    // Apply search term filter
+    const matchesSearch = exerciseSearchTerm === "" || 
+      exercise.name.toLowerCase().includes(exerciseSearchTerm.toLowerCase()) ||
+      exercise.muscleGroups.some((mg: string) => mg.toLowerCase().includes(exerciseSearchTerm.toLowerCase()));
+
+    // Apply equipment filter
+    const matchesEquipment = selectedEquipmentFilter === "all" || 
+      exercise.equipment.some((eq: string) => {
+        if (selectedEquipmentFilter === "bodyweight") return eq.toLowerCase().includes("bodyweight") || eq.toLowerCase().includes("none");
+        if (selectedEquipmentFilter === "dumbbells") return eq.toLowerCase().includes("dumbbell");
+        if (selectedEquipmentFilter === "barbell") return eq.toLowerCase().includes("barbell");
+        if (selectedEquipmentFilter === "resistance") return eq.toLowerCase().includes("band") || eq.toLowerCase().includes("resistance");
+        if (selectedEquipmentFilter === "machine") return eq.toLowerCase().includes("machine") || eq.toLowerCase().includes("cable");
+        return false;
+      });
+
+    // Apply body part filter
+    const matchesBodyPart = selectedBodyParts.length === 0 || 
+      exercise.muscleGroups.some((muscle: string) => 
+        selectedBodyParts.some((bodyPart: string) => 
+          BODY_PARTS.find(bp => bp.id === bodyPart)?.exercises.some((ex: string) => 
+            muscle.toLowerCase().includes(ex.toLowerCase().split(' ')[0])
+          )
         )
-      )
-    );
+      );
+
+    return matchesSearch && matchesEquipment && matchesBodyPart;
   });
 
   const toggleBodyPart = (bodyPartId: string) => {
@@ -436,10 +456,13 @@ export default function BuildWorkout() {
                   <CardContent className="p-4">
                     <div className="flex items-center space-x-4">
                       <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-700 flex-shrink-0">
-                        <img 
-                          src={exercise.thumbnailUrl} 
+                        <OptimizedImage
+                          src={exercise.thumbnailUrl}
                           alt={exercise.name}
                           className="w-full h-full object-cover"
+                          width={48}
+                          height={48}
+                          placeholder="blur"
                         />
                       </div>
                       
@@ -736,10 +759,13 @@ export default function BuildWorkout() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
                             <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-600">
-                              <img 
-                                src={exercise.thumbnailUrl} 
+                              <OptimizedImage
+                                src={exercise.thumbnailUrl}
                                 alt={exercise.name}
                                 className="w-full h-full object-cover"
+                                width={48}
+                                height={48}
+                                placeholder="blur"
                               />
                             </div>
                             <div>

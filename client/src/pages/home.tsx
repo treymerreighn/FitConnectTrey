@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Heart, MessageCircle, Dumbbell, Plus, Bell } from "lucide-react";
+import { Dumbbell, Plus, MessageCircle } from "lucide-react";
+import { useLocation } from "wouter";
+import TopHeader from "@/components/TopHeader";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -11,6 +13,7 @@ import type { Post, User } from "@shared/schema";
 
 export default function Home() {
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [, setLocation] = useLocation();
   
   const { data: posts = [], isLoading: postsLoading, error: postsError } = useQuery<Post[]>({
     queryKey: ["/api/posts"],
@@ -26,31 +29,7 @@ export default function Home() {
   if (postsLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        {/* Header */}
-        <header className="fixed top-0 w-full bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-50 backdrop-blur-md bg-opacity-95 dark:bg-opacity-95">
-          <div className="flex items-center justify-between px-4 py-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-fit-green rounded-lg flex items-center justify-center shadow-sm">
-                <Dumbbell className="w-4 h-4 text-white" />
-              </div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">FitConnect</h1>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Button variant="ghost" size="sm" className="relative hover:bg-gray-100 dark:hover:bg-gray-700">
-                <Heart className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center font-medium">
-                  3
-                </span>
-              </Button>
-              <Button variant="ghost" size="sm" className="relative hover:bg-gray-100 dark:hover:bg-gray-700">
-                <MessageCircle className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-fit-blue rounded-full text-xs text-white flex items-center justify-center font-medium">
-                  5
-                </span>
-              </Button>
-            </div>
-          </div>
-        </header>
+        <TopHeader className="backdrop-blur-md bg-opacity-95 dark:bg-opacity-95" />
 
         {/* Loading Content */}
         <main className="pt-16 pb-20">
@@ -89,31 +68,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <header className="fixed top-0 w-full bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-50">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-fit-green rounded-lg flex items-center justify-center">
-              <Dumbbell className="w-4 h-4 text-white" />
-            </div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">FitConnect</h1>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="sm" className="relative">
-              <Heart className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
-                3
-              </span>
-            </Button>
-            <Button variant="ghost" size="sm" className="relative">
-              <MessageCircle className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-fit-blue rounded-full text-xs text-white flex items-center justify-center">
-                5
-              </span>
-            </Button>
-          </div>
-        </div>
-      </header>
+      <TopHeader />
 
       {/* Main Content */}
       <main className="pt-16 pb-20">
@@ -167,9 +122,9 @@ export default function Home() {
       </main>
 
       {/* Floating Action Button */}
-      <div className="fixed bottom-24 right-4 z-40">
+      <div className="fixed bottom-8 right-4 z-40 safe-area-inset-bottom">
         <Button 
-          className="w-16 h-16 bg-gradient-to-r from-fit-green to-emerald-500 hover:from-fit-green/90 hover:to-emerald-500/90 text-white rounded-full shadow-xl hover:shadow-2xl transition-all duration-200 hover:scale-105"
+          className="w-14 h-14 bg-gradient-to-r from-fit-green to-emerald-500 hover:from-fit-green/90 hover:to-emerald-500/90 text-white rounded-full shadow-xl hover:shadow-2xl transition-all duration-200 hover:scale-105"
           onClick={() => setShowCreateModal(true)}
         >
           <Plus className="w-7 h-7" />

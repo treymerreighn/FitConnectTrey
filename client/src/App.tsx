@@ -4,7 +4,8 @@ import { queryClient } from "@/lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { Home, Search, Dumbbell, TrendingUp, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
+import { Link } from "@/components/ui/link";
 import { ThemeProvider } from "@/contexts/theme-context";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -25,6 +26,8 @@ import TestUpload from "./pages/test-upload";
 import RecipesPage from "./pages/recipes";
 import Landing from "./pages/landing";
 import SearchPage from "./pages/search";
+import Notifications from "./pages/notifications";
+import Messages from "./pages/messages";
 
 
 
@@ -90,6 +93,8 @@ function Router() {
           <Route path="/progress" component={Progress} />
           <Route path="/progress-insights" component={ProgressInsightsPage} />
           <Route path="/exercise-progress" component={ExerciseProgress} />
+          <Route path="/notifications" component={Notifications} />
+          <Route path="/messages" component={Messages} />
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/test-upload" component={TestUpload} />
           <Route path="/recipes" component={RecipesPage} />

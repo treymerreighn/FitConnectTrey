@@ -1,10 +1,5 @@
-import OpenAI from "openai";
+import { requireOpenAI } from "./openai.ts";
 import { storage } from "./storage.ts";
-
-let openai: OpenAI | null = null;
-if (process.env.OPENAI_API_KEY) {
-  openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-}
 
 interface ExerciseGenerationRequest {
   category: string;
@@ -123,9 +118,7 @@ Focus on:
 - Realistic progression from ${request.difficulty} level
 - Proper muscle targeting for ${request.muscleGroups.join(", ")}`;
 
-  if (!openai) {
-    throw new Error("OPENAI_API_KEY not set; AI features are disabled in this environment.");
-  }
+  const openai = requireOpenAI();
   const response = await openai.chat.completions.create({
     model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
     messages: [
@@ -173,7 +166,7 @@ async function saveExerciseToDatabase(exercise: GeneratedExercise): Promise<void
       }
     };
 
-    await storage.createExercise(exerciseData);
+    await storage.createExercise(exerciseData as any);
   } catch (error) {
     console.error(`Failed to save exercise ${exercise.name}:`, error);
   }
@@ -246,9 +239,7 @@ Return as JSON with this structure:
   }
 }`;
 
-  if (!openai) {
-    throw new Error("OPENAI_API_KEY not set; AI features are disabled in this environment.");
-  }
+  const openai = requireOpenAI();
   const response = await openai.chat.completions.create({
     model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
     messages: [
@@ -281,5 +272,5 @@ async function saveWorkoutTemplate(template: any): Promise<void> {
     createdAt: new Date()
   };
 
-  await storage.createPost(templatePost);
+  await storage.createPost(templatePost as any);
 }

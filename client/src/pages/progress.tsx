@@ -23,7 +23,7 @@ import { format } from "date-fns";
 import { ProgressChart } from "@/components/ProgressChart";
 import { ProgressPhotoAnalysis } from "@/components/ProgressPhotoAnalysis";
 import { apiRequest } from "@/lib/queryClient";
-import { Link } from "wouter";
+import { Link } from "@/components/ui/link";
 
 const progressFormSchema = z.object({
   date: z.string(),

@@ -1,13 +1,23 @@
 import { eq, ilike, and, desc, sql, inArray } from "drizzle-orm";
 import { db } from "./db.ts";
-import { users, posts, comments, connections, progressEntries, exercises } from "../shared/db-schema.ts";
+import { users, posts, comments, connections, progressEntries, exercises, notifications, conversations, messages } from "../shared/db-schema.ts";
 import { IStorage } from "./storage.ts";
-import type { User, Post, Comment, Connection, ProgressEntry, Exercise, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise } from "../shared/schema.ts";
+import type { User, Post, Comment, Connection, ProgressEntry, Exercise, Recipe, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, WorkoutSession, InsertWorkoutSession, ExerciseProgress, InsertExerciseProgress, CommunityMeal, ProgressInsight, InsertProgressInsight } from "../shared/schema.ts";
+import type { Notification, Message, Conversation } from "./storage.ts";
 
 export class PgStorage implements IStorage {
   constructor() {
     this.seedData();
   }
+
+  // Simple in-memory recipes store for environments where DB schema/table
+  // is not present. PgStorage must implement recipe methods from IStorage.
+  private recipes: Map<string, Recipe> = new Map();
+  // In-memory maps for features not yet migrated to DB schema
+  private workoutSessions: Map<string, WorkoutSession> = new Map();
+  private exerciseProgress: Map<string, ExerciseProgress> = new Map();
+  private communityMeals: Map<string, CommunityMeal> = new Map();
+  private progressInsights: Map<string, ProgressInsight> = new Map();
 
   private async seedData() {
     // Check if data already exists
@@ -165,15 +175,14 @@ export class PgStorage implements IStorage {
       id: newUser.id,
       username: newUser.username,
       email: newUser.email,
-      fullName: newUser.fullName,
+      fullName: (newUser as any).name || newUser.username,
       bio: newUser.bio,
       avatar: newUser.avatar,
       isVerified: newUser.isVerified,
-      accountType: newUser.accountType,
+      accountType: (newUser as any).professionalType || "user",
       fitnessGoals: newUser.fitnessGoals,
       followers: newUser.followers,
-      following: newUser.following,
-      location: newUser.location
+      following: newUser.following
     });
     
     return newUser;
@@ -196,16 +205,12 @@ export class PgStorage implements IStorage {
     return updated;
   }
 
-  async getPostsByUserId(userId: string): Promise<Post[]> {
-    const userPosts = await db.select().from(posts).where(eq(posts.userId, userId));
-    return userPosts;
-  }
 
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(users);
   }
 
-  async upsertUser(userData: { id: string; email: string | null; firstName: string | null; lastName: string | null; profileImageUrl: string | null; }): Promise<User> {
+  async upsertUser(userData: { id: string; email: string | null | undefined; firstName: string | null | undefined; lastName: string | null | undefined; profileImageUrl: string | null | undefined; }): Promise<User> {
     const fullName = [userData.firstName, userData.lastName].filter(Boolean).join(' ') || 'User';
     const username = userData.email?.split('@')[0] || `user_${userData.id}`;
     
@@ -383,9 +388,10 @@ export class PgStorage implements IStorage {
       id: newConnection.id,
       clientId: newConnection.clientId,
       professionalId: newConnection.professionalId,
-      type: newConnection.type,
       status: newConnection.status,
-      requestMessage: newConnection.requestMessage
+      startDate: (newConnection as any).startDate,
+      endDate: (newConnection as any).endDate,
+      requestMessage: (newConnection as any).notes || (newConnection as any).requestMessage
     });
     
     return newConnection;
@@ -457,7 +463,7 @@ export class PgStorage implements IStorage {
     const dbEntries = await db.select().from(progressEntries).where(eq(progressEntries.userId, userId)).orderBy(desc(progressEntries.date));
     
     // Convert database entries to match schema format
-    return dbEntries.map(entry => ({
+    return dbEntries.map((entry: any) => ({
       ...entry,
       bodyFatPercentage: entry.bodyFat,
       aiInsights: entry.aiInsights ? JSON.parse(entry.aiInsights) : undefined
@@ -482,18 +488,40 @@ export class PgStorage implements IStorage {
     
     // Mock AI insights for now
     const insights = "Great progress! Your form is improving and you're showing consistent results. Keep up the excellent work!";
-    
-    return await this.updateProgressEntry(entryId, { aiInsights: insights });
+    const insightsObj = {
+      recommendations: ["Keep consistent with training and recovery"],
+      progressAnalysis: insights,
+      bodyComposition: "Improving",
+      confidenceScore: 0.8,
+      generatedAt: new Date()
+    };
+
+    return await this.updateProgressEntry(entryId, { aiInsights: insightsObj as any });
   }
 
   // Exercise library
-  async createExercise(exercise: InsertExercise): Promise<Exercise> {
+  async createExercise(exercise: Partial<InsertExercise>): Promise<Exercise> {
     const newExercise = {
       id: crypto.randomUUID(),
-      createdAt: new Date(),
-      ...exercise
-    };
-    
+      name: exercise.name || "Unnamed Exercise",
+      category: (exercise.category as any) || "strength",
+      muscleGroups: (exercise.muscleGroups as any) || [],
+      equipment: exercise.equipment || [],
+      difficulty: (exercise.difficulty as any) || "beginner",
+      description: exercise.description || "",
+      instructions: exercise.instructions || [],
+      tips: exercise.tips || [],
+      safetyNotes: exercise.safetyNotes || [],
+      images: exercise.images || [],
+      videos: exercise.videos || [],
+      variations: exercise.variations || [],
+      tags: exercise.tags || [],
+      isUserCreated: exercise.isUserCreated || false,
+      createdBy: exercise.createdBy,
+      isApproved: exercise.isApproved ?? true,
+      createdAt: new Date()
+    } as Exercise;
+
     await db.insert(exercises).values({
       id: newExercise.id,
       name: newExercise.name,
@@ -513,7 +541,7 @@ export class PgStorage implements IStorage {
       createdBy: newExercise.createdBy,
       isApproved: newExercise.isApproved
     });
-    
+
     return newExercise;
   }
 
@@ -574,8 +602,346 @@ export class PgStorage implements IStorage {
       .orderBy(desc(posts.createdAt));
     
     // Filter for templates (posts with workoutData that are templates)
-    return result.filter(post => 
+    return result.filter((post: any) => 
       post.workoutData && (post.workoutData as any).isTemplate
     );
+  }
+
+  // Recipe database methods (in-memory fallback for PgStorage)
+  async addRecipe(recipe: Partial<Recipe>): Promise<Recipe> {
+    const newRecipe: Recipe = {
+      id: recipe.id || crypto.randomUUID(),
+      name: recipe.name || "Unnamed Recipe",
+      description: recipe.description || "",
+      ingredients: recipe.ingredients || [],
+      instructions: recipe.instructions || [],
+      cookTime: recipe.cookTime || 0,
+      prepTime: recipe.prepTime || 0,
+      servings: recipe.servings || 1,
+      difficulty: (recipe.difficulty as any) || "easy",
+      cuisineType: recipe.cuisineType,
+      dietaryTags: recipe.dietaryTags || [],
+      calories: recipe.calories,
+      protein: recipe.protein,
+      carbs: recipe.carbs,
+      fat: recipe.fat,
+      fiber: recipe.fiber,
+      image: recipe.image,
+      isAiGenerated: recipe.isAiGenerated ?? true,
+      category: (recipe.category as any) || "breakfast",
+      healthBenefits: recipe.healthBenefits || [],
+      tips: recipe.tips || [],
+      createdAt: recipe.createdAt || new Date(),
+    } as Recipe;
+
+    this.recipes.set(newRecipe.id, newRecipe);
+    return newRecipe;
+  }
+
+  async getRecipeById(id: string): Promise<Recipe | null> {
+    return this.recipes.get(id) || null;
+  }
+
+  async getAllRecipes(): Promise<Recipe[]> {
+    return Array.from(this.recipes.values());
+  }
+
+  async getRecipesByCategory(category: string): Promise<Recipe[]> {
+    return Array.from(this.recipes.values()).filter(r => r.category === category);
+  }
+
+  async getRecipesByDietaryTags(tags: string[]): Promise<Recipe[]> {
+    return Array.from(this.recipes.values()).filter(r => r.dietaryTags && tags.some(t => r.dietaryTags!.includes(t)));
+  }
+
+  async searchRecipes(query: string): Promise<Recipe[]> {
+    const q = query.toLowerCase();
+    return Array.from(this.recipes.values()).filter(r =>
+      r.name.toLowerCase().includes(q) || (r.description || '').toLowerCase().includes(q) || r.ingredients.some(i => i.toLowerCase().includes(q))
+    );
+  }
+
+  async getRandomRecipes(count: number): Promise<Recipe[]> {
+    const all = Array.from(this.recipes.values());
+    const shuffled = all.sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, count);
+  }
+
+  // Workout session tracking (in-memory fallback)
+  async createWorkoutSession(session: InsertWorkoutSession): Promise<WorkoutSession> {
+    const newSession: WorkoutSession = {
+      id: crypto.randomUUID(),
+      ...session,
+      createdAt: new Date(),
+    } as WorkoutSession;
+
+    this.workoutSessions.set(newSession.id, newSession);
+
+    // also create exercise progress entries
+    for (const exercise of session.exercises) {
+      const bestSet = exercise.sets.reduce((best, current) => {
+        const currentScore = (current.weight || 0) * (current.reps || 0) + (current.duration || 0);
+        const bestScore = (best.weight || 0) * (best.reps || 0) + (best.duration || 0);
+        return currentScore > bestScore ? current : best;
+      }, exercise.sets[0]);
+
+      const progressEntry: InsertExerciseProgress = {
+        userId: session.userId,
+        exerciseId: exercise.exerciseId,
+        exerciseName: exercise.exerciseName,
+        date: session.startTime,
+        bestSet: {
+          reps: bestSet.reps || 0,
+          weight: bestSet.weight,
+          duration: bestSet.duration,
+          oneRepMax: bestSet.weight ? Math.round(bestSet.weight * (1 + (bestSet.reps || 0) / 30)) : undefined,
+        },
+        totalVolume: exercise.totalVolume,
+        personalRecord: exercise.personalRecord,
+        workoutSessionId: newSession.id,
+      } as InsertExerciseProgress;
+
+      await this.createExerciseProgress(progressEntry);
+    }
+
+    return newSession;
+  }
+
+  async getWorkoutSessionById(id: string): Promise<WorkoutSession | null> {
+    return this.workoutSessions.get(id) || null;
+  }
+
+  async getWorkoutSessionsByUserId(userId: string): Promise<WorkoutSession[]> {
+    return Array.from(this.workoutSessions.values())
+      .filter(s => s.userId === userId)
+      .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+  }
+
+  async updateWorkoutSession(id: string, updates: Partial<WorkoutSession>): Promise<WorkoutSession> {
+    const session = this.workoutSessions.get(id);
+    if (!session) throw new Error("Workout session not found");
+    const updated = { ...session, ...updates } as WorkoutSession;
+    this.workoutSessions.set(id, updated);
+    return updated;
+  }
+
+  async deleteWorkoutSession(id: string): Promise<boolean> {
+    return this.workoutSessions.delete(id);
+  }
+
+  // Exercise progress (in-memory fallback)
+  async createExerciseProgress(progress: InsertExerciseProgress): Promise<ExerciseProgress> {
+    const newProgress: ExerciseProgress = {
+      id: crypto.randomUUID(),
+      ...progress,
+      createdAt: new Date(),
+    } as ExerciseProgress;
+
+    this.exerciseProgress.set(newProgress.id, newProgress);
+    return newProgress;
+  }
+
+  async getExerciseProgressById(id: string): Promise<ExerciseProgress | null> {
+    return this.exerciseProgress.get(id) || null;
+  }
+
+  async getExerciseProgressByUserId(userId: string): Promise<ExerciseProgress[]> {
+    return Array.from(this.exerciseProgress.values()).filter(p => p.userId === userId).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
+
+  async getExerciseProgressByExercise(userId: string, exerciseId: string): Promise<ExerciseProgress[]> {
+    return Array.from(this.exerciseProgress.values()).filter(p => p.userId === userId && p.exerciseId === exerciseId).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }
+
+  async updateExerciseProgress(id: string, updates: Partial<ExerciseProgress>): Promise<ExerciseProgress> {
+    const progress = this.exerciseProgress.get(id);
+    if (!progress) throw new Error("Exercise progress not found");
+    const updated = { ...progress, ...updates } as ExerciseProgress;
+    this.exerciseProgress.set(id, updated);
+    return updated;
+  }
+
+  async deleteExerciseProgress(id: string): Promise<boolean> {
+    return this.exerciseProgress.delete(id);
+  }
+
+  async getExerciseProgressChart(userId: string, exerciseId: string): Promise<{ date: string; weight?: number; reps: number; oneRepMax?: number }[]> {
+    const progressEntries = await this.getExerciseProgressByExercise(userId, exerciseId);
+    return progressEntries.map(entry => ({
+      date: entry.date.toISOString().split('T')[0],
+      weight: entry.bestSet.weight,
+      reps: entry.bestSet.reps,
+      oneRepMax: entry.bestSet.oneRepMax,
+    }));
+  }
+
+  async getWorkoutVolumeChart(userId: string): Promise<{ date: string; volume: number; duration: number }[]> {
+    const sessions = await this.getWorkoutSessionsByUserId(userId);
+    return sessions.map(session => ({
+      date: session.startTime.toISOString().split('T')[0],
+      volume: session.totalVolume || 0,
+      duration: session.totalDuration || 0,
+    })).reverse();
+  }
+
+  async getUserPersonalRecords(userId: string): Promise<ExerciseProgress[]> {
+    return Array.from(this.exerciseProgress.values()).filter(p => p.userId === userId && p.personalRecord).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
+
+  // Community meals (in-memory fallback)
+  async createCommunityMeal(meal: CommunityMeal): Promise<CommunityMeal> {
+    this.communityMeals.set(meal.id, meal);
+    return meal;
+  }
+
+  async getCommunityMealById(id: string): Promise<CommunityMeal | null> {
+    return this.communityMeals.get(id) || null;
+  }
+
+  async getAllCommunityMeals(): Promise<CommunityMeal[]> {
+    return Array.from(this.communityMeals.values()).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async updateCommunityMeal(id: string, updates: Partial<CommunityMeal>): Promise<CommunityMeal> {
+    const meal = this.communityMeals.get(id);
+    if (!meal) throw new Error("Community meal not found");
+    const updated = { ...meal, ...updates } as CommunityMeal;
+    this.communityMeals.set(id, updated);
+    return updated;
+  }
+
+  async deleteCommunityMeal(id: string): Promise<boolean> {
+    return this.communityMeals.delete(id);
+  }
+
+  // Progress insights (in-memory fallback)
+  async createProgressInsight(insight: InsertProgressInsight): Promise<ProgressInsight> {
+    const newInsight: ProgressInsight = {
+      id: crypto.randomUUID(),
+      ...insight,
+      createdAt: new Date(),
+    } as ProgressInsight;
+    this.progressInsights.set(newInsight.id, newInsight);
+    return newInsight;
+  }
+
+  async getProgressInsightsByUserId(userId: string): Promise<ProgressInsight[]> {
+    return Array.from(this.progressInsights.values()).filter(i => i.userId === userId).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async getProgressInsight(id: string): Promise<ProgressInsight | null> {
+    return this.progressInsights.get(id) || null;
+  }
+
+  async deleteProgressInsight(id: string): Promise<boolean> {
+    return this.progressInsights.delete(id);
+  }
+
+  // Notifications & Messaging
+  async createNotification(notification: Partial<Notification>): Promise<Notification> {
+    const n: Notification = {
+      id: notification.id || crypto.randomUUID(),
+      userId: notification.userId as string,
+      type: notification.type || "info",
+      text: notification.text || "",
+      url: notification.url,
+      read: notification.read ?? false,
+      createdAt: notification.createdAt || new Date(),
+    };
+
+    await db.insert(notifications).values({
+      id: n.id,
+      userId: n.userId,
+      type: n.type,
+      text: n.text,
+      url: n.url,
+      read: n.read,
+      createdAt: n.createdAt,
+    });
+
+    return n;
+  }
+
+  async getNotificationsByUserId(userId: string): Promise<Notification[]> {
+    const rows = await db.select().from(notifications).where(eq(notifications.userId, userId)).orderBy(desc(notifications.createdAt));
+    return rows.map((r: any) => ({
+      id: r.id,
+      userId: r.userId,
+      type: r.type,
+      text: r.text,
+      url: r.url,
+      read: r.read,
+      createdAt: r.createdAt,
+    }));
+  }
+
+  async markNotificationRead(id: string): Promise<boolean> {
+    const res = await db.update(notifications).set({ read: true }).where(eq(notifications.id, id));
+    return res.count > 0;
+  }
+
+  async createConversation(participants: string[]): Promise<Conversation> {
+    const conv: Conversation = {
+      id: crypto.randomUUID(),
+      participants,
+      lastMessage: undefined,
+      createdAt: new Date(),
+    };
+
+    await db.insert(conversations).values({
+      id: conv.id,
+      participants: conv.participants,
+      createdAt: conv.createdAt,
+      updatedAt: conv.createdAt,
+    });
+
+    return conv;
+  }
+
+  async getConversationsForUser(userId: string): Promise<Conversation[]> {
+    const rows = await db.select().from(conversations).where(sql`${userId} = ANY(participants)`).orderBy(desc(conversations.updatedAt));
+    return rows.map((r: any) => ({
+      id: r.id,
+      participants: r.participants,
+      lastMessage: undefined,
+      createdAt: r.createdAt,
+    }));
+  }
+
+  async getMessagesForConversation(conversationId: string): Promise<Message[]> {
+    const rows = await db.select().from(messages).where(eq(messages.conversationId, conversationId)).orderBy(desc(messages.createdAt));
+    return rows.map((r: any) => ({
+      id: r.id,
+      conversationId: r.conversationId,
+      senderId: r.senderId,
+      content: r.content,
+      createdAt: r.createdAt,
+      read: r.read,
+    }));
+  }
+
+  async sendMessage(conversationId: string, message: Partial<Message>): Promise<Message> {
+    const m: Message = {
+      id: message.id || crypto.randomUUID(),
+      conversationId,
+      senderId: message.senderId as string,
+      content: message.content || "",
+      createdAt: message.createdAt || new Date(),
+      read: message.read ?? false,
+    };
+
+    await db.insert(messages).values({
+      id: m.id,
+      conversationId: m.conversationId,
+      senderId: m.senderId,
+      content: m.content,
+      read: m.read,
+      createdAt: m.createdAt,
+    });
+
+    // update conversation updatedAt
+    await db.update(conversations).set({ updatedAt: new Date(), lastMessageId: m.id }).where(eq(conversations.id, conversationId));
+
+    return m;
   }
 }

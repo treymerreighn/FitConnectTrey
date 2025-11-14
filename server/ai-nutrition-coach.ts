@@ -1,10 +1,4 @@
-import OpenAI from "openai";
-
-// Make the OpenAI client optional so the server can start without an API key in dev
-let openai: OpenAI | null = null;
-if (process.env.OPENAI_API_KEY) {
-  openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-}
+import { requireOpenAI } from "./openai.ts";
 
 /**
  * AI-Powered Nutrition Coaching System
@@ -78,9 +72,7 @@ Respond with JSON:
   "mealTimingAdvice": "When to eat relative to workouts"
 }`;
 
-      if (!openai) {
-        throw new Error("OPENAI_API_KEY not set; AI features are disabled in this environment.");
-      }
+      const openai = requireOpenAI();
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         messages: [
@@ -125,9 +117,7 @@ Provide:
 
 Be encouraging but provide actionable nutrition advice.`;
 
-      if (!openai) {
-        throw new Error("OPENAI_API_KEY not set; AI features are disabled in this environment.");
-      }
+      const openai = requireOpenAI();
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         messages: [
@@ -198,9 +188,7 @@ Respond with JSON:
   "timingSuggestions": ["When to eat for optimal performance"]
 }`;
 
-      if (!openai) {
-        throw new Error("OPENAI_API_KEY not set; AI features are disabled in this environment.");
-      }
+      const openai = requireOpenAI();
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         messages: [

@@ -10,6 +10,13 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      fontFamily: {
+        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial'],
+      },
+      boxShadow: {
+        'md-soft': '0 8px 24px rgba(2,6,23,0.24)',
+        'fab': '0 6px 18px rgba(2,6,23,0.36)'
+      },
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",

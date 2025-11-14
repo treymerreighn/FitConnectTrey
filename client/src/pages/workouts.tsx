@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dumbbell, Clock, Flame, Target, Plus, TrendingUp, Search, Filter, Star, BookOpen, Play, Users, Database, X, PlusCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -71,12 +72,15 @@ export default function Workouts() {
   });
 
   // Exercise library query - using default queryFn pattern
+  // Debounce the search query to avoid excessive requests while typing
+  const debouncedSearch = useDebounce(searchQuery, 400);
+
   const buildExercisesUrl = () => {
     const params = new URLSearchParams();
-    if (searchQuery) params.append("search", searchQuery);
+    if (debouncedSearch) params.append("search", debouncedSearch);
     if (selectedCategory && selectedCategory !== "all") params.append("category", selectedCategory);
     if (selectedMuscleGroup && selectedMuscleGroup !== "all") params.append("muscleGroup", selectedMuscleGroup);
-    
+
     const queryString = params.toString();
     return `/api/exercises${queryString ? `?${queryString}` : ""}`;
   };
@@ -672,7 +676,7 @@ export default function Workouts() {
                 ))
               ) : exercises && exercises.length > 0 ? (
                 exercises.map((exercise) => (
-                  <Card key={exercise.id} className="group border-0 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:scale-[1.02] overflow-hidden">
+                  <Card key={exercise.id} className="mobile-card group border-0 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:scale-[1.02] overflow-hidden">
                     {/* Exercise Image */}
                     <div className="relative">
                       <ExerciseImagePlaceholder 
@@ -683,7 +687,7 @@ export default function Workouts() {
                       />
                     </div>
                     
-                    <CardHeader className="pb-3">
+                    <CardHeader className="pb-3 px-4 pt-4">
                       <div className="flex items-start justify-between">
                         <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{exercise.name}</CardTitle>
                         <Badge className={`${getDifficultyColor(exercise.difficulty)} font-medium`}>
@@ -694,7 +698,7 @@ export default function Workouts() {
                         {exercise.description}
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-4 px-4 pb-4">
                       <div className="flex flex-wrap gap-2">
                         {exercise.muscleGroups.slice(0, 3).map((muscle) => (
                           <Badge key={muscle} variant="secondary" className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors">

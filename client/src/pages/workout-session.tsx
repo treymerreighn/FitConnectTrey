@@ -25,6 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { OptimizedImage } from "@/components/OptimizedImage";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -534,10 +535,13 @@ export default function WorkoutSession() {
                     <div className="flex items-center space-x-4">
                       {/* Exercise Image */}
                       <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-700 flex-shrink-0">
-                        <img 
+                        <OptimizedImage
                           src={exercise.thumbnailUrl}
                           alt={exercise.name}
                           className="w-full h-full object-cover"
+                          width={64}
+                          height={64}
+                          placeholder="blur"
                         />
                       </div>
 

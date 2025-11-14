@@ -32,7 +32,10 @@ export function loadExerciseLibrary(): Exercise[] {
   
   // Always include basic exercises as foundation
   console.log(`📚 Adding ${BASIC_EXERCISES.length} basic exercises`);
-  allExercises = [...allExercises, ...BASIC_EXERCISES];
+  allExercises = [
+    ...allExercises,
+    ...BASIC_EXERCISES.map((e: any) => ({ id: e.id || `basic-${e.name.replace(/\s+/g, '-').toLowerCase()}`, createdAt: new Date(), ...e }))
+  ];
   
   // Remove duplicates - AI exercises take priority
   const uniqueExercises = removeDuplicateExercises(allExercises);
@@ -63,7 +66,7 @@ export function getExercisesByMuscleGroup(muscleGroup: string): Exercise[] {
 /**
  * Gets exercises by difficulty level
  */
-export function getExercisesByDifficulty(difficulty: "Beginner" | "Intermediate" | "Advanced"): Exercise[] {
+export function getExercisesByDifficulty(difficulty: "beginner" | "intermediate" | "advanced"): Exercise[] {
   const exercises = loadExerciseLibrary();
   return exercises.filter(exercise => exercise.difficulty === difficulty);
 }

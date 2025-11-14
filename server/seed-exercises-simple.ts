@@ -551,7 +551,7 @@ export async function seedBasicExercises(): Promise<void> {
     }
 
     for (const exercise of BASIC_EXERCISES) {
-      await storage.createExercise(exercise);
+      await storage.createExercise(exercise as any);
       console.log(`✓ Added: ${exercise.name}`);
     }
     

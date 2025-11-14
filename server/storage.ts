@@ -304,6 +304,8 @@ export class MemStorage implements IStorage {
         email: "sarah@example.com",
         avatar: "https://images.unsplash.com/photo-1544717297-fa95b6ee9643?w=150&h=150&fit=crop&crop=face",
         bio: "Fitness enthusiast • Personal trainer • Nutrition coach",
+        height: 65,
+        weight: 150,
         fitnessGoals: ["Weight Loss", "Strength Training"],
         followers: ["user2", "user3"],
         following: ["user2", "user4"],
@@ -326,6 +328,8 @@ export class MemStorage implements IStorage {
         email: "mike@example.com",
         avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
         bio: "Nutritionist • Meal prep expert • Clean eating advocate",
+        height: 72,
+        weight: 195,
         fitnessGoals: ["Muscle Building", "Nutrition"],
         followers: ["user1", "user3", "user4"],
         following: ["user1", "user3"],
@@ -348,6 +352,8 @@ export class MemStorage implements IStorage {
         email: "emma@example.com",
         avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
         bio: "Transformation coach • Progress documentation • Motivation",
+        height: 64,
+        weight: 135,
         fitnessGoals: ["Weight Loss", "Body Recomposition"],
         followers: ["user1", "user2"],
         following: ["user1", "user2", "user4"],
@@ -367,6 +373,8 @@ export class MemStorage implements IStorage {
         email: "jessica@example.com",
         avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b890?w=150&h=150&fit=crop&crop=face",
         bio: "Yoga instructor • HIIT specialist • Mindful movement",
+        height: 66,
+        weight: 128,
         fitnessGoals: ["Flexibility", "Cardio Fitness"],
         followers: ["user2", "user3"],
         following: ["user1", "user2"],
@@ -517,6 +525,8 @@ export class MemStorage implements IStorage {
           ? `${userData.firstName} ${userData.lastName}`
           : existingUser.name,
         avatar: userData.profileImageUrl || existingUser.avatar,
+        height: (userData as any).height ?? existingUser.height,
+        weight: (userData as any).weight ?? existingUser.weight,
       };
       this.users.set(userData.id, updatedUser);
       return updatedUser;
@@ -531,6 +541,8 @@ export class MemStorage implements IStorage {
           : userData.firstName || userData.lastName || 'Anonymous User',
         bio: "New to FitConnect! 💪",
         avatar: userData.profileImageUrl,
+        height: (userData as any).height,
+        weight: (userData as any).weight,
         isVerified: false,
         isPremium: true, // Enable premium access for AI insights testing
         subscriptionTier: "premium",
@@ -753,7 +765,12 @@ export class MemStorage implements IStorage {
   async getProgressEntriesByUserId(userId: string): Promise<ProgressEntry[]> {
     return Array.from(this.progressEntries.values())
       .filter(entry => entry.userId === userId)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      // Sort by createdAt (most recent first). Fall back to `date` if createdAt is missing.
+      .sort((a, b) => {
+        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : new Date(a.date).getTime();
+        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : new Date(b.date).getTime();
+        return bTime - aTime;
+      });
   }
 
   async updateProgressEntry(id: string, updates: Partial<ProgressEntry>): Promise<ProgressEntry> {

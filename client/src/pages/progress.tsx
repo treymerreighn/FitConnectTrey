@@ -44,12 +44,20 @@ export default function Progress() {
   const [weightTrendAnalysis, setWeightTrendAnalysis] = useState<any>(null);
   const [selectedPhotoForAnalysis, setSelectedPhotoForAnalysis] = useState<string | null>(null);
 
+  const userId = user?.id || CURRENT_USER_ID;
+
   const { data: progressEntries = [], isLoading } = useQuery<ProgressEntry[]>({
-    queryKey: ["/api/progress"],
+    queryKey: ["/api/progress", userId],
     queryFn: async () => {
-      const response = await apiRequest("GET", "/api/progress");
-      return response.json();
+      const entries = await api.getProgressEntries(userId);
+      // Ensure entries are sorted newest -> oldest using createdAt (fallback to date)
+      return entries.sort((a, b) => {
+        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : new Date(a.date).getTime();
+        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : new Date(b.date).getTime();
+        return bTime - aTime;
+      });
     },
+    enabled: Boolean(userId),
   });
 
   // Get weight data for chart
@@ -65,8 +73,9 @@ export default function Progress() {
 
   // Get recent workouts for trend analysis
   const { data: recentWorkouts = [] } = useQuery({
-    queryKey: ["/api/user-exercises", user?.id || CURRENT_USER_ID],
-    queryFn: () => fetch(`/api/user-exercises?userId=${user?.id || CURRENT_USER_ID}`).then(res => res.json()),
+    queryKey: ["/api/user-exercises", userId],
+    queryFn: () => fetch(`/api/user-exercises?userId=${userId}`).then(res => res.json()),
+    enabled: Boolean(userId),
   });
 
   // Analyze weight trends when data changes
@@ -78,12 +87,11 @@ export default function Progress() {
 
   const analyzeWeightTrends = async () => {
     try {
-      const response = await apiRequest("POST", "/api/ai/analyze-weight-trends", {
+      const analysis = await apiRequest("POST", "/api/ai/analyze-weight-trends", {
         weightEntries: weightData,
         userGoals: ["general_fitness"], // Could come from user profile
-        workoutData: recentWorkouts.slice(-10)
+        workoutData: recentWorkouts.slice(-10),
       });
-      const analysis = await response.json();
       setWeightTrendAnalysis(analysis);
     } catch (error) {
       console.error("Failed to analyze weight trends:", error);
@@ -114,11 +122,8 @@ export default function Progress() {
       
       console.log("Progress data to send:", progressData);
       
-      // Use apiRequest directly to see detailed error responses
       try {
-        const response = await apiRequest("POST", "/api/progress", progressData);
-        const result = await response.json();
-        console.log("API Response:", result);
+        const result = await api.createProgressEntry(progressData);
         return result;
       } catch (error) {
         console.error("API Error:", error);
@@ -127,7 +132,7 @@ export default function Progress() {
     },
     onSuccess: (result) => {
       console.log("Progress entry created successfully:", result);
-      queryClient.invalidateQueries({ queryKey: ["/api/progress", CURRENT_USER_ID] });
+      queryClient.invalidateQueries({ queryKey: ["/api/progress", userId] });
       setIsCreateModalOpen(false);
       form.reset();
       setSelectedPhotos([]);
@@ -142,7 +147,7 @@ export default function Progress() {
       return api.generateAIInsights(id, photos);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/progress", CURRENT_USER_ID] });
+      queryClient.invalidateQueries({ queryKey: ["/api/progress", userId] });
       setGeneratingInsights(null);
     },
   });

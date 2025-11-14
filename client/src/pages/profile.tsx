@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { User, Settings, Camera, Edit3, MapPin, Calendar, Trophy, Users, Heart, MessageCircle, Share2, MoreHorizontal, Plus, Dumbbell, TrendingUp, Target, Clock, Flame, BarChart3, X, Activity, Brain } from "lucide-react";
+import { User, Settings, Camera, Edit3, MapPin, Calendar, Trophy, Users, Heart, MessageCircle, Share2, MoreHorizontal, Plus, Dumbbell, TrendingUp, Target, Weight, Clock, Flame, BarChart3, X, Activity, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { OptimizedImage } from "@/components/OptimizedImage";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,7 +19,7 @@ import { CURRENT_USER_ID } from "@/lib/constants";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { uploadImage } from "@/lib/imageUpload";
-import { apiRequest } from "@/lib/queryClient";
+// apiRequest is not used directly here; use the `api` wrapper instead
 import type { User as UserType, Post, ProgressEntry } from "@shared/schema";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
@@ -26,6 +27,17 @@ const editProfileSchema = z.object({
   name: z.string().min(1, "Name is required"),
   bio: z.string().max(160, "Bio must be under 160 characters"),
   location: z.string().optional(),
+  // Coerce string inputs into numbers so form inputs (which produce strings) validate correctly
+  height: z.preprocess((val) => {
+    if (val === undefined || val === null || val === "") return undefined;
+    const n = Number(val);
+    return Number.isNaN(n) ? val : n;
+  }, z.number().optional()),
+  weight: z.preprocess((val) => {
+    if (val === undefined || val === null || val === "") return undefined;
+    const n = Number(val);
+    return Number.isNaN(n) ? val : n;
+  }, z.number().optional()),
   fitnessGoals: z.array(z.string()).default([]),
 });
 
@@ -39,18 +51,21 @@ function ProgressInsightsTab({ userId }: { userId: string }) {
   const { data: progressEntries = [], isLoading: progressLoading } = useQuery<ProgressEntry[]>({
     queryKey: ["/api/progress", userId],
     queryFn: async () => {
-      const response = await apiRequest("GET", `/api/progress`);
-      return response.json();
+      const entries = await api.getProgressEntries(userId);
+      return entries.sort((a, b) => {
+        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : new Date(a.date).getTime();
+        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : new Date(b.date).getTime();
+        return bTime - aTime;
+      });
     },
+    enabled: Boolean(userId),
   });
 
   // Fetch recent posts for activity tracking
   const { data: userPosts = [] } = useQuery({
     queryKey: ["/api/posts", "user", userId],
-    queryFn: async () => {
-      const response = await apiRequest("GET", `/api/posts/user/${userId}`);
-      return response.json();
-    },
+    queryFn: async () => api.getPostsByUserId(userId),
+    enabled: Boolean(userId),
   });
 
   if (progressLoading) {
@@ -250,11 +265,14 @@ function ProgressInsightsTab({ userId }: { userId: string }) {
                     .filter(entry => entry.photos.length > 0)
                     .slice(0, 4)
                     .map((entry, index) => (
-                      <img
+                      <OptimizedImage
                         key={index}
                         src={entry.photos[0]}
                         alt={`Progress ${index + 1}`}
+                        width={240}
+                        height={96}
                         className="w-full h-24 object-cover rounded-lg"
+                        placeholder="blur"
                       />
                     ))}
                 </div>
@@ -300,21 +318,40 @@ export default function Profile() {
   const [activeTab, setActiveTab] = useState("posts");
 
   // Fetch current user data
-  const { data: currentUser, isLoading: userLoading } = useQuery<UserType>({
+  // Fetch current user data (fall back to first user if CURRENT_USER_ID not present in DB)
+  const { data: currentUser, isLoading: userLoading } = useQuery<UserType | null>({
     queryKey: ["/api/users", CURRENT_USER_ID],
-    queryFn: () => api.getUserById(CURRENT_USER_ID),
+    queryFn: async () => {
+      try {
+        return await api.getUserById(CURRENT_USER_ID);
+      } catch (err) {
+        // If fetching current user fails (e.g., seed uses different IDs), fall back to first user
+        try {
+          const users = await api.getUsers();
+          return users && users.length ? users[0] : null;
+        } catch (_e) {
+          return null;
+        }
+      }
+    },
   });
 
   // Fetch user's posts
+  const userId = currentUser?.id || CURRENT_USER_ID;
   const { data: userPosts = [], isLoading: postsLoading } = useQuery<Post[]>({
-    queryKey: ["/api/posts", "user", CURRENT_USER_ID],
-    queryFn: () => api.getPostsByUserId(CURRENT_USER_ID),
+    queryKey: ["/api/posts", "user", userId],
+    queryFn: () => api.getPostsByUserId(userId),
+    enabled: Boolean(currentUser),
   });
 
   // Fetch user's progress entries for stats
-  const { data: progressEntries = [] } = useQuery({
-    queryKey: ["/api/progress", CURRENT_USER_ID],
-    queryFn: () => api.getProgressEntries(CURRENT_USER_ID),
+  const { data: progressEntries = [] } = useQuery<ProgressEntry[]>({
+    queryKey: ["/api/progress", userId],
+    queryFn: async () => {
+      const entries = await api.getProgressEntries(userId);
+      return entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    },
+    enabled: Boolean(currentUser),
   });
 
   const form = useForm<EditProfileData>({
@@ -323,6 +360,8 @@ export default function Profile() {
       name: currentUser?.name || "",
       bio: currentUser?.bio || "",
       fitnessGoals: currentUser?.fitnessGoals || [],
+      height: (currentUser as any)?.height ?? undefined,
+      weight: (currentUser as any)?.weight ?? undefined,
     },
   });
 
@@ -383,7 +422,13 @@ export default function Profile() {
 
   const onSubmit = (data: EditProfileData) => {
     if (!currentUser) return;
-    updateProfileMutation.mutate(data);
+    // Ensure numeric fields are numbers before sending
+    const payload: Partial<EditProfileData> = {
+      ...data,
+      height: data.height ? Number(data.height) : undefined,
+      weight: data.weight ? Number(data.weight) : undefined,
+    };
+    updateProfileMutation.mutate(payload as EditProfileData);
   };
 
   if (userLoading) {
@@ -411,6 +456,9 @@ export default function Profile() {
   const totalWorkouts = userPosts.filter(p => p.type === "workout").length;
   const totalProgress = progressEntries.length;
   const joinDate = format(new Date(currentUser.createdAt), "MMMM yyyy");
+  const latestProgress = (progressEntries && progressEntries.length > 0) ? progressEntries[0] : null;
+  const currentWeight = latestProgress?.weight ?? null;
+  const currentHeight = (currentUser as any)?.height ?? null;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -472,6 +520,17 @@ export default function Profile() {
                         <Calendar className="h-4 w-4" />
                         <span>Joined {joinDate}</span>
                       </div>
+
+                      <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-1">
+                          <Weight className="h-4 w-4" />
+                          <span>{currentWeight ? `${currentWeight} lbs` : '—'}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Target className="h-4 w-4" />
+                          <span>{currentHeight ? `${currentHeight} in` : '—'}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -491,7 +550,7 @@ export default function Profile() {
                   </div>
                 </div>
 
-                {/* Stats */}
+                  {/* Stats */}
                 <div className="flex space-x-6 mt-4 pt-4 border-t">
                   <div className="text-center">
                     <div className="text-xl font-bold text-gray-900 dark:text-white">
@@ -516,6 +575,17 @@ export default function Profile() {
                       {totalProgress}
                     </div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">Progress</div>
+                  </div>
+                </div>
+                {/* Height / Weight */}
+                <div className="flex items-center space-x-6 mt-3 text-sm text-gray-600 dark:text-gray-400">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs text-gray-500">Height</span>
+                    <span className="font-medium">{currentHeight ? `${currentHeight} in` : '—'}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs text-gray-500">Weight</span>
+                    <span className="font-medium">{currentWeight ? `${currentWeight} lbs` : '—'}</span>
                   </div>
                 </div>
               </div>
@@ -615,11 +685,14 @@ export default function Profile() {
                           {post.images && post.images.length > 0 && (
                             <div className="grid grid-cols-2 gap-2 mb-3">
                               {post.images.slice(0, 2).map((image, index) => (
-                                <img
+                                <OptimizedImage
                                   key={index}
                                   src={image}
-                                  alt=""
+                                  alt={post.caption || ""}
+                                  width={320}
+                                  height={128}
                                   className="rounded-lg h-32 w-full object-cover"
+                                  placeholder="blur"
                                 />
                               ))}
                             </div>
@@ -772,6 +845,34 @@ export default function Profile() {
                     </FormItem>
                   )}
                 />
+                <div className="grid grid-cols-2 gap-2">
+                  <FormField
+                    control={form.control}
+                    name="height"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Height (in)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="Height in inches" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="weight"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Weight (lbs)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="Weight in lbs" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 
                 <div className="flex space-x-2 pt-4">
                   <Button

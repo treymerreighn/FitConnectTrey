@@ -36,6 +36,17 @@ router.get("/api/users/:id", async (req, res) => {
   }
 });
 
+// Dev debug endpoint: list seeded users (safe to remove in production)
+router.get("/api/debug/seeded-users", async (req, res) => {
+  try {
+    const users = await storage.getAllUsers();
+    res.json({ count: users.length, users });
+  } catch (error) {
+    console.error("Failed to return seeded users:", error);
+    res.status(500).json({ error: "Failed to fetch seeded users" });
+  }
+});
+
 router.post("/api/users", async (req, res) => {
   try {
     const userData = insertUserSchema.parse(req.body);

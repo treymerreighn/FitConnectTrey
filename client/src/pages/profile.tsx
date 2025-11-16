@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { User, Settings, Camera, Edit3, MapPin, Calendar, Trophy, Users, Heart, MessageCircle, Share2, MoreHorizontal, Plus, Dumbbell, TrendingUp, Target, Weight, Clock, Flame, BarChart3, X, Activity, Brain } from "lucide-react";
+import { User, Settings, Camera, Edit3, MapPin, Calendar, Trophy, Users, Heart, MessageCircle, Share2, MoreHorizontal, Plus, Dumbbell, TrendingUp, Target, Weight, Clock, Flame, BarChart3, X, Activity, Brain, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OptimizedImage } from "@/components/OptimizedImage";
@@ -15,6 +15,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { api } from "@/lib/api";
+import { useRoute } from "wouter";
 import { CURRENT_USER_ID } from "@/lib/constants";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -44,7 +45,7 @@ const editProfileSchema = z.object({
 type EditProfileData = z.infer<typeof editProfileSchema>;
 
 // Progress Insights Tab Component
-function ProgressInsightsTab({ userId }: { userId: string }) {
+function ProgressInsightsTab({ userId, isOwner }: { userId: string; isOwner?: boolean }) {
   const [selectedMetric, setSelectedMetric] = useState<"weight" | "bodyFat" | "muscle">("weight");
   
   // Fetch progress entries
@@ -124,9 +125,15 @@ function ProgressInsightsTab({ userId }: { userId: string }) {
           <CardContent className="p-4 text-center">
             <Target className="w-6 h-6 mx-auto mb-2 text-green-600" />
             <div className="text-2xl font-bold text-green-700 dark:text-green-300">
-              {latestEntry?.weight || '--'}
+              {isOwner ? (latestEntry?.weight ?? '--') : '--'}
             </div>
             <div className="text-xs text-green-600 dark:text-green-400">Current Weight (lbs)</div>
+            {!isOwner && (
+              <div className="text-xs text-gray-400 mt-1 flex items-center justify-center gap-1">
+                <Lock className="w-3 h-3" />
+                <span>Private</span>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -134,7 +141,7 @@ function ProgressInsightsTab({ userId }: { userId: string }) {
           <CardContent className="p-4 text-center">
             <TrendingUp className="w-6 h-6 mx-auto mb-2 text-purple-600" />
             <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">
-              {weightChange ? (weightChange > 0 ? '+' : '') + weightChange : '--'}
+              {isOwner ? (weightChange ? (weightChange > 0 ? '+' : '') + weightChange : '--') : '--'}
             </div>
             <div className="text-xs text-purple-600 dark:text-purple-400">Weight Change (lbs)</div>
           </CardContent>
@@ -317,27 +324,41 @@ export default function Profile() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("posts");
 
-  // Fetch current user data
-  // Fetch current user data (fall back to first user if CURRENT_USER_ID not present in DB)
+  // Fetch the signed-in viewer so we can know following state
+  const { data: viewer } = useQuery<UserType | null>({
+    queryKey: [`/api/users/${CURRENT_USER_ID}`],
+    queryFn: () => api.getUserById(CURRENT_USER_ID),
+  });
+
+  // Determine if we're viewing another user's profile via route param
+  const [, routeParams] = useRoute("/profile/:id");
+  const routeUserId = (routeParams as any)?.id;
+
+  // Fetch current/target user data (if route param present, show that user's profile)
   const { data: currentUser, isLoading: userLoading } = useQuery<UserType | null>({
-    queryKey: ["/api/users", CURRENT_USER_ID],
+    queryKey: ["/api/users", routeUserId || CURRENT_USER_ID],
     queryFn: async () => {
+      const targetId = routeUserId || CURRENT_USER_ID;
       try {
-        return await api.getUserById(CURRENT_USER_ID);
+        return await api.getUserById(targetId);
       } catch (err) {
-        // If fetching current user fails (e.g., seed uses different IDs), fall back to first user
-        try {
-          const users = await api.getUsers();
-          return users && users.length ? users[0] : null;
-        } catch (_e) {
-          return null;
+        // If fetching target user fails and no explicit param, fall back to first user
+        if (!routeUserId) {
+          try {
+            const users = await api.getUsers();
+            return users && users.length ? users[0] : null;
+          } catch (_e) {
+            return null;
+          }
         }
+        return null;
       }
     },
   });
 
-  // Fetch user's posts
-  const userId = currentUser?.id || CURRENT_USER_ID;
+  // Determine the profile being viewed and whether it's the current user's own profile
+  const userId = routeUserId || currentUser?.id || CURRENT_USER_ID;
+  const isOwner = routeUserId ? routeUserId === CURRENT_USER_ID : true;
   const { data: userPosts = [], isLoading: postsLoading } = useQuery<Post[]>({
     queryKey: ["/api/posts", "user", userId],
     queryFn: () => api.getPostsByUserId(userId),
@@ -359,9 +380,72 @@ export default function Profile() {
     defaultValues: {
       name: currentUser?.name || "",
       bio: currentUser?.bio || "",
+      location: (currentUser as any)?.location ?? undefined,
       fitnessGoals: currentUser?.fitnessGoals || [],
       height: (currentUser as any)?.height ?? undefined,
       weight: (currentUser as any)?.weight ?? undefined,
+    },
+  });
+
+  // Follow/unfollow mutation for profile page actions
+  const followMutation = useMutation({
+    mutationFn: async (targetUserId: string) => {
+      const isFollowing = viewer?.following?.includes(targetUserId);
+      if (isFollowing) {
+        return api.unfollowUser(targetUserId, CURRENT_USER_ID);
+      }
+      return api.followUser(targetUserId, CURRENT_USER_ID);
+    },
+    onMutate: async (targetUserId: string) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
+      await queryClient.cancelQueries({ queryKey: ["/api/users"] });
+
+      const previousViewer = queryClient.getQueryData(["/api/users", CURRENT_USER_ID]);
+      const previousUsers = queryClient.getQueryData(["/api/users"]);
+
+      // Optimistically update viewer
+      if (previousViewer) {
+        const isFollowing = (previousViewer as any).following?.includes(targetUserId);
+        const newFollowing = isFollowing
+          ? (previousViewer as any).following?.filter((id: string) => id !== targetUserId) || []
+          : [...((previousViewer as any).following || []), targetUserId];
+        queryClient.setQueryData(["/api/users", CURRENT_USER_ID], { ...(previousViewer as any), following: newFollowing });
+      }
+
+      // Optimistically update users list follower arrays
+      if (previousUsers) {
+        const updated = (previousUsers as any[]).map((u) => {
+          if (u.id !== targetUserId) return u;
+          const isFollowing = u.followers?.includes(CURRENT_USER_ID);
+          const newFollowers = isFollowing
+            ? u.followers?.filter((id: string) => id !== CURRENT_USER_ID) || []
+            : [...(u.followers || []), CURRENT_USER_ID];
+          return { ...u, followers: newFollowers };
+        });
+        queryClient.setQueryData(["/api/users"], updated);
+      }
+
+      // Also update the displayed profile user's followers if cached at ["/api/users", userId]
+      const previousProfileUser = queryClient.getQueryData(["/api/users", userId]);
+      if (previousProfileUser) {
+        const isFollowing = (previousProfileUser as any).followers?.includes(CURRENT_USER_ID);
+        const newFollowers = isFollowing
+          ? (previousProfileUser as any).followers?.filter((id: string) => id !== CURRENT_USER_ID) || []
+          : [...((previousProfileUser as any).followers || []), CURRENT_USER_ID];
+        queryClient.setQueryData(["/api/users", userId], { ...(previousProfileUser as any), followers: newFollowers });
+      }
+
+      return { previousViewer, previousUsers, previousProfileUser };
+    },
+    onError: (err, targetUserId, context: any) => {
+      if (context?.previousViewer) queryClient.setQueryData(["/api/users", CURRENT_USER_ID], context.previousViewer);
+      if (context?.previousUsers) queryClient.setQueryData(["/api/users"], context.previousUsers);
+      if (context?.previousProfileUser) queryClient.setQueryData(["/api/users", userId], context.previousProfileUser);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users", userId] });
     },
   });
 
@@ -420,15 +504,64 @@ export default function Profile() {
     }
   };
 
-  const onSubmit = (data: EditProfileData) => {
+  const onSubmit = async (data: EditProfileData) => {
     if (!currentUser) return;
     // Ensure numeric fields are numbers before sending
     const payload: Partial<EditProfileData> = {
       ...data,
       height: data.height ? Number(data.height) : undefined,
       weight: data.weight ? Number(data.weight) : undefined,
+      location: data.location ?? undefined,
     };
-    updateProfileMutation.mutate(payload as EditProfileData);
+
+    try {
+      // Update the user record
+      await updateProfileMutation.mutateAsync(payload as EditProfileData);
+
+      // If the user edited weight, also create or update a progress entry so profile weight reflects immediately
+      if (payload.weight !== undefined && payload.weight !== null) {
+        const newWeight = Number(payload.weight);
+        const latest = progressEntries && progressEntries.length > 0 ? progressEntries[0] : null;
+
+        const isSameDay = (entry: ProgressEntry) => {
+          const entryDate = new Date(entry.createdAt || entry.date);
+          const today = new Date();
+          return entryDate.getFullYear() === today.getFullYear() && entryDate.getMonth() === today.getMonth() && entryDate.getDate() === today.getDate();
+        };
+
+        if (latest && isSameDay(latest)) {
+          // Update the existing entry for today
+          try {
+            await api.updateProgressEntry(latest.id, { weight: newWeight });
+          } catch (err) {
+            console.error("Failed to update today's progress entry:", err);
+          }
+        } else {
+          // Create a new progress entry with the edited weight
+          try {
+            await api.createProgressEntry({
+              userId,
+              date: new Date(),
+              weight: newWeight,
+              photos: [],
+              notes: 'Weight updated via profile',
+              isPrivate: true,
+            } as any);
+          } catch (err) {
+            console.error("Failed to create progress entry from profile update:", err);
+          }
+        }
+
+        // Refresh progress queries so UI shows the updated weight immediately
+        queryClient.invalidateQueries({ queryKey: ["/api/progress", userId] });
+      }
+
+      setIsEditModalOpen(false);
+      toast({ title: 'Profile updated', description: 'Your profile has been successfully updated.' });
+    } catch (error) {
+      console.error("Failed to update profile:", error);
+      toast({ title: 'Error', description: 'Failed to update profile. Please try again.', variant: 'destructive' });
+    }
   };
 
   if (userLoading) {
@@ -475,15 +608,17 @@ export default function Profile() {
                     {currentUser.name?.charAt(0).toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
-                <label className="absolute -bottom-2 -right-2 rounded-full w-8 h-8 p-0 bg-fit-green hover:bg-fit-green/90 cursor-pointer flex items-center justify-center">
-                  <Camera className="h-4 w-4 text-white" />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarUpload}
-                    className="hidden"
-                  />
-                </label>
+                {isOwner && (
+                  <label className="absolute -bottom-2 -right-2 rounded-full w-8 h-8 p-0 bg-fit-green hover:bg-fit-green/90 cursor-pointer flex items-center justify-center">
+                    <Camera className="h-4 w-4 text-white" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      className="hidden"
+                    />
+                  </label>
+                )}
               </div>
 
               {/* Profile Info */}
@@ -510,43 +645,52 @@ export default function Profile() {
                       </p>
                     )}
                     <div className="flex flex-wrap items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-                      {currentUser.bio && (
+                      {currentUser.location && (
                         <div className="flex items-center space-x-1">
                           <MapPin className="h-4 w-4" />
-                          <span>{currentUser.bio}</span>
+                          <span>{currentUser.location}</span>
                         </div>
                       )}
                       <div className="flex items-center space-x-1">
                         <Calendar className="h-4 w-4" />
                         <span>Joined {joinDate}</span>
                       </div>
-
-                      <div className="flex items-center space-x-3">
-                        <div className="flex items-center space-x-1">
-                          <Weight className="h-4 w-4" />
-                          <span>{currentWeight ? `${currentWeight} lbs` : '—'}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Target className="h-4 w-4" />
-                          <span>{currentHeight ? `${currentHeight} in` : '—'}</span>
-                        </div>
-                      </div>
                     </div>
                   </div>
 
                   {/* Action Buttons */}
                   <div className="flex space-x-2 mt-4 md:mt-0">
-                    <Button
-                      onClick={() => setIsEditModalOpen(true)}
-                      variant="outline"
-                      className="flex items-center space-x-2"
-                    >
-                      <Edit3 className="h-4 w-4" />
-                      <span>Edit Profile</span>
-                    </Button>
-                    <Button variant="outline" size="icon">
-                      <Settings className="h-4 w-4" />
-                    </Button>
+                    {isOwner ? (
+                      <>
+                        <Button
+                          onClick={() => setIsEditModalOpen(true)}
+                          variant="outline"
+                          className="flex items-center space-x-2"
+                        >
+                          <Edit3 className="h-4 w-4" />
+                          <span>Edit Profile</span>
+                        </Button>
+                        <Button variant="outline" size="icon">
+                          <Settings className="h-4 w-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      // Show follow/following button for other users
+                      (() => {
+                        const isFollowing = viewer?.following?.includes(userId);
+                        return (
+                          <Button
+                            variant={isFollowing ? "outline" : "default"}
+                            size="sm"
+                            onClick={() => followMutation.mutate(userId)}
+                            disabled={followMutation.isPending}
+                            className={isFollowing ? "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-white" : "bg-fit-green hover:bg-fit-green/90"}
+                          >
+                            {isFollowing ? "Following" : "Follow"}
+                          </Button>
+                        );
+                      })()
+                    )}
                   </div>
                 </div>
 
@@ -577,17 +721,27 @@ export default function Profile() {
                     <div className="text-sm text-gray-500 dark:text-gray-400">Progress</div>
                   </div>
                 </div>
-                {/* Height / Weight */}
-                <div className="flex items-center space-x-6 mt-3 text-sm text-gray-600 dark:text-gray-400">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xs text-gray-500">Height</span>
-                    <span className="font-medium">{currentHeight ? `${currentHeight} in` : '—'}</span>
+                {/* Height / Weight (visible only to the profile owner) */}
+                {isOwner && (
+                  <div className="flex items-center space-x-6 mt-3 text-sm text-gray-600 dark:text-gray-400">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs text-gray-500">Height</span>
+                      <span className="font-medium">{currentHeight ? `${currentHeight} in` : '—'}</span>
+                      <span className="ml-2 text-xs text-gray-400 flex items-center gap-1">
+                        <Lock className="w-3 h-3" />
+                        <span>Private</span>
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs text-gray-500">Weight</span>
+                      <span className="font-medium">{currentWeight ? `${currentWeight} lbs` : '—'}</span>
+                      <span className="ml-2 text-xs text-gray-400 flex items-center gap-1">
+                        <Lock className="w-3 h-3" />
+                        <span>Private</span>
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xs text-gray-500">Weight</span>
-                    <span className="font-medium">{currentWeight ? `${currentWeight} lbs` : '—'}</span>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
 
@@ -800,7 +954,7 @@ export default function Profile() {
           </TabsContent>
 
           <TabsContent value="progress" className="space-y-4">
-            <ProgressInsightsTab userId={CURRENT_USER_ID} />
+            <ProgressInsightsTab userId={userId} isOwner={isOwner} />
           </TabsContent>
         </Tabs>
 
@@ -840,6 +994,19 @@ export default function Profile() {
                           className="min-h-[100px]"
                           {...field}
                         />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Location</FormLabel>
+                      <FormControl>
+                        <Input placeholder="City, State or Location" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

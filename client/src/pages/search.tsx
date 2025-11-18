@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, UserPlus, Users, Brain, Share2, Heart, MessageCircle, Utensils, Crown } from "lucide-react";
+import { Search, Users, Brain, Share2, Heart, MessageCircle, Utensils, Crown } from "lucide-react";
+import { Link } from "@/components/ui/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -34,12 +35,61 @@ export default function SearchPage() {
 
   const followMutation = useMutation({
     mutationFn: async (targetUserId: string) => {
-      const isFollowing = currentUser?.following.includes(targetUserId);
+      const isFollowing = currentUser?.following?.includes(targetUserId);
       const endpoint = isFollowing ? "unfollow" : "follow";
       return apiRequest("POST", `/api/users/${targetUserId}/${endpoint}`, { followerId: CURRENT_USER_ID });
     },
-    onSuccess: () => {
+    onMutate: async (targetUserId: string) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
+      await queryClient.cancelQueries({ queryKey: ["/api/users"] });
+
+      const previousViewerArray = queryClient.getQueryData<User>(["/api/users", CURRENT_USER_ID]);
+      const previousViewerString = queryClient.getQueryData<User>([`/api/users/${CURRENT_USER_ID}`]);
+      const previousUsers = queryClient.getQueryData<User[]>(["/api/users"]);
+
+      const previousViewer = previousViewerArray || previousViewerString;
+
+      // Optimistically update viewer following list (update both cached key shapes if present)
+      if (previousViewer) {
+        const isFollowing = previousViewer.following?.includes(targetUserId);
+        const newFollowing = isFollowing
+          ? previousViewer.following?.filter((id) => id !== targetUserId) || []
+          : [...(previousViewer.following || []), targetUserId];
+
+        if (previousViewerArray) {
+          queryClient.setQueryData(["/api/users", CURRENT_USER_ID], { ...previousViewerArray, following: newFollowing } as User);
+        }
+        if (previousViewerString) {
+          queryClient.setQueryData([`/api/users/${CURRENT_USER_ID}`], { ...previousViewerString, following: newFollowing } as User);
+        }
+      }
+
+      // Optimistically update users list follower arrays
+      if (previousUsers) {
+        const updated = previousUsers.map((u) => {
+          if (u.id !== targetUserId) return u;
+          const isFollowing = u.followers?.includes(CURRENT_USER_ID);
+          const newFollowers = isFollowing
+            ? u.followers?.filter((id) => id !== CURRENT_USER_ID) || []
+            : [...(u.followers || []), CURRENT_USER_ID];
+          return { ...u, followers: newFollowers };
+        });
+        queryClient.setQueryData(["/api/users"], updated);
+      }
+
+      return { previousViewerArray, previousViewerString, previousUsers };
+    },
+    onError: (err, targetUserId, context: any) => {
+      if (context?.previousViewer) {
+        queryClient.setQueryData(["/api/users", CURRENT_USER_ID], context.previousViewer);
+      }
+      if (context?.previousUsers) {
+        queryClient.setQueryData(["/api/users"], context.previousUsers);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
     },
   });
 
@@ -53,7 +103,7 @@ export default function SearchPage() {
   });
 
   const suggestedUsers = users.filter(
-    (user) => user.id !== CURRENT_USER_ID && !currentUser?.following.includes(user.id)
+    (user) => user.id !== CURRENT_USER_ID && !currentUser?.following?.includes(user.id)
   ).slice(0, 5);
 
   return (
@@ -108,50 +158,45 @@ export default function SearchPage() {
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
-                          <UserAvatar
-                            src={user.avatar}
-                            name={user.name}
-                            size="md"
-                          />
-                          <div>
-                            <p className="font-semibold text-gray-900 dark:text-white">
-                              {user.name}
-                            </p>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                              @{user.username}
-                            </p>
-                            {user.bio && (
-                              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                {user.bio}
-                              </p>
-                            )}
-                          </div>
+                          <Link href={`/profile/${user.id}`} asChild>
+                            <div className="flex items-center space-x-3 cursor-pointer">
+                              <UserAvatar
+                                src={user.avatar}
+                                name={user.name}
+                                size="md"
+                              />
+                              <div>
+                                <p className="font-semibold text-gray-900 dark:text-white">
+                                  {user.name}
+                                </p>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  @{user.username}
+                                </p>
+                                {user.bio && (
+                                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                    {user.bio}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </Link>
                         </div>
-                        <Button
-                          variant={
-                            currentUser?.following.includes(user.id) ? "outline" : "default"
-                          }
-                          size="sm"
-                          onClick={() => followMutation.mutate(user.id)}
-                          disabled={followMutation.isPending}
-                          className={
-                            currentUser?.following.includes(user.id)
-                              ? ""
-                              : "bg-fit-green hover:bg-fit-green/90"
-                          }
-                        >
-                          {currentUser?.following.includes(user.id) ? (
-                            <>
-                              <Users className="w-4 h-4 mr-1" />
-                              Following
-                            </>
-                          ) : (
-                            <>
-                              <UserPlus className="w-4 h-4 mr-1" />
-                              Follow
-                            </>
-                          )}
-                        </Button>
+                        {
+                          (() => {
+                            const isFollowing = currentUser?.following?.includes(user.id);
+                            return (
+                              <Button
+                                variant={isFollowing ? "outline" : "default"}
+                                size="sm"
+                                onClick={() => followMutation.mutate(user.id)}
+                                disabled={followMutation.isPending}
+                                className={isFollowing ? "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-white" : "bg-fit-green hover:bg-fit-green/90"}
+                              >
+                                {isFollowing ? "Following" : "Follow"}
+                              </Button>
+                            );
+                          })()
+                        }
                       </div>
                     </CardContent>
                   </Card>
@@ -178,35 +223,45 @@ export default function SearchPage() {
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
-                          <UserAvatar
-                            src={user.avatar}
-                            name={user.name}
-                            size="md"
-                          />
-                          <div>
-                            <p className="font-semibold text-gray-900 dark:text-white">
-                              {user.name}
-                            </p>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                              @{user.username}
-                            </p>
-                            {user.bio && (
-                              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                {user.bio}
-                              </p>
-                            )}
-                          </div>
+                          <Link href={`/profile/${user.id}`} asChild>
+                            <div className="flex items-center space-x-3 cursor-pointer">
+                              <UserAvatar
+                                src={user.avatar}
+                                name={user.name}
+                                size="md"
+                              />
+                              <div>
+                                <p className="font-semibold text-gray-900 dark:text-white">
+                                  {user.name}
+                                </p>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  @{user.username}
+                                </p>
+                                {user.bio && (
+                                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                    {user.bio}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </Link>
                         </div>
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={() => followMutation.mutate(user.id)}
-                          disabled={followMutation.isPending}
-                          className="bg-fit-green hover:bg-fit-green/90"
-                        >
-                          <UserPlus className="w-4 h-4 mr-1" />
-                          Follow
-                        </Button>
+                        {
+                          (() => {
+                            const isFollowing = currentUser?.following?.includes(user.id);
+                            return (
+                              <Button
+                                variant={isFollowing ? "outline" : "default"}
+                                size="sm"
+                                onClick={() => followMutation.mutate(user.id)}
+                                disabled={followMutation.isPending}
+                                className={isFollowing ? "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-white" : "bg-fit-green hover:bg-fit-green/90"}
+                              >
+                                {isFollowing ? "Following" : "Follow"}
+                              </Button>
+                            );
+                          })()
+                        }
                       </div>
                     </CardContent>
                   </Card>

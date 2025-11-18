@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { UserAvatar } from "./user-avatar";
+import { Link } from "@/components/ui/link";
 import { OptimizedImage } from "../OptimizedImage";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -282,15 +283,19 @@ export function PostCard({ post }: PostCardProps) {
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <UserAvatar
-              src={user?.avatar}
-              name={user?.name}
-              alt={`${user?.name}'s avatar`}
-            />
-            <div>
-              <p className="font-semibold text-sm text-gray-900 dark:text-gray-100">{user?.name}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">@{user?.username} • {formatTimeAgo(post.createdAt)}</p>
-            </div>
+            <Link href={`/profile/${user?.id}`} asChild>
+              <div className="flex items-center space-x-3 cursor-pointer">
+                <UserAvatar
+                  src={user?.avatar}
+                  name={user?.name}
+                  alt={`${user?.name}'s avatar`}
+                />
+                <div>
+                  <p className="font-semibold text-sm text-gray-900 dark:text-gray-100">{user?.name}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">@{user?.username} • {formatTimeAgo(post.createdAt)}</p>
+                </div>
+              </div>
+            </Link>
           </div>
           <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
             <MoreHorizontal className="h-4 w-4 text-gray-400" />

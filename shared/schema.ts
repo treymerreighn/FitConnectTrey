@@ -21,6 +21,8 @@ export const userSchema = z.object({
   // Client relationships
   clients: z.array(z.string()).default([]),
   trainers: z.array(z.string()).default([]),
+  // Optional location for user profile
+  location: z.string().optional(),
   // Premium subscription
   isPremium: z.boolean().default(false),
   subscriptionTier: z.enum(["free", "premium", "pro"]).default("free"),

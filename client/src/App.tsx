@@ -86,6 +86,7 @@ function Router() {
         <>
           <Route path="/" component={Feed} />
           <Route path="/profile" component={Profile} />
+          <Route path="/profile/:id" component={Profile} />
           <Route path="/create-post" component={CreatePost} />
           <Route path="/log-workout" component={LogWorkout} />
           <Route path="/workouts" component={Workouts} />

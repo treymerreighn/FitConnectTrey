@@ -1960,5 +1960,105 @@
     "targetSets": 3,
     "targetReps": 12,
     "restTime": 60
+  },
+  {
+    "id": "ai-gen-88",
+    "name": "Romanian Deadlift",
+    "category": "Strength",
+    "muscleGroups": ["hamstrings", "glutes", "lower back"],
+    "equipment": ["Barbell"],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand with feet hip-width apart holding a barbell in front of your thighs.",
+      "Hinge at the hips letting the bar travel down close to your legs while keeping a slight knee bend.",
+      "Lower until you feel a strong hamstring stretch without rounding your back.",
+      "Drive hips forward and squeeze glutes to return to the top.",
+      "Tips: Keep the bar close, maintain a neutral spine, move slowly on the descent.",
+      "Safety: Avoid excessive knee bend; stop if lumbar rounding occurs."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1599058917765-a7806e3e4302?w=400&h=300&fit=crop",
+    "targetSets": 4,
+    "targetReps": 8,
+    "restTime": 90
+  },
+  {
+    "id": "ai-gen-89",
+    "name": "Walking Lunge",
+    "category": "Strength",
+    "muscleGroups": ["quadriceps", "glutes", "hamstrings"],
+    "equipment": ["Dumbbells"],
+    "difficulty": "Beginner",
+    "instructions": [
+      "Stand tall holding dumbbells at your sides.",
+      "Step forward into a lunge creating two ~90° knee angles.",
+      "Push through the front heel and bring the rear leg forward into the next step.",
+      "Continue alternating steps maintaining upright torso.",
+      "Tips: Shorter steps emphasize quads; longer steps load glutes.",
+      "Safety: Keep knee tracking over toes; avoid crashing the rear knee into the floor."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1605296867304-46d5465a13f1?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 12,
+    "restTime": 60
+  },
+  {
+    "id": "ai-gen-90",
+    "name": "Bulgarian Split Squat",
+    "category": "Strength",
+    "muscleGroups": ["quadriceps", "glutes", "hamstrings"],
+    "equipment": ["Dumbbells", "Bench"],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand about two feet in front of a bench and place rear foot laces-down on top.",
+      "Descend by bending front knee keeping torso upright until front thigh is near parallel.",
+      "Drive through front heel to return to standing.",
+      "Repeat all reps then switch legs.",
+      "Tips: Slight forward torso lean can increase glute involvement.",
+      "Safety: Keep front knee tracking over mid-foot; avoid collapsing inward."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1517963628607-1dba6ff0a008?w=400&h=300&fit=crop",
+    "targetSets": 3,
+    "targetReps": 10,
+    "restTime": 75
+  },
+  {
+    "id": "ai-gen-91",
+    "name": "Incline Dumbbell Press",
+    "category": "Strength",
+    "muscleGroups": ["chest", "shoulders", "triceps"],
+    "equipment": ["Dumbbells", "Bench"],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Set bench to a 25–35° incline and sit with dumbbells resting on thighs.",
+      "Kick weights to start position with wrists stacked over elbows.",
+      "Lower dumbbells in a controlled arc to upper chest (not shoulders).",
+      "Press back up focusing on driving elbows inward slightly.",
+      "Tips: Keep shoulder blades retracted; avoid flaring elbows excessively.",
+      "Safety: Stop if shoulder discomfort; maintain neutral wrist alignment."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400&h=300&fit=crop",
+    "targetSets": 4,
+    "targetReps": 10,
+    "restTime": 90
+  },
+  {
+    "id": "ai-gen-92",
+    "name": "Farmer's Carry",
+    "category": "Functional",
+    "muscleGroups": ["forearms", "core", "traps"],
+    "equipment": ["Dumbbells"],
+    "difficulty": "Intermediate",
+    "instructions": [
+      "Stand tall holding heavy dumbbells at your sides.",
+      "Brace core and walk controlled steps maintaining upright posture.",
+      "Avoid excessive sway; keep shoulder blades packed down and back.",
+      "Turn carefully and continue for prescribed distance or time.",
+      "Tips: Short, quick steps improve stability; think 'tall and tight'.",
+      "Safety: Do not allow weights to crash into legs; stop if grip fails."
+    ],
+    "thumbnailUrl": "https://images.unsplash.com/photo-1599058916861-b90b174b0942?w=400&h=300&fit=crop",
+    "targetSets": 4,
+    "targetReps": 40,
+    "restTime": 60
   }
 ]

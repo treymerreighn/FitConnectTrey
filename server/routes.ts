@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { storage } from "./storage.ts";
+import { insertWorkoutTemplateSchema, insertSavedWorkoutSchema } from "../shared/workout-types.ts";
 import { insertUserSchema, insertPostSchema, insertCommentSchema, insertConnectionSchema, insertProgressEntrySchema, insertExerciseSchema } from "../shared/schema.ts";
 import { setupAuth, isAuthenticated } from "./replitAuth.ts";
 import { generateAIWorkout } from "./ai-workout.ts";
@@ -11,6 +12,9 @@ import { AIWorkoutIntelligence } from "./ai-fitness-coach.ts";
 import { AINutritionCoach } from "./ai-nutrition-coach.ts";
 import { AIProgressAnalyzer } from "./ai-progress-analyzer.ts";
 import { generatePersonalizedRecipe } from "./ai-meal-helper.ts";
+import { findPotentialDuplicates } from "./exercise-duplicate.ts";
+import fs from 'fs';
+import path from 'path';
 
 const router = Router();
 
@@ -660,8 +664,71 @@ router.get("/api/exercises/:id", async (req, res) => {
 
 router.post("/api/exercises", async (req, res) => {
   try {
+    const forceCreate = !!req.body.forceCreate;
+    // Perform duplicate detection BEFORE validation (allow partial data for check)
+    if (req.body.name) {
+      try {
+        const duplicates = await findPotentialDuplicates({
+          name: req.body.name,
+          muscleGroups: req.body.muscleGroups || [],
+          equipment: req.body.equipment || []
+        });
+        const exact = duplicates.find(d => d.reasons.some(r => r.includes('exact normalized name')));
+        if (!forceCreate && (exact || duplicates.length > 0)) {
+          return res.status(409).json({
+            error: "Potential duplicate exercises detected",
+            duplicates: duplicates.map(d => ({
+              id: d.exercise.id,
+              name: d.exercise.name,
+              score: Number(d.score.toFixed(3)),
+              reasons: d.reasons,
+              muscleGroups: d.exercise.muscleGroups,
+              equipment: d.exercise.equipment,
+              difficulty: d.exercise.difficulty
+            }))
+          });
+        }
+      } catch (dupErr) {
+        console.warn("Duplicate check failed (non-blocking):", dupErr);
+      }
+    }
+
     const validatedData = insertExerciseSchema.parse(req.body);
     const exercise = await storage.createExercise(validatedData);
+
+    // Append to exerciseLibrary.json for simple persistence (best-effort, non-blocking)
+    try {
+      const filePath = path.join(process.cwd(), 'server', 'exerciseLibrary.json');
+      let arr: any[] = [];
+      if (fs.existsSync(filePath)) {
+        arr = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+        if (!Array.isArray(arr)) arr = [];
+      }
+      // Avoid duplicate by normalized name
+      const normName = exercise.name.toLowerCase();
+      const already = arr.find((e: any) => e && typeof e.name === 'string' && e.name.toLowerCase() === normName);
+      if (!already) {
+        arr.push({
+          id: exercise.id,
+            name: exercise.name,
+            category: exercise.category,
+            muscleGroups: exercise.muscleGroups,
+            equipment: exercise.equipment,
+            difficulty: exercise.difficulty,
+            instructions: exercise.instructions,
+            tips: exercise.tips,
+            safetyNotes: exercise.safetyNotes,
+            images: exercise.images,
+            createdAt: exercise.createdAt,
+            thumbnailUrl: exercise.images?.[0]
+        });
+        fs.writeFileSync(filePath, JSON.stringify(arr, null, 2));
+        console.log(`📦 Persisted new exercise '${exercise.name}' to exerciseLibrary.json`);
+      }
+    } catch (persistErr) {
+      console.warn('Exercise persistence failed (non-fatal):', persistErr);
+    }
+
     res.status(201).json(exercise);
   } catch (error: unknown) {
     console.error("Error creating exercise:", error);
@@ -669,6 +736,31 @@ router.post("/api/exercises", async (req, res) => {
       return res.status(400).json({ error: "Invalid exercise data", details: (error as any).errors });
     }
     res.status(500).json({ error: "Failed to create exercise" });
+  }
+});
+
+// Client-side preflight duplicate check endpoint
+router.post("/api/exercises/check-duplicates", async (req, res) => {
+  try {
+    const { name, muscleGroups = [], equipment = [] } = req.body || {};
+    if (!name || typeof name !== 'string') {
+      return res.status(400).json({ error: 'Name is required for duplicate check' });
+    }
+    const duplicates = await findPotentialDuplicates({ name, muscleGroups, equipment });
+    return res.json({
+      duplicates: duplicates.map(d => ({
+        id: d.exercise.id,
+        name: d.exercise.name,
+        score: Number(d.score.toFixed(3)),
+        reasons: d.reasons,
+        muscleGroups: d.exercise.muscleGroups,
+        equipment: d.exercise.equipment,
+        difficulty: d.exercise.difficulty
+      }))
+    });
+  } catch (err) {
+    console.error('Duplicate check error:', err);
+    return res.status(500).json({ error: 'Failed duplicate check' });
   }
 });
 
@@ -817,6 +909,102 @@ router.get("/api/workout-templates", async (req, res) => {
   } catch (error) {
     console.error("Error fetching workout templates:", error);
     res.status(500).json({ error: "Failed to fetch workout templates" });
+  }
+});
+
+// Canonical Workout Templates CRUD (independent from social posts)
+router.post("/api/workout-templates", async (req, res) => {
+  try {
+    const validated = insertWorkoutTemplateSchema.parse(req.body);
+    const ownerUserId = (req as any).user?.claims?.sub || validated.ownerUserId || validated.sourcePostId ? (validated as any).ownerUserId : "user1";
+    const created = await storage.createWorkoutTemplate({ ...validated, ownerUserId });
+    res.status(201).json(created);
+  } catch (error: any) {
+    if (error.name === "ZodError") {
+      return res.status(400).json({ error: error.errors });
+    }
+    console.error("Error creating workout template:", error);
+    res.status(500).json({ error: "Failed to create workout template" });
+  }
+});
+
+router.get("/api/workout-templates/:id", async (req, res) => {
+  try {
+    const tpl = await storage.getWorkoutTemplate(req.params.id);
+    if (!tpl) return res.status(404).json({ error: "Workout template not found" });
+    res.json(tpl);
+  } catch (error) {
+    console.error("Error fetching workout template:", error);
+    res.status(500).json({ error: "Failed to fetch workout template" });
+  }
+});
+
+router.get("/api/workout-templates/user/:userId", async (req, res) => {
+  try {
+    const list = await storage.listWorkoutTemplates(req.params.userId);
+    res.json(list);
+  } catch (error) {
+    console.error("Error listing workout templates:", error);
+    res.status(500).json({ error: "Failed to list workout templates" });
+  }
+});
+
+router.put("/api/workout-templates/:id", async (req, res) => {
+  try {
+    const updated = await storage.updateWorkoutTemplate(req.params.id, req.body);
+    res.json(updated);
+  } catch (error: any) {
+    if (error.message === "Workout template not found") return res.status(404).json({ error: error.message });
+    console.error("Error updating workout template:", error);
+    res.status(500).json({ error: "Failed to update workout template" });
+  }
+});
+
+router.delete("/api/workout-templates/:id", async (req, res) => {
+  try {
+    const deleted = await storage.deleteWorkoutTemplate(req.params.id);
+    if (!deleted) return res.status(404).json({ error: "Workout template not found" });
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting workout template:", error);
+    res.status(500).json({ error: "Failed to delete workout template" });
+  }
+});
+
+// Saved Workouts (bookmarks)
+router.get("/api/saved-workouts", async (req, res) => {
+  try {
+    const userId = (req.query as any).userId || (req as any).user?.claims?.sub || "user1";
+    const list = await storage.listSavedWorkouts(userId);
+    res.json(list);
+  } catch (error) {
+    console.error("Error fetching saved workouts:", error);
+    res.status(500).json({ error: "Failed to fetch saved workouts" });
+  }
+});
+
+router.post("/api/saved-workouts", async (req, res) => {
+  try {
+    const payload = { ...req.body, userId: req.body.userId || (req as any).user?.claims?.sub || "user1" };
+    const validated = insertSavedWorkoutSchema.parse(payload);
+    const saved = await storage.saveWorkout(validated);
+    res.status(201).json(saved);
+  } catch (error: any) {
+    if (error.name === "ZodError") return res.status(400).json({ error: error.errors });
+    console.error("Error saving workout:", error);
+    res.status(500).json({ error: "Failed to save workout" });
+  }
+});
+
+router.delete("/api/saved-workouts/:id", async (req, res) => {
+  try {
+    const userId = (req.query as any).userId || (req as any).user?.claims?.sub || "user1";
+    const ok = await storage.deleteSavedWorkout(userId, req.params.id);
+    if (!ok) return res.status(404).json({ error: "Saved workout not found" });
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting saved workout:", error);
+    res.status(500).json({ error: "Failed to delete saved workout" });
   }
 });
 
@@ -1408,6 +1596,106 @@ router.delete('/api/progress-insights/:id', async (req, res) => {
   } catch (error: any) {
     console.error('Error deleting progress insight:', error);
     res.status(500).json({ error: 'Failed to delete progress insight' });
+  }
+});
+
+// Workout Session Endpoints
+router.post('/api/workout-sessions', async (req, res) => {
+  try {
+    const session = await storage.createWorkoutSession(req.body);
+    res.status(201).json(session);
+  } catch (error: any) {
+    console.error('Error creating workout session:', error);
+    res.status(500).json({ error: 'Failed to create workout session' });
+  }
+});
+
+router.get('/api/workout-sessions/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const sessions = await storage.getWorkoutSessionsByUserId(userId);
+    res.json(sessions);
+  } catch (error: any) {
+    console.error('Error fetching workout sessions:', error);
+    res.status(500).json({ error: 'Failed to fetch workout sessions' });
+  }
+});
+
+router.get('/api/workout-sessions/detail/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const session = await storage.getWorkoutSessionById(id);
+    
+    if (!session) {
+      return res.status(404).json({ error: 'Workout session not found' });
+    }
+    
+    res.json(session);
+  } catch (error: any) {
+    console.error('Error fetching workout session:', error);
+    res.status(500).json({ error: 'Failed to fetch workout session' });
+  }
+});
+
+router.put('/api/workout-sessions/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const session = await storage.updateWorkoutSession(id, req.body);
+    res.json(session);
+  } catch (error: any) {
+    console.error('Error updating workout session:', error);
+    res.status(500).json({ error: 'Failed to update workout session' });
+  }
+});
+
+router.delete('/api/workout-sessions/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await storage.deleteWorkoutSession(id);
+    
+    if (!deleted) {
+      return res.status(404).json({ error: 'Workout session not found' });
+    }
+    
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('Error deleting workout session:', error);
+    res.status(500).json({ error: 'Failed to delete workout session' });
+  }
+});
+
+// Exercise Progress Endpoints
+router.get('/api/exercise-progress/:exerciseId', async (req, res) => {
+  try {
+    const { exerciseId } = req.params;
+    const userId = (req.query as any).userId || (req as any).user?.claims?.sub || "user1";
+    const progressData = await storage.getExerciseProgressChart(userId, exerciseId);
+    res.json(progressData);
+  } catch (error: any) {
+    console.error('Error fetching exercise progress:', error);
+    res.status(500).json({ error: 'Failed to fetch exercise progress' });
+  }
+});
+
+router.get('/api/workout-volume-chart', async (req, res) => {
+  try {
+    const userId = (req.query as any).userId || (req as any).user?.claims?.sub || "user1";
+    const volumeData = await storage.getWorkoutVolumeChart(userId);
+    res.json(volumeData);
+  } catch (error: any) {
+    console.error('Error fetching workout volume chart:', error);
+    res.status(500).json({ error: 'Failed to fetch workout volume chart' });
+  }
+});
+
+router.get('/api/personal-records', async (req, res) => {
+  try {
+    const userId = (req.query as any).userId || (req as any).user?.claims?.sub || "user1";
+    const personalRecords = await storage.getUserPersonalRecords(userId);
+    res.json(personalRecords);
+  } catch (error: any) {
+    console.error('Error fetching personal records:', error);
+    res.status(500).json({ error: 'Failed to fetch personal records' });
   }
 });
 

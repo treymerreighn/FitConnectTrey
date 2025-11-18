@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Search, Plus, Play, X, Filter, Brain, Sparkles } from "lucide-react";
@@ -13,6 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { api } from "@/lib/api";
 import { OptimizedImage } from "@/components/OptimizedImage";
+import ExerciseThumb from "@/components/ExerciseThumb";
+import { getExerciseImage } from "@/lib/exerciseImages";
 import { useLocation, Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -120,7 +122,14 @@ export default function ExerciseLibrary() {
     queryKey: [exercisesQueryUrl],
   });
 
-  const exercises = exercisesData.length > 0 ? exercisesData : MOCK_EXERCISES;
+  // Treat known generic stock unsplash URLs as placeholders and prefer dynamic gradient thumb
+  const PLACEHOLDER_HOST = 'images.unsplash.com';
+  const isGeneric = (url?: string) => !!url && url.includes(PLACEHOLDER_HOST);
+  const exercises = (exercisesData.length > 0 ? exercisesData : MOCK_EXERCISES).map(ex => ({
+    ...ex,
+    // Preserve only non-generic custom thumbnails
+    thumbnailUrl: isGeneric(ex.thumbnailUrl) ? '' : ex.thumbnailUrl
+  }));
 
   const categories = ["All", "Strength", "Cardio", "Flexibility", "Sports"];
   const muscleGroups = ["Chest", "Back", "Shoulders", "Arms", "Legs", "Core"];
@@ -131,6 +140,8 @@ export default function ExerciseLibrary() {
     const matchesCategory = selectedCategory === "All" || exercise.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+  // Alphabetize globally before grouping
+  const alphabetizedExercises = [...filteredExercises].sort((a,b) => a.name.localeCompare(b.name));
 
   const toggleExerciseSelection = (exercise: Exercise) => {
     setSelectedExercises(prev => {
@@ -150,7 +161,7 @@ export default function ExerciseLibrary() {
     }
   };
 
-  const groupedByLetter = filteredExercises.reduce((acc, exercise) => {
+  const groupedByLetter = alphabetizedExercises.reduce((acc, exercise) => {
     const firstLetter = exercise.name[0].toUpperCase();
     if (!acc[firstLetter]) {
       acc[firstLetter] = [];
@@ -257,15 +268,19 @@ export default function ExerciseLibrary() {
                     <CardContent className="p-3">
                       <div className="flex items-center space-x-4">
                         {/* Exercise Image */}
-                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-700">
-                          <OptimizedImage
-                            src={exercise.thumbnailUrl}
-                            alt={exercise.name}
-                            className="w-full h-full object-cover"
-                            width={48}
-                            height={48}
-                            placeholder="blur"
-                          />
+                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-700 flex-shrink-0">
+                          {exercise.thumbnailUrl ? (
+                            <OptimizedImage
+                              src={exercise.thumbnailUrl}
+                              alt={exercise.name}
+                              className="w-full h-full object-cover"
+                              width={48}
+                              height={48}
+                              placeholder="blur"
+                            />
+                          ) : (
+                            <ExerciseThumb exercise={exercise} size={48} />
+                          )}
                         </div>
 
                         {/* Exercise Info */}
@@ -326,12 +341,18 @@ export default function ExerciseLibrary() {
             </DialogHeader>
             <div className="space-y-4">
               <div className="aspect-video rounded-lg overflow-hidden bg-gray-700">
-                <OptimizedImage
-                  src={showExerciseDetail.thumbnailUrl}
-                  alt={showExerciseDetail.name}
-                  className="w-full h-full object-cover"
-                  placeholder="blur"
-                />
+                {showExerciseDetail.thumbnailUrl ? (
+                  <OptimizedImage
+                    src={showExerciseDetail.thumbnailUrl}
+                    alt={showExerciseDetail.name}
+                    className="w-full h-full object-cover"
+                    placeholder="blur"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center w-full h-full">
+                    <ExerciseThumb exercise={showExerciseDetail} size={160} rounded className="w-full h-full" />
+                  </div>
+                )}
               </div>
               
               <div>
@@ -416,6 +437,10 @@ function CreateExerciseModal({ isOpen, onClose, onExerciseCreated }: CreateExerc
     variations: [""],
     safetyNotes: [""]
   });
+  const [duplicates, setDuplicates] = useState<{ id: string; name: string; score: number; reasons: string[] }[]>([]);
+  const [dupLoading, setDupLoading] = useState(false);
+  const [dupError, setDupError] = useState<string | null>(null);
+  const [forceCreate, setForceCreate] = useState(false);
   const { toast } = useToast();
 
   const createExerciseMutation = useMutation({
@@ -447,6 +472,16 @@ function CreateExerciseModal({ isOpen, onClose, onExerciseCreated }: CreateExerc
       return;
     }
 
+    // If duplicates exist and user hasn't confirmed override, require explicit action
+    if (duplicates.length > 0 && !forceCreate) {
+      toast({
+        title: "Possible Duplicates Found",
+        description: "Review similar exercises below. Click 'Create Anyway' to proceed.",
+        variant: "destructive",
+      });
+      return; // Stop until user confirms
+    }
+
     const exerciseData = {
       ...formData,
       instructions: formData.instructions.filter(i => i.trim()),
@@ -457,7 +492,8 @@ function CreateExerciseModal({ isOpen, onClose, onExerciseCreated }: CreateExerc
       videos: [],
       tags: [],
       isApproved: false, // Requires approval for user-created exercises
-      isUserCreated: true
+      isUserCreated: true,
+      forceCreate: forceCreate
     };
 
     createExerciseMutation.mutate(exerciseData);
@@ -507,6 +543,40 @@ function CreateExerciseModal({ isOpen, onClose, onExerciseCreated }: CreateExerc
   const muscleGroupOptions = ["chest", "back", "shoulders", "biceps", "triceps", "forearms", "abs", "obliques", "lower_back", "glutes", "quadriceps", "hamstrings", "calves", "traps", "lats", "delts"];
   const equipmentOptions = ["bodyweight", "barbell", "dumbbell", "kettlebell", "resistance-band", "pull-up-bar", "bench", "machine", "cable", "medicine-ball"];
 
+  // Duplicate check effect (debounced via simple timeout)
+  useEffect(() => {
+    const handle = setTimeout(async () => {
+      const name = formData.name.trim();
+      if (name.length < 3) {
+        setDuplicates([]);
+        setDupError(null);
+        return;
+      }
+      setDupLoading(true);
+      setDupError(null);
+      try {
+        const resp = await fetch('/api/exercises/check-duplicates', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: formData.name,
+            muscleGroups: formData.muscleGroups,
+            equipment: formData.equipment
+          })
+        });
+        if (!resp.ok) throw new Error('Duplicate check failed');
+        const data = await resp.json();
+        setDuplicates(data.duplicates || []);
+      } catch (err: any) {
+        setDupError(err.message || 'Error checking duplicates');
+      } finally {
+        setDupLoading(false);
+        setForceCreate(false); // Reset confirmation if user keeps editing name
+      }
+    }, 450);
+    return () => clearTimeout(handle);
+  }, [formData.name, formData.muscleGroups.join(','), formData.equipment.join(',')]);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-2xl bg-gray-800 border-gray-700 text-white max-h-[90vh] overflow-y-auto">
@@ -527,6 +597,61 @@ function CreateExerciseModal({ isOpen, onClose, onExerciseCreated }: CreateExerc
                 placeholder="e.g., Push-ups"
                 required
               />
+              {/* Duplicate suggestions */}
+              <div className="mt-2 space-y-2">
+                {dupLoading && <p className="text-xs text-gray-400">Checking for duplicates...</p>}
+                {dupError && <p className="text-xs text-red-400">{dupError}</p>}
+                {!dupLoading && duplicates.length > 0 && (
+                  <div className="border border-yellow-600/40 rounded-md p-2 bg-yellow-900/20">
+                    <p className="text-xs font-semibold text-yellow-300 mb-1">Similar existing exercises:</p>
+                    <ul className="max-h-32 overflow-y-auto space-y-1">
+                      {duplicates.map(d => (
+                        <li key={d.id} className="text-xs text-yellow-200 flex justify-between">
+                          <span>{d.name}</span>
+                          <span className="opacity-70">{(d.score * 100).toFixed(0)}%</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="mt-2 flex gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setForceCreate(true)}
+                        className="text-xs border-yellow-500 text-yellow-300 hover:bg-yellow-700/30"
+                      >
+                        Create Anyway
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          // Treat as variation of first duplicate: append tag & variation reference
+                          if (duplicates[0]) {
+                            setFormData(prev => ({
+                              ...prev,
+                              variations: [
+                                ...prev.variations.filter(v => v.trim()),
+                                `Variation of ${duplicates[0].name}`
+                              ],
+                              description: prev.description || `Variation of ${duplicates[0].name}`
+                            }));
+                            setForceCreate(true);
+                            toast({
+                              title: 'Marked as Variation',
+                              description: `Linked as variation of ${duplicates[0].name}`
+                            });
+                          }
+                        }}
+                        className="text-xs border-blue-500 text-blue-300 hover:bg-blue-700/30"
+                      >
+                        Link as Variation
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Heart, MessageCircle, Share2, Bookmark, MoreHorizontal } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, MoreHorizontal, Play, Save, Copy } from "lucide-react";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +9,8 @@ import { OptimizedImage } from "../OptimizedImage";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { CURRENT_USER_ID } from "@/lib/constants";
+import { useToast } from "@/hooks/use-toast";
+import { projectWorkoutForUser } from "@/lib/workoutProjection";
 import type { Post, User, Comment } from "@shared/schema";
 
 interface PostCardProps {
@@ -16,7 +19,10 @@ interface PostCardProps {
 
 export function PostCard({ post }: PostCardProps) {
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const [showComments, setShowComments] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
   
   // ALL HOOKS MUST COME FIRST - NO CONDITIONAL LOGIC ABOVE HOOKS
   const { data: user } = useQuery<User>({
@@ -149,6 +155,81 @@ export function PostCard({ post }: PostCardProps) {
   const likesCount = post.likes.length;
   const commentsCount = post.comments.length;
 
+  // Handle starting a workout from a post
+  const handleStartWorkout = async () => {
+    if (!post.workoutData?.exercises) {
+      toast({
+        title: "Cannot Start Workout",
+        description: "This workout doesn't have exercise details",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const plan = await projectWorkoutForUser({
+      workoutName: post.workoutData.workoutType || 'Shared Workout',
+      exercises: post.workoutData.exercises.map((ex: any) => ({
+        name: ex.name || ex.exerciseName,
+        exerciseId: ex.exerciseId || ex.id,
+        sets: Array.isArray(ex.sets) ? ex.sets : undefined,
+      }))
+    });
+
+    const exerciseIds = plan.exercises.map(e => e.id).join(',');
+    const planParam = encodeURIComponent(JSON.stringify(plan));
+    // Route to builder pre-filled so user can review/adjust, then Start
+    setLocation(`/build-workout?from=post&exercises=${exerciseIds}&plan=${planParam}`);
+  };
+
+  // Handle saving a workout as a template
+  const handleSaveWorkout = async () => {
+    if (!post.workoutData) return;
+    try {
+      await apiRequest("POST", "/api/saved-workouts", {
+        templateId: post.id,
+        sourceType: "post",
+        dataSnapshot: {
+          name: post.workoutData.workoutType || 'Saved Workout',
+          workoutData: post.workoutData,
+          author: user?.username,
+        }
+      });
+      setIsSaved(true);
+      queryClient.invalidateQueries({ queryKey: ["/api/saved-workouts"] });
+      toast({
+        title: "Workout Saved! 💪",
+        description: "Check it in your Saved Workouts collection",
+      });
+    } catch (e: any) {
+      toast({ title: "Save failed", description: e?.message || "Couldn't save workout", variant: "destructive" });
+    }
+  };
+
+  // Handle sharing a workout
+  const handleShareWorkout = async () => {
+    const shareUrl = `${window.location.origin}/post/${post.id}`;
+    const shareText = `Check out this ${post.workoutData?.workoutType || 'workout'} by @${user?.username} on FitConnect!`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: post.workoutData?.workoutType || 'Workout',
+          text: shareText,
+          url: shareUrl,
+        });
+      } catch (err) {
+        // User cancelled or error occurred
+      }
+    } else {
+      // Fallback: copy to clipboard
+      await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+      toast({
+        title: "Link Copied!",
+        description: "Workout link copied to clipboard",
+      });
+    }
+  };
+
   const formatTimeAgo = (date: Date) => {
     const now = new Date();
     const diff = now.getTime() - new Date(date).getTime();
@@ -279,6 +360,7 @@ export function PostCard({ post }: PostCardProps) {
               variant="ghost"
               size="sm"
               className="p-0 h-auto text-gray-600 hover:text-gray-800"
+              onClick={handleShareWorkout}
             >
               <Share2 className="h-5 w-5" />
             </Button>
@@ -286,11 +368,35 @@ export function PostCard({ post }: PostCardProps) {
           <Button
             variant="ghost"
             size="sm"
-            className="p-0 h-auto text-gray-600 hover:text-gray-800"
+            className={`p-0 h-auto ${isSaved ? 'text-blue-600' : 'text-gray-600'} hover:text-blue-600`}
+            onClick={handleSaveWorkout}
           >
-            <Bookmark className="h-5 w-5" />
+            <Bookmark className={`h-5 w-5 ${isSaved ? 'fill-current' : ''}`} />
           </Button>
         </div>
+
+        {/* Workout Action Buttons */}
+        {post.workoutData && (
+          <div className="flex gap-2 mt-3">
+            <Button
+              onClick={handleStartWorkout}
+              className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+              size="sm"
+            >
+              <Play className="h-4 w-4 mr-2" />
+              Start This Workout
+            </Button>
+            <Button
+              onClick={handleSaveWorkout}
+              variant="outline"
+              className="border-blue-600 text-blue-600 hover:bg-blue-600/10"
+              size="sm"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Save
+            </Button>
+          </div>
+        )}
         
   {/* Post Details */}
         {(post.workoutData || post.nutritionData || post.progressData) && (
@@ -300,6 +406,34 @@ export function PostCard({ post }: PostCardProps) {
               {post.type === "nutrition" && "Nutrition Facts"}
               {post.type === "progress" && "Progress Stats"}
             </h4>
+            
+            {/* Exercise List for Workouts */}
+            {post.workoutData?.exercises && post.workoutData.exercises.length > 0 && (
+              <div className="mb-3">
+                <h5 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Exercises:</h5>
+                <div className="space-y-1">
+                  {post.workoutData.exercises.slice(0, 5).map((exercise: any, idx: number) => (
+                    <div key={idx} className="flex justify-between items-center text-xs bg-white dark:bg-gray-900 rounded px-2 py-1">
+                      <span className="font-medium">{exercise.name || exercise.exerciseName}</span>
+                      {exercise.sets && (
+                        <span className="text-gray-500">
+                          {Array.isArray(exercise.sets) 
+                            ? `${exercise.sets.length} sets` 
+                            : `${exercise.sets} sets`}
+                          {exercise.sets[0]?.reps && ` × ${exercise.sets[0].reps} reps`}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                  {post.workoutData.exercises.length > 5 && (
+                    <div className="text-xs text-gray-500 text-center py-1">
+                      +{post.workoutData.exercises.length - 5} more exercises
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            
             <div className="grid grid-cols-2 gap-3 text-sm">
               {post.workoutData && (
                 <>
@@ -313,13 +447,13 @@ export function PostCard({ post }: PostCardProps) {
                   </div>
                   {post.workoutData.sets && (
                     <div>
-                      <span className="text-gray-600 dark:text-gray-400">Sets:</span>
+                      <span className="text-gray-600 dark:text-gray-400">Total Sets:</span>
                       <span className="font-medium ml-1">{post.workoutData.sets}</span>
                     </div>
                   )}
                   {post.workoutData.reps && (
                     <div>
-                      <span className="text-gray-600 dark:text-gray-400">Reps:</span>
+                      <span className="text-gray-600 dark:text-gray-400">Exercises:</span>
                       <span className="font-medium ml-1">{post.workoutData.reps}</span>
                     </div>
                   )}

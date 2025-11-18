@@ -1,9 +1,9 @@
 import { eq, ilike, and, desc, sql, inArray } from "drizzle-orm";
 import { db } from "./db.ts";
 import { users, posts, comments, connections, progressEntries, exercises, notifications, conversations, messages } from "../shared/db-schema.ts";
-import { IStorage } from "./storage.ts";
+import type { IStorage, Notification, Message, Conversation } from "./storage.ts";
+import type { WorkoutTemplate, InsertWorkoutTemplate, SavedWorkout, InsertSavedWorkout } from "../shared/workout-types.ts";
 import type { User, Post, Comment, Connection, ProgressEntry, Exercise, Recipe, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, WorkoutSession, InsertWorkoutSession, ExerciseProgress, InsertExerciseProgress, CommunityMeal, ProgressInsight, InsertProgressInsight } from "../shared/schema.ts";
-import type { Notification, Message, Conversation } from "./storage.ts";
 
 export class PgStorage implements IStorage {
   constructor() {
@@ -18,6 +18,8 @@ export class PgStorage implements IStorage {
   private exerciseProgress: Map<string, ExerciseProgress> = new Map();
   private communityMeals: Map<string, CommunityMeal> = new Map();
   private progressInsights: Map<string, ProgressInsight> = new Map();
+  private workoutTemplates: Map<string, WorkoutTemplate> = new Map(); // in-memory until table added
+  private savedWorkouts: Map<string, SavedWorkout[]> = new Map(); // in-memory bookmark persistence
 
   private async seedData() {
     // Check if data already exists
@@ -620,6 +622,66 @@ export class PgStorage implements IStorage {
     return result.filter((post: any) => 
       post.workoutData && (post.workoutData as any).isTemplate
     );
+  }
+
+  // Canonical workout templates (not yet persisted in DB - placeholder layer)
+  async createWorkoutTemplate(template: InsertWorkoutTemplate & { ownerUserId: string }): Promise<WorkoutTemplate> {
+    const full: WorkoutTemplate = {
+      id: crypto.randomUUID(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      ...template,
+      ownerUserId: template.ownerUserId,
+      exercises: template.exercises || [],
+    } as WorkoutTemplate;
+    this.workoutTemplates.set(full.id, full);
+    return full;
+  }
+
+  async getWorkoutTemplate(id: string): Promise<WorkoutTemplate | null> {
+    return this.workoutTemplates.get(id) || null;
+  }
+
+  async listWorkoutTemplates(ownerUserId?: string): Promise<WorkoutTemplate[]> {
+    const list = Array.from(this.workoutTemplates.values());
+    return ownerUserId ? list.filter(t => t.ownerUserId === ownerUserId) : list;
+  }
+
+  async updateWorkoutTemplate(id: string, updates: Partial<WorkoutTemplate>): Promise<WorkoutTemplate> {
+    const existing = this.workoutTemplates.get(id);
+    if (!existing) throw new Error("Workout template not found");
+    const updated = { ...existing, ...updates, updatedAt: new Date() } as WorkoutTemplate;
+    this.workoutTemplates.set(id, updated);
+    return updated;
+  }
+
+  async deleteWorkoutTemplate(id: string): Promise<boolean> {
+    return this.workoutTemplates.delete(id);
+  }
+
+  // Saved workouts CRUD (in-memory)
+  async saveWorkout(data: InsertSavedWorkout): Promise<SavedWorkout> {
+    const list = this.savedWorkouts.get(data.userId) || [];
+    const saved: SavedWorkout = {
+      id: crypto.randomUUID(),
+      createdAt: new Date(),
+      ...data,
+    } as SavedWorkout;
+    list.unshift(saved);
+    this.savedWorkouts.set(data.userId, list);
+    return saved;
+  }
+
+  async listSavedWorkouts(userId: string): Promise<SavedWorkout[]> {
+    return this.savedWorkouts.get(userId) || [];
+  }
+
+  async deleteSavedWorkout(userId: string, savedWorkoutId: string): Promise<boolean> {
+    const list = this.savedWorkouts.get(userId) || [];
+    const newList = list.filter(sw => sw.id !== savedWorkoutId);
+    const changed = newList.length !== list.length;
+    if (changed) this.savedWorkouts.set(userId, newList);
+    return changed;
   }
 
   // Recipe database methods (in-memory fallback for PgStorage)

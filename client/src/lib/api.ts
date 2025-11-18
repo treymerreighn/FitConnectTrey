@@ -5,130 +5,101 @@ import type { Post, User, Comment, Connection, ProgressEntry, Exercise, InsertPo
 export const api = {
   // Posts
   getPosts: async (): Promise<Post[]> => {
-    const res = await apiRequest("GET", "/api/posts");
-    return res.json();
+    return await apiRequest("GET", "/api/posts");
   },
   getPost: async (id: string): Promise<Post> => {
-    const res = await apiRequest("GET", `/api/posts/${id}`);
-    return res.json();
+    return await apiRequest("GET", `/api/posts/${id}`);
   },
   getUserPosts: async (userId: string): Promise<Post[]> => {
-    const res = await apiRequest("GET", `/api/users/${userId}/posts`);
-    return res.json();
+    return await apiRequest("GET", `/api/users/${userId}/posts`);
   },
   createPost: async (post: InsertPost): Promise<Post> => {
-    const res = await apiRequest("POST", "/api/posts", post);
-    return res.json();
+    return await apiRequest("POST", "/api/posts", post);
   },
   deletePost: async (id: string): Promise<{ success: boolean }> => {
-    const res = await apiRequest("DELETE", `/api/posts/${id}`);
-    return res.json();
+    return await apiRequest("DELETE", `/api/posts/${id}`);
   },
   getTrendingWorkouts: async (hours?: number): Promise<Post[]> => {
-    const res = await apiRequest("GET", `/api/workouts/trending${hours ? `?hours=${hours}` : ""}`);
-    return res.json();
+    return await apiRequest("GET", `/api/workouts/trending${hours ? `?hours=${hours}` : ""}`);
   },
   
   // Users
   getUsers: async (): Promise<User[]> => {
-    const res = await apiRequest("GET", "/api/users");
-    return res.json();
+    return await apiRequest("GET", "/api/users");
   },
   getUser: async (id: string): Promise<User> => {
-    const res = await apiRequest("GET", `/api/users/${id}`);
-    return res.json();
+    return await apiRequest("GET", `/api/users/${id}`);
   },
   getUserById: async (id: string): Promise<User> => {
-    const res = await apiRequest("GET", `/api/users/${id}`);
-    return res.json();
+    return await apiRequest("GET", `/api/users/${id}`);
   },
   updateUser: async (id: string, updates: Partial<User>): Promise<User> => {
-    const res = await apiRequest("PUT", `/api/users/${id}`, updates);
-    return res.json();
+    return await apiRequest("PUT", `/api/users/${id}`, updates);
   },
   getPostsByUserId: async (userId: string): Promise<Post[]> => {
-    const res = await apiRequest("GET", `/api/posts/user/${userId}`);
-    return res.json();
+    return await apiRequest("GET", `/api/posts/user/${userId}`);
   },
   
   // Comments
   getComments: async (postId: string): Promise<Comment[]> => {
-    const res = await apiRequest("GET", `/api/posts/${postId}/comments`);
-    return res.json();
+    return await apiRequest("GET", `/api/posts/${postId}/comments`);
   },
   createComment: async (postId: string, comment: InsertComment): Promise<Comment> => {
-    const res = await apiRequest("POST", `/api/posts/${postId}/comments`, { ...comment, postId });
-    return res.json();
+    return await apiRequest("POST", `/api/posts/${postId}/comments`, { ...comment, postId });
   },
   
   // Social actions
   likePost: async (postId: string, userId: string): Promise<Post> => {
-    const res = await apiRequest("POST", `/api/posts/${postId}/like`, { userId });
-    return res.json();
+    return await apiRequest("POST", `/api/posts/${postId}/like`, { userId });
   },
   unlikePost: async (postId: string, userId: string): Promise<Post> => {
-    const res = await apiRequest("POST", `/api/posts/${postId}/unlike`, { userId });
-    return res.json();
+    return await apiRequest("POST", `/api/posts/${postId}/unlike`, { userId });
   },
   followUser: async (userId: string, followerId: string): Promise<{ success: boolean }> => {
-    const res = await apiRequest("POST", `/api/users/${userId}/follow`, { followerId });
-    return res.json();
+    return await apiRequest("POST", `/api/users/${userId}/follow`, { followerId });
   },
   unfollowUser: async (userId: string, followerId: string): Promise<{ success: boolean }> => {
-    const res = await apiRequest("POST", `/api/users/${userId}/unfollow`, { followerId });
-    return res.json();
+    return await apiRequest("POST", `/api/users/${userId}/unfollow`, { followerId });
   },
   
   // Professional connections
   getProfessionals: async (type?: "trainer" | "nutritionist"): Promise<User[]> => {
-    const res = await apiRequest("GET", `/api/professionals${type ? `?type=${type}` : ""}`);
-    return res.json();
+    return await apiRequest("GET", `/api/professionals${type ? `?type=${type}` : ""}`);
   },
   createConnection: async (connection: InsertConnection): Promise<Connection> => {
-    const res = await apiRequest("POST", "/api/connections", connection);
-    return res.json();
+    return await apiRequest("POST", "/api/connections", connection);
   },
   getClientConnections: async (clientId: string): Promise<Connection[]> => {
-    const res = await apiRequest("GET", `/api/connections/client/${clientId}`);
-    return res.json();
+    return await apiRequest("GET", `/api/connections/client/${clientId}`);
   },
   getProfessionalConnections: async (professionalId: string): Promise<Connection[]> => {
-    const res = await apiRequest("GET", `/api/connections/professional/${professionalId}`);
-    return res.json();
+    return await apiRequest("GET", `/api/connections/professional/${professionalId}`);
   },
   updateConnection: async (id: string, updates: Partial<Connection>): Promise<Connection> => {
-    const res = await apiRequest("PUT", `/api/connections/${id}`, updates);
-    return res.json();
+    return await apiRequest("PUT", `/api/connections/${id}`, updates);
   },
   deleteConnection: async (id: string): Promise<{ success: boolean }> => {
-    const res = await apiRequest("DELETE", `/api/connections/${id}`);
-    return res.json();
+    return await apiRequest("DELETE", `/api/connections/${id}`);
   },
   
   // Progress tracking
   createProgressEntry: async (entry: InsertProgressEntry): Promise<ProgressEntry> => {
-    const res = await apiRequest("POST", "/api/progress", entry);
-    return res.json();
+    return await apiRequest("POST", "/api/progress", entry);
   },
   getProgressEntries: async (userId: string): Promise<ProgressEntry[]> => {
-    const res = await apiRequest("GET", `/api/progress/user/${userId}`);
-    return res.json();
+    return await apiRequest("GET", `/api/progress/user/${userId}`);
   },
   getProgressEntry: async (id: string): Promise<ProgressEntry> => {
-    const res = await apiRequest("GET", `/api/progress/${id}`);
-    return res.json();
+    return await apiRequest("GET", `/api/progress/${id}`);
   },
   updateProgressEntry: async (id: string, updates: Partial<ProgressEntry>): Promise<ProgressEntry> => {
-    const res = await apiRequest("PUT", `/api/progress/${id}`, updates);
-    return res.json();
+    return await apiRequest("PUT", `/api/progress/${id}`, updates);
   },
   deleteProgressEntry: async (id: string): Promise<{ success: boolean }> => {
-    const res = await apiRequest("DELETE", `/api/progress/${id}`);
-    return res.json();
+    return await apiRequest("DELETE", `/api/progress/${id}`);
   },
   generateAIInsights: async (id: string, photos: string[]): Promise<ProgressEntry> => {
-    const res = await apiRequest("POST", `/api/progress/${id}/ai-insights`, { photos });
-    return res.json();
+    return await apiRequest("POST", `/api/progress/${id}/ai-insights`, { photos });
   },
 
   // Exercise library
@@ -141,23 +112,19 @@ export const api = {
     const queryString = searchParams.toString();
     const url = `/api/exercises${queryString ? `?${queryString}` : ""}`;
     
-    const res = await apiRequest("GET", url);
-    return res.json();
+    return await apiRequest("GET", url);
   },
 
   getExerciseById: async (id: string): Promise<Exercise> => {
-    const res = await apiRequest("GET", `/api/exercises/${id}`);
-    return res.json();
+    return await apiRequest("GET", `/api/exercises/${id}`);
   },
 
   createExercise: async (exercise: InsertExercise): Promise<Exercise> => {
-    const res = await apiRequest("POST", "/api/exercises", exercise);
-    return res.json();
+    return await apiRequest("POST", "/api/exercises", exercise);
   },
 
   updateExercise: async (id: string, updates: Partial<Exercise>): Promise<Exercise> => {
-    const res = await apiRequest("PUT", `/api/exercises/${id}`, updates);
-    return res.json();
+    return await apiRequest("PUT", `/api/exercises/${id}`, updates);
   },
 
   deleteExercise: async (id: string): Promise<void> => {
@@ -165,13 +132,11 @@ export const api = {
   },
 
   approveExercise: async (id: string): Promise<Exercise> => {
-    const res = await apiRequest("POST", `/api/exercises/${id}/approve`);
-    return res.json();
+    return await apiRequest("POST", `/api/exercises/${id}/approve`);
   },
 
   getUserCreatedExercises: async (userId: string): Promise<Exercise[]> => {
-    const res = await apiRequest("GET", `/api/users/${userId}/exercises`);
-    return res.json();
+    return await apiRequest("GET", `/api/users/${userId}/exercises`);
   },
 
   // Image uploads

@@ -25,6 +25,9 @@ export const userSchema = z.object({
   isPremium: z.boolean().default(false),
   subscriptionTier: z.enum(["free", "premium", "pro"]).default("free"),
   subscriptionExpiresAt: z.date().optional(),
+  // Optional physical attributes
+  height: z.number().optional(), // in inches
+  weight: z.number().optional(), // in pounds (current weight)
   createdAt: z.date().default(() => new Date()),
 });
 

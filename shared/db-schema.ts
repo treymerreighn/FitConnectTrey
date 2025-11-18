@@ -13,6 +13,8 @@ export const users = pgTable("users", {
   followers: text("followers").array().default([]),
   following: text("following").array().default([]),
   location: text("location"),
+  height: integer("height"),
+  weight: integer("weight"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

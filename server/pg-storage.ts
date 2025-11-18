@@ -39,6 +39,8 @@ export class PgStorage implements IStorage {
         followers: ["user2", "user3"],
         following: ["user2", "user4"],
         location: "New York, NY"
+        ,height: 68,
+        weight: 170
       },
       {
         id: "user2",
@@ -53,6 +55,8 @@ export class PgStorage implements IStorage {
         followers: ["user1", "user3", "user4"],
         following: ["user1"],
         location: "Los Angeles, CA"
+        ,height: 65,
+        weight: 150
       },
       {
         id: "user3",
@@ -67,6 +71,8 @@ export class PgStorage implements IStorage {
         followers: ["user1", "user2"],
         following: ["user1", "user2"],
         location: "Chicago, IL"
+        ,height: 72,
+        weight: 200
       },
       {
         id: "user4",
@@ -81,6 +87,8 @@ export class PgStorage implements IStorage {
         followers: ["user2"],
         following: ["user2", "user3"],
         location: "Austin, TX"
+        ,height: 64,
+        weight: 125
       }
     ];
 
@@ -183,6 +191,8 @@ export class PgStorage implements IStorage {
       fitnessGoals: newUser.fitnessGoals,
       followers: newUser.followers,
       following: newUser.following
+      ,height: (newUser as any).height
+      ,weight: (newUser as any).weight
     });
     
     return newUser;
@@ -222,6 +232,8 @@ export class PgStorage implements IStorage {
         email: userData.email || '',
         fullName: fullName,
         avatar: userData.profileImageUrl,
+        height: (userData as any).height,
+        weight: (userData as any).weight,
         bio: 'New to FitConnect! 💪',
         isVerified: false,
         accountType: 'user',
@@ -235,6 +247,8 @@ export class PgStorage implements IStorage {
           email: userData.email || '',
           fullName: fullName,
           avatar: userData.profileImageUrl,
+          height: (userData as any).height,
+          weight: (userData as any).weight,
         },
       })
       .returning();
@@ -439,6 +453,7 @@ export class PgStorage implements IStorage {
       id: newEntry.id,
       userId: newEntry.userId,
       date: newEntry.date,
+      createdAt: newEntry.createdAt,
       type: "weight", // Default type for simplified progress tracking
       weight: newEntry.weight,
       bodyFat: newEntry.bodyFatPercentage,
@@ -460,8 +475,8 @@ export class PgStorage implements IStorage {
   }
 
   async getProgressEntriesByUserId(userId: string): Promise<ProgressEntry[]> {
-    const dbEntries = await db.select().from(progressEntries).where(eq(progressEntries.userId, userId)).orderBy(desc(progressEntries.date));
-    
+    const dbEntries = await db.select().from(progressEntries).where(eq(progressEntries.userId, userId)).orderBy(desc(progressEntries.createdAt));
+
     // Convert database entries to match schema format
     return dbEntries.map((entry: any) => ({
       ...entry,

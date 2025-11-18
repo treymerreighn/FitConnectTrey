@@ -1,4 +1,5 @@
 import type { User, Post, Comment, Connection, ProgressEntry, Exercise, WorkoutSession, ExerciseProgress, Recipe, CommunityMeal, ProgressInsight, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, InsertWorkoutSession, InsertExerciseProgress, InsertProgressInsight } from "../shared/schema.ts";
+import type { WorkoutTemplate, InsertWorkoutTemplate, SavedWorkout, InsertSavedWorkout } from "../shared/workout-types.ts";
 // Lightweight messaging/notification types used by server storage
 export type Notification = {
   id: string;
@@ -27,6 +28,8 @@ export type Conversation = {
 };
 import { nanoid } from "nanoid";
 import { PgStorage } from "./pg-storage.ts";
+import fs from 'fs';
+import path from 'path';
 
 export interface IStorage {
   // Users
@@ -89,6 +92,18 @@ export interface IStorage {
   
   // Workout template operations
   getWorkoutTemplates(filters?: { category?: string; difficulty?: string; bodyPart?: string }): Promise<Post[]>;
+
+  // Canonical workout templates (separate from social posts)
+  createWorkoutTemplate(template: InsertWorkoutTemplate & { ownerUserId: string }): Promise<WorkoutTemplate>;
+  getWorkoutTemplate(id: string): Promise<WorkoutTemplate | null>;
+  listWorkoutTemplates(ownerUserId?: string): Promise<WorkoutTemplate[]>;
+  updateWorkoutTemplate(id: string, updates: Partial<WorkoutTemplate>): Promise<WorkoutTemplate>;
+  deleteWorkoutTemplate(id: string): Promise<boolean>;
+
+  // Saved workouts (user bookmarks a template/post)
+  saveWorkout(data: InsertSavedWorkout): Promise<SavedWorkout>;
+  listSavedWorkouts(userId: string): Promise<SavedWorkout[]>;
+  deleteSavedWorkout(userId: string, savedWorkoutId: string): Promise<boolean>;
   
   // Workout session tracking
   createWorkoutSession(session: InsertWorkoutSession): Promise<WorkoutSession>;
@@ -159,10 +174,13 @@ export class MemStorage implements IStorage {
   private notifications: Map<string, Notification[]> = new Map();
   private conversations: Map<string, Conversation> = new Map();
   private messages: Map<string, Message[]> = new Map();
+  private workoutTemplates: Map<string, WorkoutTemplate> = new Map();
+  private savedWorkouts: Map<string, SavedWorkout[]> = new Map();
 
   constructor() {
     this.seedData();
     this.seedExercises();
+    this.loadExerciseLibraryFile();
   }
 
   private seedExercises() {
@@ -292,6 +310,51 @@ export class MemStorage implements IStorage {
     basicExercises.forEach(exercise => {
       this.exercises.set(exercise.id, exercise);
     });
+  }
+
+  // Load extended exercise library from JSON file (server/exerciseLibrary.json) if present.
+  // This provides persistence across restarts for seeded + previously added exercises.
+  private loadExerciseLibraryFile() {
+    try {
+      const filePath = path.join(process.cwd(), 'server', 'exerciseLibrary.json');
+      if (!fs.existsSync(filePath)) return;
+      const raw = fs.readFileSync(filePath, 'utf-8');
+      const data = JSON.parse(raw);
+      if (!Array.isArray(data)) return;
+      let imported = 0;
+      for (const item of data) {
+        if (!item || typeof item !== 'object' || !item.name) continue;
+        const id = typeof item.id === 'string' ? item.id : nanoid();
+        if (this.exercises.has(id)) continue; // don't overwrite existing seeds
+        const ex: Exercise = {
+          id,
+          name: item.name,
+          category: (item.category?.toString().toLowerCase() || 'strength') as any,
+          muscleGroups: Array.isArray(item.muscleGroups) ? item.muscleGroups.map((m: string) => m.toLowerCase().replace(/\s+/g, '_')) as any : [],
+          equipment: Array.isArray(item.equipment) ? item.equipment.map((e: string) => e.toLowerCase()) : [],
+          difficulty: (item.difficulty?.toString().toLowerCase() || 'beginner') as any,
+          description: item.description || item.instructions?.join(' ') || '',
+          instructions: Array.isArray(item.instructions) ? item.instructions : [],
+          tips: Array.isArray(item.tips) ? item.tips : [],
+          safetyNotes: Array.isArray(item.safetyNotes) ? item.safetyNotes : [],
+          images: item.images || (item.thumbnailUrl ? [item.thumbnailUrl] : []),
+          videos: item.videos || [],
+          variations: item.variations || [],
+          isUserCreated: false,
+          createdBy: undefined,
+          isApproved: true,
+          tags: item.tags || [],
+          createdAt: new Date(),
+        };
+        this.exercises.set(id, ex);
+        imported++;
+      }
+      if (imported) {
+        console.log(`📥 Imported ${imported} exercises from exerciseLibrary.json`);
+      }
+    } catch (err) {
+      console.warn('Failed loading exerciseLibrary.json (non-fatal):', err);
+    }
   }
 
   private seedData() {
@@ -905,6 +968,68 @@ export class MemStorage implements IStorage {
       post.type === "workout" && 
       (post.workoutData && (post.workoutData as any).isTemplate)
     );
+  }
+
+  // Canonical Workout Templates CRUD (in-memory)
+  async createWorkoutTemplate(template: InsertWorkoutTemplate & { ownerUserId: string }): Promise<WorkoutTemplate> {
+    const id = nanoid();
+    const now = new Date();
+    const full: WorkoutTemplate = {
+      id,
+      createdAt: now,
+      updatedAt: now,
+      ...template,
+      ownerUserId: template.ownerUserId,
+      exercises: template.exercises || [],
+    } as WorkoutTemplate;
+    this.workoutTemplates.set(id, full);
+    return full;
+  }
+
+  async getWorkoutTemplate(id: string): Promise<WorkoutTemplate | null> {
+    return this.workoutTemplates.get(id) || null;
+  }
+
+  async listWorkoutTemplates(ownerUserId?: string): Promise<WorkoutTemplate[]> {
+    const list = Array.from(this.workoutTemplates.values());
+    return ownerUserId ? list.filter(t => t.ownerUserId === ownerUserId) : list;
+  }
+
+  async updateWorkoutTemplate(id: string, updates: Partial<WorkoutTemplate>): Promise<WorkoutTemplate> {
+    const existing = this.workoutTemplates.get(id);
+    if (!existing) throw new Error("Workout template not found");
+    const updated = { ...existing, ...updates, updatedAt: new Date() } as WorkoutTemplate;
+    this.workoutTemplates.set(id, updated);
+    return updated;
+  }
+
+  async deleteWorkoutTemplate(id: string): Promise<boolean> {
+    return this.workoutTemplates.delete(id);
+  }
+
+  // Saved workouts
+  async saveWorkout(data: InsertSavedWorkout): Promise<SavedWorkout> {
+    const list = this.savedWorkouts.get(data.userId) || [];
+    const saved: SavedWorkout = {
+      id: nanoid(),
+      createdAt: new Date(),
+      ...data,
+    } as SavedWorkout;
+    list.unshift(saved);
+    this.savedWorkouts.set(data.userId, list);
+    return saved;
+  }
+
+  async listSavedWorkouts(userId: string): Promise<SavedWorkout[]> {
+    return this.savedWorkouts.get(userId) || [];
+  }
+
+  async deleteSavedWorkout(userId: string, savedWorkoutId: string): Promise<boolean> {
+    const list = this.savedWorkouts.get(userId) || [];
+    const newList = list.filter(sw => sw.id !== savedWorkoutId);
+    const changed = newList.length !== list.length;
+    if (changed) this.savedWorkouts.set(userId, newList);
+    return changed;
   }
 
   // Workout session tracking methods

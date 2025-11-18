@@ -1,1019 +1,521 @@
-import { useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Plus, Trash2, Play, Share, Sparkles, Target, Clock, Dumbbell } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus, Trash2, Dumbbell, Timer, Save, Play, ChevronDown, ChevronUp, Share2 } from "lucide-react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { OptimizedImage } from "@/components/OptimizedImage";
+import { useAuth } from "@/hooks/useAuth";
 
-interface Exercise {
-  id: string;
-  name: string;
-  category: string;
-  muscleGroups: string[];
-  equipment: string[];
-  difficulty: "Beginner" | "Intermediate" | "Advanced";
-  thumbnailUrl: string;
-  instructions: string[];
-  targetSets?: number;
-  targetReps?: number;
-  restTime?: number;
-}
+type SetRow = { id: string; reps: number; weight?: number; restTime?: number };
+type ExerciseRow = { id: string; name: string; notes?: string; sets: SetRow[]; expanded?: boolean; sourceExerciseId?: string };
+type LibraryExercise = { id: string; name: string; muscleGroups: string[]; difficulty: string };
 
-interface WorkoutPlan {
-  name: string;
-  description: string;
-  exercises: Exercise[];
-  estimatedDuration: number;
-  difficulty: "Beginner" | "Intermediate" | "Advanced";
-}
-
-const BODY_PARTS = [
-  { id: "chest", name: "Chest", icon: "💪", exercises: ["Push-ups", "Bench Press", "Chest Flyes"] },
-  { id: "back", name: "Back", icon: "🏋️", exercises: ["Pull-ups", "Rows", "Deadlifts"] },
-  { id: "shoulders", name: "Shoulders", icon: "🔥", exercises: ["Shoulder Press", "Lateral Raises", "Front Raises"] },
-  { id: "arms", name: "Arms", icon: "💪", exercises: ["Bicep Curls", "Tricep Dips", "Hammer Curls"] },
-  { id: "legs", name: "Legs", icon: "🦵", exercises: ["Squats", "Lunges", "Leg Press"] },
-  { id: "core", name: "Core", icon: "⚡", exercises: ["Planks", "Crunches", "Russian Twists"] },
-  { id: "glutes", name: "Glutes", icon: "🍑", exercises: ["Hip Thrusts", "Glute Bridges", "Bulgarian Squats"] },
-  { id: "full-body", name: "Full Body", icon: "🔥", exercises: ["Burpees", "Mountain Climbers", "Jumping Jacks"] }
-];
-
-// Workout analysis and balancing functions
-const analyzeWorkoutBalance = (exercises: Exercise[]) => {
-  const pushExercises = exercises.filter((ex: Exercise) => 
-    ex.muscleGroups.some((mg: string) => 
-      ['chest', 'shoulders', 'triceps', 'quadriceps'].includes(mg.toLowerCase())
-    )
-  );
-  
-  const pullExercises = exercises.filter((ex: Exercise) => 
-    ex.muscleGroups.some((mg: string) => 
-      ['back', 'biceps', 'hamstrings', 'glutes'].includes(mg.toLowerCase())
-    )
-  );
-
-  const coreExercises = exercises.filter((ex: Exercise) => 
-    ex.muscleGroups.some((mg: string) => mg.toLowerCase().includes('abs') || mg.toLowerCase().includes('core'))
-  );
-
-  const suggestions = [];
-  
-  // Push/Pull balance check
-  if (pushExercises.length > pullExercises.length + 1) {
-    suggestions.push("Consider adding more pulling exercises (back, biceps) to balance your workout");
-  } else if (pullExercises.length > pushExercises.length + 1) {
-    suggestions.push("Consider adding more pushing exercises (chest, shoulders, triceps) to balance your workout");
-  }
-
-  // Core inclusion check
-  if (exercises.length >= 4 && coreExercises.length === 0) {
-    suggestions.push("Add core exercises for a complete workout");
-  }
-
-  // Difficulty progression
-  const difficulties = exercises.map((ex: Exercise) => ex.difficulty);
-  const hasProgression = difficulties.includes("Beginner") && 
-                        (difficulties.includes("Intermediate") || difficulties.includes("Advanced"));
-  
-  if (!hasProgression && exercises.length >= 3) {
-    suggestions.push("Mix difficulty levels for better progression");
-  }
-
+function makeExercise(name: string, exerciseId?: string, defaultWeight = 0, defaultReps = 10, defaultRest = 90): ExerciseRow {
   return {
-    pushCount: pushExercises.length,
-    pullCount: pullExercises.length,
-    coreCount: coreExercises.length,
-    isBalanced: Math.abs(pushExercises.length - pullExercises.length) <= 1,
-    suggestions
+    id: crypto.randomUUID(),
+    name,
+    sourceExerciseId: exerciseId,
+    notes: "",
+    expanded: true,
+    sets: [
+      { id: crypto.randomUUID(), reps: defaultReps, weight: defaultWeight, restTime: defaultRest },
+      { id: crypto.randomUUID(), reps: defaultReps, weight: defaultWeight, restTime: defaultRest },
+      { id: crypto.randomUUID(), reps: defaultReps, weight: defaultWeight, restTime: defaultRest },
+    ],
   };
-};
-
-const calculateWorkoutDuration = (exercises: Exercise[]) => {
-  return exercises.reduce((total: number, ex: Exercise) => {
-    const sets = ex.targetSets || 3;
-    const restTime = ex.restTime || 60;
-    const setDuration = 45; // Average time per set in seconds
-    return total + ((sets * setDuration + (sets - 1) * restTime) / 60); // Convert to minutes
-  }, 0);
-};
-
-const calculateWorkoutDifficulty = (exercises: Exercise[]): "Beginner" | "Intermediate" | "Advanced" => {
-  if (exercises.length === 0) return "Beginner";
-  
-  const difficultyScores = exercises.map((ex: Exercise) => {
-    switch (ex.difficulty) {
-      case "Beginner": return 1;
-      case "Intermediate": return 2;
-      case "Advanced": return 3;
-      default: return 1;
-    }
-  });
-  
-  const avgScore = difficultyScores.reduce((sum, score) => sum + score, 0) / difficultyScores.length;
-  
-  if (avgScore <= 1.3) return "Beginner";
-  if (avgScore <= 2.3) return "Intermediate";
-  return "Advanced";
-};
-
-
-const MOCK_EXERCISES: Exercise[] = [
-  {
-    id: "1",
-    name: "Push-ups",
-    category: "Strength",
-    muscleGroups: ["Chest", "Triceps", "Shoulders"],
-    equipment: ["None"],
-    difficulty: "Beginner",
-    thumbnailUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400",
-    instructions: ["Start in plank position", "Lower body until chest nearly touches floor", "Push back up to starting position"],
-    targetSets: 3,
-    targetReps: 12,
-    restTime: 60
-  },
-  {
-    id: "2",
-    name: "Squats",
-    category: "Strength", 
-    muscleGroups: ["Quadriceps", "Glutes", "Hamstrings"],
-    equipment: ["None"],
-    difficulty: "Beginner",
-    thumbnailUrl: "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400",
-    instructions: ["Stand with feet shoulder-width apart", "Lower hips back and down", "Return to standing position"],
-    targetSets: 3,
-    targetReps: 15,
-    restTime: 90
-  },
-  {
-    id: "3",
-    name: "Pull-ups",
-    category: "Strength",
-    muscleGroups: ["Lats", "Biceps", "Rhomboids"],
-    equipment: ["Pull-up Bar"],
-    difficulty: "Intermediate",
-    thumbnailUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400",
-    instructions: ["Hang from bar with palms facing away", "Pull up until chin clears bar", "Lower slowly to starting position"],
-    targetSets: 3,
-    targetReps: 8,
-    restTime: 120
-  }
-];
+}
 
 export default function BuildWorkout() {
-  const [, setLocation] = useLocation();
+  const [workoutName, setWorkoutName] = useState("");
+  const [workoutGoal, setWorkoutGoal] = useState("");
+  const [intensity, setIntensity] = useState<"easy" | "moderate" | "hard" | "custom">("moderate");
+  const [exercises, setExercises] = useState<ExerciseRow[]>([]);
+  const [showPicker, setShowPicker] = useState(false);
+  const [pickerSearch, setPickerSearch] = useState("");
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
-  
-  // Fetch exercises from the database
-  const { data: exercises = [] } = useQuery({
-    queryKey: ["/api/exercises"],
-    queryFn: () => fetch("/api/exercises").then(res => res.json()),
-  });
-  
-  const [selectedBodyParts, setSelectedBodyParts] = useState<string[]>([]);
-  const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlan>({
-    name: "",
-    description: "",
-    exercises: [],
-    estimatedDuration: 0,
-    difficulty: "Beginner"
-  });
-  
-  const [showExerciseLibrary, setShowExerciseLibrary] = useState(false);
-  const [showSaveOptions, setShowSaveOptions] = useState(false);
-  const [showPostOptions, setShowPostOptions] = useState(false);
+  const [, setLocation] = useLocation();
 
-  // Exercise library search and filter states
-  const [exerciseSearchTerm, setExerciseSearchTerm] = useState("");
-  const [selectedEquipmentFilter, setSelectedEquipmentFilter] = useState<string>("all");
+  const totals = useMemo(() => {
+    const totalSets = exercises.reduce((acc, e) => acc + e.sets.length, 0);
+    const estMinutes = Math.max(10, Math.round(totalSets * 2.75));
+    const volume = exercises.reduce((acc, e) => acc + e.sets.reduce((v, s) => v + (s.weight || 0) * (s.reps || 0), 0), 0);
+    return { totalSets, estMinutes, volume };
+  }, [exercises]);
 
-  const filteredExercises = (exercises.length > 0 ? exercises : MOCK_EXERCISES).filter((exercise: Exercise) => {
-    // Apply search term filter
-    const matchesSearch = exerciseSearchTerm === "" || 
-      exercise.name.toLowerCase().includes(exerciseSearchTerm.toLowerCase()) ||
-      exercise.muscleGroups.some((mg: string) => mg.toLowerCase().includes(exerciseSearchTerm.toLowerCase()));
+  function addExerciseFromLibrary(ex: LibraryExercise) {
+    setExercises((prev) => [...prev, makeExercise(ex.name, ex.id)]);
+  }
 
-    // Apply equipment filter
-    const matchesEquipment = selectedEquipmentFilter === "all" || 
-      exercise.equipment.some((eq: string) => {
-        if (selectedEquipmentFilter === "bodyweight") return eq.toLowerCase().includes("bodyweight") || eq.toLowerCase().includes("none");
-        if (selectedEquipmentFilter === "dumbbells") return eq.toLowerCase().includes("dumbbell");
-        if (selectedEquipmentFilter === "barbell") return eq.toLowerCase().includes("barbell");
-        if (selectedEquipmentFilter === "resistance") return eq.toLowerCase().includes("band") || eq.toLowerCase().includes("resistance");
-        if (selectedEquipmentFilter === "machine") return eq.toLowerCase().includes("machine") || eq.toLowerCase().includes("cable");
-        return false;
-      });
+  function removeExercise(id: string) {
+    setExercises((prev) => prev.filter((e) => e.id !== id));
+  }
 
-    // Apply body part filter
-    const matchesBodyPart = selectedBodyParts.length === 0 || 
-      exercise.muscleGroups.some((muscle: string) => 
-        selectedBodyParts.some((bodyPart: string) => 
-          BODY_PARTS.find(bp => bp.id === bodyPart)?.exercises.some((ex: string) => 
-            muscle.toLowerCase().includes(ex.toLowerCase().split(' ')[0])
-          )
-        )
-      );
+  function updateExercise(id: string, updater: (e: ExerciseRow) => ExerciseRow) {
+    setExercises((prev) => prev.map((e) => (e.id === id ? updater({ ...e }) : e)));
+  }
 
-    return matchesSearch && matchesEquipment && matchesBodyPart;
-  });
-
-  const toggleBodyPart = (bodyPartId: string) => {
-    setSelectedBodyParts(prev => 
-      prev.includes(bodyPartId) 
-        ? prev.filter(id => id !== bodyPartId)
-        : [...prev, bodyPartId]
-    );
-  };
-
-  const addExerciseToWorkout = (exercise: Exercise) => {
-    // Check for duplicates
-    if (workoutPlan.exercises.some(ex => ex.id === exercise.id)) {
-      toast({
-        title: "Exercise Already Added",
-        description: "This exercise is already in your workout plan",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Smart balancing logic
-    const exerciseWithDefaults = {
-      ...exercise,
-      targetSets: exercise.targetSets || 3,
-      targetReps: exercise.targetReps || 12,
-      restTime: exercise.restTime || 60
-    };
-
-    const updatedExercises = [...workoutPlan.exercises, exerciseWithDefaults];
-
-    // Analyze balance and suggest improvements
-    const balance = analyzeWorkoutBalance(updatedExercises);
-    
-    setWorkoutPlan(prev => ({
-      ...prev,
-      exercises: updatedExercises,
-      estimatedDuration: calculateWorkoutDuration(updatedExercises),
-      difficulty: calculateWorkoutDifficulty(updatedExercises)
-    }));
-
-    setShowExerciseLibrary(false); // Close modal after adding
-    
-    toast({
-      title: "Exercise Added!",
-      description: `${exercise.name} has been added to your workout`
-    });
-
-    // Show balance recommendations
-    if (balance.suggestions.length > 0) {
-      setTimeout(() => {
-        toast({
-          title: "Workout Balance Tip",
-          description: balance.suggestions[0],
-          duration: 4000
-        });
-      }, 1000);
-    }
-  };
-
-  const removeExerciseFromWorkout = (exerciseId: string) => {
-    setWorkoutPlan(prev => ({
-      ...prev,
-      exercises: prev.exercises.filter(ex => ex.id !== exerciseId),
-      estimatedDuration: Math.max(0, prev.estimatedDuration - 6) // Remove 6 min estimate
-    }));
-  };
-
-  const updateExerciseSets = (exerciseId: string, newSets: number) => {
-    setWorkoutPlan(prev => ({
-      ...prev,
-      exercises: prev.exercises.map(ex => 
-        ex.id === exerciseId ? { ...ex, targetSets: newSets } : ex
-      )
-    }));
-  };
-
-  const updateExerciseReps = (exerciseId: string, newReps: number) => {
-    setWorkoutPlan(prev => ({
-      ...prev,
-      exercises: prev.exercises.map(ex => 
-        ex.id === exerciseId ? { ...ex, targetReps: newReps } : ex
-      )
-    }));
-  };
-
-
-  const startWorkout = () => {
-    const exerciseIds = workoutPlan.exercises.map(ex => ex.id).join(',');
-    setLocation(`/workout-session?exercises=${exerciseIds}&plan=${encodeURIComponent(JSON.stringify(workoutPlan))}`);
-  };
-
-  const postWorkout = async () => {
-    try {
-      // Post workout plan to social feed
-      const postData = {
-        type: "workout_plan",
-        content: workoutPlan.description,
-        workoutPlan: workoutPlan,
-        createdAt: new Date().toISOString()
+  // Save for later: create a template, then bookmark it as a saved workout
+  const saveForLaterMutation = useMutation({
+    mutationFn: async () => {
+      const templatePayload = {
+        name: workoutName || "Untitled Workout",
+        ownerUserId: user?.id || "user1",
+        isPublic: false,
+        estimatedDurationMinutes: totals.estMinutes,
+        goal: workoutGoal || undefined,
+        intensity,
+        exercises: exercises.map((ex, idx) => ({
+          name: ex.name,
+          order: idx,
+          notes: ex.notes || "",
+          sets: ex.sets.map((s) => ({
+            reps: s.reps,
+            weight: s.weight || 0,
+            restSeconds: s.restTime || 90,
+          })),
+        })),
       };
-      
-      toast({
-        title: "Workout Posted!",
-        description: "Your workout plan has been shared with your followers"
+
+      const tplRes = await fetch("/api/workout-templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(templatePayload),
       });
-      
-      setLocation("/");
-    } catch (error) {
-      toast({
-        title: "Post Failed",
-        description: "Failed to share workout plan",
-        variant: "destructive"
+      if (!tplRes.ok) {
+        const text = await tplRes.text();
+        throw new Error(text || "Failed to save workout");
+      }
+      const template = await tplRes.json();
+
+      const snapshot = {
+        workoutType: workoutName || "Untitled Workout",
+        duration: totals.estMinutes,
+        calories: Math.round(totals.volume / 100) + 50,
+        exercises: exercises.map((ex) => ({
+          id: ex.sourceExerciseId || ex.id,
+          exerciseName: ex.name,
+          sets: ex.sets.map((s) => ({ reps: s.reps, weight: s.weight || 0 })),
+        })),
+      };
+
+      const savedRes = await fetch("/api/saved-workouts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          templateId: template.id,
+          sourceType: "template",
+          dataSnapshot: snapshot,
+        }),
       });
+      if (!savedRes.ok) {
+        const text = await savedRes.text();
+        throw new Error(text || "Failed to bookmark workout");
+      }
+      return savedRes.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Saved for later", description: "Find it in Saved Workouts." });
+      queryClient.invalidateQueries({ queryKey: ["/api/saved-workouts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/workout-templates"] });
+    },
+    onError: (err: any) => {
+      toast({ title: "Save failed", description: err?.message || "Couldn't save workout", variant: "destructive" });
+    },
+  });
+
+  function startWorkout() {
+    const plan = {
+      name: workoutName,
+      goal: workoutGoal || undefined,
+      intensity,
+      exercises: exercises.map((ex) => ({
+        id: ex.id,
+        name: ex.name,
+        sets: ex.sets.map((s) => ({ targetReps: s.reps, weight: s.weight || 0, restTime: s.restTime || 90 })),
+      })),
+    };
+    const exerciseIds = plan.exercises.map((e) => e.id).join(",");
+    const planParam = encodeURIComponent(JSON.stringify(plan));
+    setLocation(`/workout-session?exercises=${encodeURIComponent(exerciseIds)}&plan=${planParam}`);
+  }
+
+  function postWorkoutNow() {
+    if (exercises.length === 0) return;
+    const snapshot = {
+      workoutType: workoutName || "Untitled Workout",
+      duration: totals.estMinutes,
+      calories: Math.round(totals.volume / 100) + 50,
+      goal: workoutGoal || undefined,
+      intensity,
+      exercises: exercises.map((ex) => ({
+        id: ex.sourceExerciseId || ex.id,
+        exerciseName: ex.name,
+        sets: ex.sets.map((s) => ({ reps: s.reps, weight: s.weight || 0 })),
+      })),
+    };
+    const encoded = encodeURIComponent(JSON.stringify(snapshot));
+    setLocation(`/create-post?type=workout&workoutData=${encoded}`);
+  }
+
+  // Prefill from shared plan when provided via query string
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const planParam = params.get("plan");
+      if (!planParam) return;
+      const plan = JSON.parse(decodeURIComponent(planParam));
+      if (!plan || !Array.isArray(plan.exercises)) return;
+
+      if (plan.name && typeof plan.name === 'string') {
+        setWorkoutName(plan.name);
+      }
+
+      const mapped: ExerciseRow[] = plan.exercises.map((ex: any) => {
+        const setsSrc: any[] | undefined = Array.isArray(ex.sets) ? ex.sets : undefined;
+        const targetSets = ex.targetSets && Number.isFinite(ex.targetSets) ? ex.targetSets : 3;
+        const targetReps = ex.targetReps && Number.isFinite(ex.targetReps) ? ex.targetReps : 8;
+        const rows: SetRow[] = setsSrc
+          ? setsSrc.map((s: any) => ({ id: crypto.randomUUID(), reps: s.targetReps ?? targetReps, weight: s.weight ?? 0, restTime: s.restTime ?? 90 }))
+          : Array.from({ length: targetSets }, () => ({ id: crypto.randomUUID(), reps: targetReps, weight: 0, restTime: 90 }));
+        return {
+          id: crypto.randomUUID(),
+          name: ex.name,
+          sourceExerciseId: ex.id,
+          notes: "",
+          expanded: true,
+          sets: rows,
+        } as ExerciseRow;
+      });
+
+      setExercises(mapped);
+    } catch (_e) {
+      // ignore parse errors
     }
-  };
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-white text-slate-900">
       {/* Header */}
-      <div className="sticky top-0 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800 p-4 z-10">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setLocation("/workouts")}
-              className="text-gray-400"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-xl font-bold">Build Workout</h1>
-          </div>
-          
+      <div className="sticky top-0 z-30 border-b bg-white/90 backdrop-blur">
+        <div className="mx-auto max-w-4xl px-5 py-4 flex items-center gap-3">
+          <Dumbbell className="h-6 w-6 text-indigo-600" />
+          <h1 className="text-xl md:text-2xl font-semibold tracking-tight">Workout Builder</h1>
         </div>
       </div>
 
-      {/* Workout Plan */}
-      <div className="p-4 pb-32">
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Your Workout Plan</h2>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowExerciseLibrary(true)}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Exercise
-            </Button>
-          </div>
-
-          {workoutPlan.exercises.length === 0 ? (
-            <Card className="bg-gray-800 border-gray-700">
-              <CardContent className="p-8 text-center">
-                <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2 text-gray-300">No exercises added yet</h3>
-                <p className="text-gray-400 mb-4">Use the Add Exercise button to browse and filter exercises for your workout</p>
-                <div className="flex justify-center">
-                  <Button onClick={() => setShowExerciseLibrary(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Exercise
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {/* Workout Summary */}
-              <Card className="bg-gray-800 border-gray-700">
-                <CardContent className="p-4">
-                  <div className="grid grid-cols-4 gap-4 text-center">
-                    <div>
-                      <div className="text-2xl font-bold text-red-400">{workoutPlan.exercises.length}</div>
-                      <div className="text-xs text-gray-400">Exercises</div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-blue-400">{Math.round(workoutPlan.estimatedDuration)}m</div>
-                      <div className="text-xs text-gray-400">Duration</div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-green-400">
-                        {workoutPlan.exercises.reduce((acc, ex) => acc + (ex.targetSets || 3), 0)}
-                      </div>
-                      <div className="text-xs text-gray-400">Total Sets</div>
-                    </div>
-                    <div>
-                      {(() => {
-                        const balance = analyzeWorkoutBalance(workoutPlan.exercises);
-                        return (
-                          <div>
-                            <div className={`text-2xl font-bold ${balance.isBalanced ? 'text-green-400' : 'text-yellow-400'}`}>
-                              {balance.isBalanced ? '⚖️' : '⚠️'}
-                            </div>
-                            <div className="text-xs text-gray-400">
-                              {balance.isBalanced ? 'Balanced' : 'Unbalanced'}
-                            </div>
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  </div>
-                  
-                  {/* Balance Details */}
-                  {workoutPlan.exercises.length > 0 && (() => {
-                    const balance = analyzeWorkoutBalance(workoutPlan.exercises);
-                    return (
-                      <div className="mt-3 pt-3 border-t border-gray-700">
-                        <div className="grid grid-cols-3 gap-2 text-xs text-gray-400">
-                          <div className="text-center">
-                            <span className="text-red-400 font-semibold">{balance.pushCount}</span> Push
-                          </div>
-                          <div className="text-center">
-                            <span className="text-blue-400 font-semibold">{balance.pullCount}</span> Pull
-                          </div>
-                          <div className="text-center">
-                            <span className="text-green-400 font-semibold">{balance.coreCount}</span> Core
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </CardContent>
-              </Card>
-
-              {/* Exercise List */}
-              {workoutPlan.exercises.map((exercise, index) => (
-                <Card key={exercise.id} className="bg-gray-800 border-gray-700">
-                  <CardContent className="p-4">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-700 flex-shrink-0">
-                        <OptimizedImage
-                          src={exercise.thumbnailUrl}
-                          alt={exercise.name}
-                          className="w-full h-full object-cover"
-                          width={48}
-                          height={48}
-                          placeholder="blur"
-                        />
-                      </div>
-                      
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-semibold text-white">{exercise.name}</h3>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeExerciseFromWorkout(exercise.id)}
-                            className="text-red-400 hover:text-red-300"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        
-                        <div className="flex items-center space-x-4 mt-2">
-                          {/* Sets Control */}
-                          <div className="flex items-center space-x-2">
-                            <label className="text-xs text-gray-400">Sets:</label>
-                            <div className="flex items-center space-x-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => updateExerciseSets(exercise.id, Math.max(1, (exercise.targetSets || 3) - 1))}
-                                className="h-6 w-6 p-0 text-gray-400 hover:text-white"
-                              >
-                                -
-                              </Button>
-                              <span className="text-sm text-white min-w-[20px] text-center">
-                                {exercise.targetSets || 3}
-                              </span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => updateExerciseSets(exercise.id, Math.min(10, (exercise.targetSets || 3) + 1))}
-                                className="h-6 w-6 p-0 text-gray-400 hover:text-white"
-                              >
-                                +
-                              </Button>
-                            </div>
-                          </div>
-
-                          {/* Reps Control */}
-                          <div className="flex items-center space-x-2">
-                            <label className="text-xs text-gray-400">Reps:</label>
-                            <div className="flex items-center space-x-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => updateExerciseReps(exercise.id, Math.max(1, (exercise.targetReps || 10) - 1))}
-                                className="h-6 w-6 p-0 text-gray-400 hover:text-white"
-                              >
-                                -
-                              </Button>
-                              <span className="text-sm text-white min-w-[20px] text-center">
-                                {exercise.targetReps || 10}
-                              </span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => updateExerciseReps(exercise.id, Math.min(50, (exercise.targetReps || 10) + 1))}
-                                className="h-6 w-6 p-0 text-gray-400 hover:text-white"
-                              >
-                                +
-                              </Button>
-                            </div>
-                          </div>
-
-                          <Badge variant="secondary" className="text-xs">
-                            {exercise.difficulty}
-                          </Badge>
-                        </div>
-                        
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {exercise.muscleGroups.slice(0, 3).map(muscle => (
-                            <Badge key={muscle} variant="outline" className="text-xs">
-                              {muscle}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-
+      {/* Content */}
+      <div className="mx-auto max-w-4xl px-5 pt-6 pb-40 md:pb-36 pb-[calc(env(safe-area-inset-bottom)+9rem)]">
+        {/* Workout meta */}
+        <Card className="border-slate-200 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Plan Details</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-2 md:col-span-1">
+              <Label htmlFor="name">Workout name</Label>
+              <Input id="name" value={workoutName} onChange={(e) => setWorkoutName(e.target.value)} placeholder="e.g., Push Day - Hypertrophy" className="h-11 text-base" />
             </div>
-          )}
-
-          {/* Always visible action buttons when exercises exist */}
-          {workoutPlan.exercises.length > 0 && (
-            <div className="fixed bottom-20 left-0 right-0 bg-gray-900/95 backdrop-blur-sm border-t border-gray-700 p-4 z-40">
-              <div className="max-w-4xl mx-auto flex space-x-3">
-                <Button
-                  onClick={startWorkout}
-                  className="flex-1 bg-red-600 hover:bg-red-700"
-                  size="lg"
-                >
-                  <Play className="h-5 w-5 mr-2" />
-                  Start Workout
-                </Button>
-                <Button
-                  onClick={() => setShowSaveOptions(true)}
-                  className="bg-green-600 hover:bg-green-700"
-                  size="lg"
-                >
-                  Save
-                </Button>
-                <Button
-                  onClick={() => setShowPostOptions(true)}
-                  variant="outline"
-                  className="border-blue-500 text-blue-400 hover:bg-blue-500/10"
-                  size="lg"
-                >
-                  <Share className="h-5 w-5 mr-2" />
-                  Share
-                </Button>
-              </div>
+            <div className="space-y-2 md:col-span-1">
+              <Label htmlFor="goal">Goal (optional)</Label>
+              <Input
+                id="goal"
+                value={workoutGoal}
+                onChange={(e) => setWorkoutGoal(e.target.value)}
+                placeholder="Strength, hypertrophy, endurance…"
+                className="h-11 text-base"
+              />
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* Exercise Library Modal */}
-      <Dialog open={showExerciseLibrary} onOpenChange={(open) => {
-        setShowExerciseLibrary(open);
-        if (!open) {
-          setExerciseSearchTerm("");
-          setSelectedEquipmentFilter("all");
-          // Keep body part selection for AI generation
-        }
-      }}>
-        <DialogContent className="sm:max-w-3xl bg-gray-800 border-gray-700 text-white max-h-[85vh] overflow-hidden">
-          <DialogHeader>
-            <DialogTitle>Exercise Library</DialogTitle>
-            
-            {/* Search and Filter Section */}
-            <div className="space-y-4 pt-4">
-              {/* Search Bar */}
-              <div className="relative">
-                <Input
-                  placeholder="Search exercises by name or muscle group..."
-                  value={exerciseSearchTerm}
-                  onChange={(e) => setExerciseSearchTerm(e.target.value)}
-                  className="bg-gray-700 border-gray-600 text-white pl-10"
-                  data-testid="exercise-search-input"
-                />
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
+            <div className="flex flex-col gap-2 md:col-span-1">
+              <Label className="text-sm">Overview</Label>
+              <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+                <Badge variant="secondary" className="h-7 rounded-full px-3">Sets: {totals.totalSets}</Badge>
+                <Badge variant="secondary" className="h-7 rounded-full px-3 flex items-center gap-1"><Timer className="h-4 w-4" />~{totals.estMinutes} min</Badge>
+                <Badge variant="secondary" className="h-7 rounded-full px-3">Volume: {Intl.NumberFormat().format(totals.volume)} lb</Badge>
               </div>
-              
-              {/* Equipment Filter */}
-              <div className="flex flex-wrap gap-2">
-                <span className="text-sm text-gray-400 self-center mr-2">Equipment:</span>
-                {[
-                  { id: "all", name: "All", icon: "🔄" },
-                  { id: "bodyweight", name: "Bodyweight", icon: "🏃" },
-                  { id: "dumbbells", name: "Dumbbells", icon: "🏋️" },
-                  { id: "barbell", name: "Barbell", icon: "💪" },
-                  { id: "resistance", name: "Bands", icon: "🎯" },
-                  { id: "machine", name: "Machine", icon: "⚙️" }
-                ].map(equipment => (
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+                <span className="text-[11px] uppercase tracking-wide text-slate-500">Intensity</span>
+                {(["easy","moderate","hard"] as const).map(level => (
                   <Button
-                    key={equipment.id}
-                    variant={selectedEquipmentFilter === equipment.id ? "default" : "outline"}
+                    key={level}
+                    type="button"
+                    variant={intensity === level ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setSelectedEquipmentFilter(equipment.id)}
-                    className={`text-xs ${selectedEquipmentFilter === equipment.id 
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                      : 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                    className={`h-7 rounded-full px-3 text-xs capitalize ${
+                      intensity === level
+                        ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                        : "border-slate-300 text-slate-700"
                     }`}
-                    data-testid={`equipment-filter-${equipment.id}`}
+                    onClick={() => setIntensity(level)}
                   >
-                    <span className="mr-1">{equipment.icon}</span>
-                    {equipment.name}
+                    {level}
                   </Button>
                 ))}
               </div>
-              
-              {/* Results count */}
-              <div className="text-sm text-gray-400">
-                {(() => {
-                  const filteredCount = (exercises.length > 0 ? exercises : MOCK_EXERCISES).filter((exercise: Exercise) => {
-                    const matchesSearch = exerciseSearchTerm === "" || 
-                      exercise.name.toLowerCase().includes(exerciseSearchTerm.toLowerCase()) ||
-                      exercise.muscleGroups.some((mg: string) => mg.toLowerCase().includes(exerciseSearchTerm.toLowerCase()));
-                    
-                    const matchesEquipment = selectedEquipmentFilter === "all" || 
-                      exercise.equipment.some((eq: string) => {
-                        if (selectedEquipmentFilter === "bodyweight") return eq.toLowerCase().includes("bodyweight") || eq.toLowerCase().includes("none");
-                        if (selectedEquipmentFilter === "dumbbells") return eq.toLowerCase().includes("dumbbell");
-                        if (selectedEquipmentFilter === "barbell") return eq.toLowerCase().includes("barbell");
-                        if (selectedEquipmentFilter === "resistance") return eq.toLowerCase().includes("band") || eq.toLowerCase().includes("resistance");
-                        if (selectedEquipmentFilter === "machine") return eq.toLowerCase().includes("machine") || eq.toLowerCase().includes("cable");
-                        return false;
-                      });
-
-                    const matchesBodyPart = selectedBodyParts.length === 0 || 
-                      exercise.muscleGroups.some((muscle: string) => 
-                        selectedBodyParts.some((bodyPart: string) => 
-                          BODY_PARTS.find(bp => bp.id === bodyPart)?.exercises.some((ex: string) => 
-                            muscle.toLowerCase().includes(ex.toLowerCase().split(' ')[0])
-                          )
-                        )
-                      );
-
-                    return matchesSearch && matchesEquipment && matchesBodyPart;
-                  }).length;
-                  
-                  return `${filteredCount} exercises found`;
-                })()}
-              </div>
             </div>
-          </DialogHeader>
-          
-          <div className="space-y-4 overflow-y-auto max-h-[60vh]">
-            {/* All Exercises with Body Part Filtering */}
-            <div className="space-y-4">
-                {/* Body Part Filter Buttons */}
-                <div className="space-y-3">
-                  <h3 className="text-lg font-semibold text-gray-200">Filter by Body Part</h3>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      variant={selectedBodyParts.length === 0 ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setSelectedBodyParts([])}
-                      className={`text-xs ${selectedBodyParts.length === 0 
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                        : 'border-gray-600 text-gray-300 hover:bg-gray-700'
-                      }`}
-                      data-testid="body-part-filter-all"
-                    >
-                      🔄 All
-                    </Button>
-                    {BODY_PARTS.map(bodyPart => (
-                      <Button
-                        key={bodyPart.id}
-                        variant={selectedBodyParts.includes(bodyPart.id) ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => toggleBodyPart(bodyPart.id)}
-                        className={`text-xs ${selectedBodyParts.includes(bodyPart.id) 
-                          ? 'bg-red-600 hover:bg-red-700 text-white' 
-                          : 'border-gray-600 text-gray-300 hover:bg-gray-700'
-                        }`}
-                        data-testid={`body-part-filter-${bodyPart.id}`}
-                      >
-                        <span className="mr-1">{bodyPart.icon}</span>
-                        {bodyPart.name}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
+          </CardContent>
+        </Card>
 
-                {/* Exercise List */}
-                <div className="space-y-3">
-                  {(exercises.length > 0 ? exercises : MOCK_EXERCISES)
-                    .filter((exercise: Exercise) => {
-                      // Apply search filter
-                      const matchesSearch = exerciseSearchTerm === "" || 
-                        exercise.name.toLowerCase().includes(exerciseSearchTerm.toLowerCase()) ||
-                        exercise.muscleGroups.some((mg: string) => mg.toLowerCase().includes(exerciseSearchTerm.toLowerCase()));
-                      
-                      // Apply equipment filter
-                      const matchesEquipment = selectedEquipmentFilter === "all" || 
-                        exercise.equipment.some((eq: string) => {
-                          if (selectedEquipmentFilter === "bodyweight") return eq.toLowerCase().includes("bodyweight") || eq.toLowerCase().includes("none");
-                          if (selectedEquipmentFilter === "dumbbells") return eq.toLowerCase().includes("dumbbell");
-                          if (selectedEquipmentFilter === "barbell") return eq.toLowerCase().includes("barbell");
-                          if (selectedEquipmentFilter === "resistance") return eq.toLowerCase().includes("band") || eq.toLowerCase().includes("resistance");
-                          if (selectedEquipmentFilter === "machine") return eq.toLowerCase().includes("machine") || eq.toLowerCase().includes("cable");
-                          return false;
-                        });
+        {/* Exercises list */}
+        <div className="mt-6 space-y-6">
+          {exercises.map((ex, idx) => (
+            <motion.div key={ex.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
+              <ExerciseCard
+                index={idx + 1}
+                ex={ex}
+                onRemove={() => removeExercise(ex.id)}
+                onChange={(updater) => updateExercise(ex.id, updater)}
+              />
+            </motion.div>
+          ))}
+        </div>
 
-                      // Apply body part filter
-                      const matchesBodyPart = selectedBodyParts.length === 0 || 
-                        exercise.muscleGroups.some((muscle: string) => 
-                          selectedBodyParts.some((bodyPart: string) => 
-                            BODY_PARTS.find(bp => bp.id === bodyPart)?.exercises.some((ex: string) => 
-                              muscle.toLowerCase().includes(ex.toLowerCase().split(' ')[0])
-                            )
-                          )
-                        );
+        <div className="mt-6 flex justify-center">
+          <Button onClick={() => setShowPicker(true)} className="h-12 rounded-xl px-6 text-base bg-indigo-600 hover:bg-indigo-700">
+            <Plus className="mr-2 h-5 w-5" /> Add From Library
+          </Button>
+        </div>
+      </div>
 
-                      return matchesSearch && matchesEquipment && matchesBodyPart;
-                    })
-                    .sort((a: Exercise, b: Exercise) => a.name.localeCompare(b.name))
-                    .map((exercise: Exercise) => (
-                    <Card key={exercise.id} className="bg-gray-700 border-gray-600">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-600">
-                              <OptimizedImage
-                                src={exercise.thumbnailUrl}
-                                alt={exercise.name}
-                                className="w-full h-full object-cover"
-                                width={48}
-                                height={48}
-                                placeholder="blur"
-                              />
-                            </div>
-                            <div>
-                              <h4 className="font-medium text-white">{exercise.name}</h4>
-                              <p className="text-sm text-gray-400 capitalize">{exercise.difficulty}</p>
-                              <div className="flex space-x-2 mt-1">
-                                {exercise.muscleGroups.slice(0, 3).map(muscle => (
-                                  <Badge key={muscle} variant="secondary" className="text-xs">
-                                    {muscle}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                          <Button
-                            onClick={() => {
-                              addExerciseToWorkout(exercise);
-                              // Don't close modal - let users add multiple exercises
-                            }}
-                            disabled={workoutPlan.exercises.some(ex => ex.id === exercise.id)}
-                            size="sm"
-                            className="bg-red-600 hover:bg-red-700"
-                            data-testid={`add-exercise-${exercise.id}`}
-                          >
-                            {workoutPlan.exercises.some(ex => ex.id === exercise.id) ? "Added" : "Add"}
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                  
-                  {/* No results message */}
-                  {(exercises.length > 0 ? exercises : MOCK_EXERCISES).filter((exercise: Exercise) => {
-                    const matchesSearch = exerciseSearchTerm === "" || 
-                      exercise.name.toLowerCase().includes(exerciseSearchTerm.toLowerCase()) ||
-                      exercise.muscleGroups.some((mg: string) => mg.toLowerCase().includes(exerciseSearchTerm.toLowerCase()));
-                    
-                    const matchesEquipment = selectedEquipmentFilter === "all" || 
-                      exercise.equipment.some((eq: string) => {
-                        if (selectedEquipmentFilter === "bodyweight") return eq.toLowerCase().includes("bodyweight") || eq.toLowerCase().includes("none");
-                        if (selectedEquipmentFilter === "dumbbells") return eq.toLowerCase().includes("dumbbell");
-                        if (selectedEquipmentFilter === "barbell") return eq.toLowerCase().includes("barbell");
-                        if (selectedEquipmentFilter === "resistance") return eq.toLowerCase().includes("band") || eq.toLowerCase().includes("resistance");
-                        if (selectedEquipmentFilter === "machine") return eq.toLowerCase().includes("machine") || eq.toLowerCase().includes("cable");
-                        return false;
-                      });
-
-                    const matchesBodyPart = selectedBodyParts.length === 0 || 
-                      exercise.muscleGroups.some((muscle: string) => 
-                        selectedBodyParts.some((bodyPart: string) => 
-                          BODY_PARTS.find(bp => bp.id === bodyPart)?.exercises.some((ex: string) => 
-                            muscle.toLowerCase().includes(ex.toLowerCase().split(' ')[0])
-                          )
-                        )
-                      );
-
-                    return matchesSearch && matchesEquipment && matchesBodyPart;
-                  }).length === 0 && (
-                    <div className="text-center py-8">
-                      <p className="text-gray-400">No exercises found matching your filters.</p>
-                      <p className="text-gray-500 text-sm mt-2">Try adjusting your search, equipment, or body part filters.</p>
-                    </div>
-                  )}
-                </div>
-              </div>
+      {/* Sticky Footer Summary */}
+      <div className="fixed bottom-14 left-0 right-0 z-50 border-t bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+        <div className="mx-auto max-w-4xl px-4 py-2 pb-[calc(env(safe-area-inset-bottom)+0.25rem)] flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+            <span className="font-medium">
+              {workoutName || "Untitled Workout"}
+              {workoutGoal && (
+                <span className="ml-1 text-xs font-normal text-slate-500">• {workoutGoal}</span>
+              )}
+            </span>
+            <Separator orientation="vertical" className="hidden md:block" />
+            <span>Sets: <b>{totals.totalSets}</b></span>
+            <span>Time: <b>~{totals.estMinutes} min</b></span>
+            <span>Volume: <b>{Intl.NumberFormat().format(totals.volume)} lb</b></span>
+            <span className="ml-auto text-xs uppercase tracking-wide text-slate-500 hidden md:inline">
+              {intensity === "easy" && "Easy Day"}
+              {intensity === "moderate" && "Moderate"}
+              {intensity === "hard" && "Hard"}
+              {intensity === "custom" && "Custom"}
+            </span>
           </div>
-        </DialogContent>
-      </Dialog>
-
-
-      {/* Save Workout Modal */}
-      <Dialog open={showSaveOptions} onOpenChange={setShowSaveOptions}>
-        <DialogContent className="sm:max-w-md bg-gray-800 border-gray-700 text-white">
-          <DialogHeader>
-            <DialogTitle>Save Workout</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Workout Name</Label>
-              <Input
-                placeholder="Enter workout name..."
-                value={workoutPlan.name}
-                onChange={(e) => setWorkoutPlan(prev => ({ ...prev, name: e.target.value }))}
-                className="bg-gray-700 border-gray-600 mt-2"
-              />
-            </div>
-            <div>
-              <Label>Description (Optional)</Label>
-              <Textarea
-                placeholder="Describe your workout..."
-                value={workoutPlan.description}
-                onChange={(e) => setWorkoutPlan(prev => ({ ...prev, description: e.target.value }))}
-                className="bg-gray-700 border-gray-600 mt-2"
-                rows={3}
-              />
-            </div>
-            <div className="flex space-x-3 pt-4">
+           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <Button
+              className="h-10 flex-1 rounded-2xl text-sm sm:text-base bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 shadow-md shadow-indigo-500/40 disabled:opacity-60 disabled:shadow-none"
+              onClick={startWorkout}
+              disabled={exercises.length === 0}
+            >
+              <Play className="mr-2 h-4 w-4" />
+              Start Workout
+            </Button>
+            <div className="flex justify-end gap-2 sm:w-auto">
               <Button
                 variant="outline"
-                className="flex-1"
-                onClick={() => setShowSaveOptions(false)}
+                className="h-9 rounded-xl text-xs sm:text-sm"
+                onClick={() => saveForLaterMutation.mutate()}
+                disabled={saveForLaterMutation.isPending || exercises.length === 0}
               >
-                Cancel
+                <Save className="mr-2 h-4 w-4" />
+                {saveForLaterMutation.isPending ? "Saving..." : "Save"}
               </Button>
-              <Button
-                className="flex-1 bg-green-600 hover:bg-green-700"
-                onClick={() => {
-                  toast({
-                    title: "Workout Saved!",
-                    description: `"${workoutPlan.name || 'Unnamed Workout'}" saved to your workouts`
-                  });
-                  setShowSaveOptions(false);
-                }}
-              >
-                Save Workout
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Share Workout Modal */}
-      <Dialog open={showPostOptions} onOpenChange={setShowPostOptions}>
-        <DialogContent className="sm:max-w-lg bg-gray-800 border-gray-700 text-white">
-          <DialogHeader>
-            <DialogTitle>Share Workout</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            {/* Workout Preview */}
-            <div className="bg-gray-700 rounded-lg p-4">
-              <h3 className="font-semibold mb-2">Workout Preview</h3>
-              <div className="text-sm text-gray-300 space-y-1">
-                <p><strong>Exercises:</strong> {workoutPlan.exercises.length}</p>
-                <p><strong>Duration:</strong> ~{workoutPlan.estimatedDuration} minutes</p>
-                <p><strong>Target:</strong> {selectedBodyParts.length > 0 ? 
-                  selectedBodyParts.map(id => BODY_PARTS.find(bp => bp.id === id)?.name).join(", ") : 
-                  "Full Body"
-                }</p>
-              </div>
-            </div>
-
-            {/* Post Details */}
-            <div>
-              <Label>Caption</Label>
-              <Textarea
-                placeholder="What's on your mind? Share your workout with the community..."
-                value={workoutPlan.description}
-                onChange={(e) => setWorkoutPlan(prev => ({ ...prev, description: e.target.value }))}
-                className="bg-gray-700 border-gray-600 mt-2"
-                rows={4}
-              />
-            </div>
-
-            <div>
-              <Label>Workout Name</Label>
-              <Input
-                placeholder="Name your workout..."
-                value={workoutPlan.name}
-                onChange={(e) => setWorkoutPlan(prev => ({ ...prev, name: e.target.value }))}
-                className="bg-gray-700 border-gray-600 mt-2"
-              />
-            </div>
-
-            {/* Exercise List */}
-            <div>
-              <Label>Exercises ({workoutPlan.exercises.length})</Label>
-              <div className="mt-2 space-y-2 max-h-32 overflow-y-auto">
-                {workoutPlan.exercises.map(exercise => (
-                  <div key={exercise.id} className="flex justify-between items-center bg-gray-700 p-2 rounded text-sm">
-                    <span>{exercise.name}</span>
-                    <span className="text-gray-400">{exercise.targetSets || 3} sets × {exercise.targetReps || 10} reps</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex space-x-3 pt-4">
               <Button
                 variant="outline"
-                className="flex-1"
-                onClick={() => setShowPostOptions(false)}
+                className="h-9 rounded-xl text-xs sm:text-sm"
+                onClick={postWorkoutNow}
+                disabled={exercises.length === 0}
               >
-                Cancel
-              </Button>
-              <Button
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
-                onClick={async () => {
-                  try {
-                    const response = await fetch("/api/posts", {
-                      method: "POST",
-                      headers: {
-                        "Content-Type": "application/json",
-                      },
-                      body: JSON.stringify({
-                        userId: "44595091", // Current user ID
-                        type: "workout",
-                        caption: workoutPlan.description || `Check out my workout: ${workoutPlan.name || 'Custom Workout'}! 💪`,
-                        workoutData: {
-                          workoutType: workoutPlan.name || 'Custom Workout',
-                          duration: Math.round(workoutPlan.estimatedDuration),
-                          calories: Math.round(workoutPlan.estimatedDuration * 6), // Estimate 6 calories per minute
-                          exercises: workoutPlan.exercises.map(ex => ({
-                            name: ex.name,
-                            sets: Array.from({ length: ex.targetSets || 3 }, (_, i) => ({
-                              reps: ex.targetReps || 10,
-                              rest: ex.restTime || 60
-                            })),
-                            notes: `Target: ${ex.targetSets || 3} sets × ${ex.targetReps || 10} reps`
-                          })),
-                          // Legacy fields for backward compatibility
-                          sets: workoutPlan.exercises.reduce((total, ex) => total + (ex.targetSets || 3), 0),
-                          reps: `${workoutPlan.exercises.length} exercises`
-                        }
-                      }),
-                    });
-
-                    if (!response.ok) {
-                      throw new Error("Failed to create post");
-                    }
-
-                    toast({
-                      title: "Workout Shared!",
-                      description: "Your workout has been posted to the community"
-                    });
-                    
-                    // Invalidate posts cache to refresh feed
-                    queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
-                    
-                    setShowPostOptions(false);
-                    setLocation("/");
-                  } catch (error) {
-                    toast({
-                      title: "Share Failed",
-                      description: "Failed to share workout. Please try again.",
-                      variant: "destructive"
-                    });
-                  }
-                }}
-              >
-                <Share className="h-4 w-4 mr-2" />
-                Post Workout
+                <Share2 className="mr-2 h-4 w-4" />
+                Share
               </Button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </div>
+      {showPicker && <ExercisePickerModal onClose={() => setShowPicker(false)} onSelect={ex => { addExerciseFromLibrary(ex); setShowPicker(false); }} search={pickerSearch} setSearch={setPickerSearch} />}
+    </div>
+  );
+}
+
+function ExerciseCard({ index, ex, onRemove, onChange }: { index: number; ex: ExerciseRow; onRemove: () => void; onChange: (updater: (e: ExerciseRow) => ExerciseRow) => void; }) {
+  const volume = ex.sets.reduce((v, s) => v + (s.weight || 0) * (s.reps || 0), 0);
+
+  function addSet() {
+    onChange((e) => ({ ...e, sets: [...e.sets, { id: crypto.randomUUID(), reps: 10, weight: 0, restTime: 90 }] }));
+  }
+  function removeSet(id: string) {
+    onChange((e) => ({ ...e, sets: e.sets.filter((s) => s.id !== id) }));
+  }
+  function updateSet(id: string, patch: Partial<SetRow>) {
+    onChange((e) => ({ ...e, sets: e.sets.map((s) => (s.id === id ? { ...s, ...patch } : s)) }));
+  }
+
+  return (
+    <Card className="border-slate-200 shadow-sm">
+      <CardHeader className="pb-2">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="text-sm text-slate-500">Exercise {index}</div>
+            <CardTitle className="text-2xl tracking-tight">{ex.name}</CardTitle>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Badge variant="outline">Volume: {Intl.NumberFormat().format(volume)} lb</Badge>
+              <Badge variant="outline">Sets: {ex.sets.length}</Badge>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={onRemove} className="text-rose-600 hover:text-rose-700"><Trash2 className="h-5 w-5"/></Button>
+            <Button variant="outline" size="icon" onClick={() => onChange((e) => ({ ...e, expanded: !e.expanded }))}>
+              {ex.expanded ? <ChevronUp className="h-5 w-5"/> : <ChevronDown className="h-5 w-5"/>}
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        {ex.expanded && (
+          <div className="overflow-hidden rounded-xl border border-slate-200">
+            {/* Header Row */}
+            <div className="grid grid-cols-12 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600">
+              <div className="col-span-2">Set</div>
+              <div className="col-span-3">Reps</div>
+              <div className="col-span-3">Weight (lb)</div>
+              <div className="col-span-3">Rest (sec)</div>
+              <div className="col-span-1" />
+            </div>
+
+            {/* Rows */}
+            {ex.sets.map((s, i) => (
+              <div key={s.id} className="grid grid-cols-12 items-center px-4 py-3 border-t text-base">
+                <div className="col-span-2 text-slate-600">{i + 1}</div>
+                <div className="col-span-3 flex items-center gap-2">
+                  <StepInput value={s.reps} onChange={(v) => updateSet(s.id, { reps: v })} min={1} max={50} />
+                </div>
+                <div className="col-span-3 flex items-center gap-2">
+                  <StepInput value={s.weight || 0} onChange={(v) => updateSet(s.id, { weight: v })} min={0} max={2000} />
+                </div>
+                <div className="col-span-3 flex items-center gap-2">
+                  <StepInput value={s.restTime || 90} onChange={(v) => updateSet(s.id, { restTime: v })} min={15} max={600} step={5} />
+                </div>
+                <div className="col-span-1 flex justify-end">
+                  <Button variant="ghost" size="icon" onClick={() => removeSet(s.id)} className="text-rose-600 hover:text-rose-700"><Trash2 className="h-5 w-5"/></Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {ex.expanded && (
+          <div className="mt-3 flex items-center justify-between">
+            <div className="flex-1 pr-4">
+              <Label htmlFor={`notes-${ex.id}`} className="text-sm text-slate-600">Notes</Label>
+              <Input id={`notes-${ex.id}`} value={ex.notes} onChange={(e) => onChange((e0) => ({ ...e0, notes: e.target.value }))} placeholder="Form cues, tempo, PR attempts…" className="mt-1 h-11" />
+            </div>
+            <Button onClick={addSet} className="h-11 rounded-xl bg-slate-900 hover:bg-black text-white"><Plus className="mr-2 h-4 w-4"/>Add Set</Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function StepInput({ value, onChange, min = 0, max = 999, step = 1 }: { value: number; onChange: (v: number) => void; min?: number; max?: number; step?: number; }) {
+  return (
+    <div className="flex items-center gap-2">
+      <Button type="button" variant="outline" size="icon" className="h-9 w-9" onClick={() => onChange(Math.max(min, value - step))}>–</Button>
+      <Input type="number" className="h-11 w-24 text-center text-base" value={value} onChange={(e) => onChange(Number(e.target.value))} min={min} max={max} step={step} />
+      <Button type="button" variant="outline" size="icon" className="h-9 w-9" onClick={() => onChange(Math.min(max, value + step))}>+</Button>
+    </div>
+  );
+}
+
+function ExercisePickerModal({ onClose, onSelect, search, setSearch }: { onClose: () => void; onSelect: (ex: LibraryExercise) => void; search: string; setSearch: (v: string) => void }) {
+  const { data: libraryExercises = [] } = useQuery<LibraryExercise[]>({ queryKey: ["/api/exercises"] });
+
+  // Step 1: choose body part or "See All"
+  const [stage, setStage] = useState<'choose' | 'list'>("choose");
+  const [selectedPart, setSelectedPart] = useState<string | 'all' | null>(null);
+
+  // Friendly labels + alias matching to exercise.muscleGroups values
+  const PARTS: { key: string; label: string; aliases: string[] }[] = [
+    { key: 'chest', label: 'Chest', aliases: ['chest','pecs'] },
+    { key: 'back', label: 'Back', aliases: ['back','lats','lower_back'] },
+    { key: 'shoulders', label: 'Shoulders', aliases: ['shoulders','delts'] },
+    { key: 'arms', label: 'Arms', aliases: ['biceps','triceps','forearms','arms'] },
+    { key: 'legs', label: 'Legs', aliases: ['quadriceps','hamstrings','calves','legs'] },
+    { key: 'glutes', label: 'Glutes', aliases: ['glutes'] },
+    { key: 'core', label: 'Core', aliases: ['core','abs','obliques'] },
+    { key: 'traps', label: 'Traps', aliases: ['traps'] },
+  ];
+
+  const matchesPart = (ex: LibraryExercise, partKey: string) => {
+    const part = PARTS.find(p => p.key === partKey);
+    if (!part) return true;
+    const groups = (ex.muscleGroups || []).map(g => g.toLowerCase());
+    return part.aliases.some(a => groups.includes(a));
+  };
+
+  const filtered = [...libraryExercises]
+    .filter(ex => (selectedPart && selectedPart !== 'all') ? matchesPart(ex, selectedPart) : true)
+    .filter(ex => ex.name.toLowerCase().includes(search.toLowerCase()))
+    .sort((a,b) => a.name.localeCompare(b.name));
+
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between px-4 py-3 border-b">
+          <h2 className="text-lg font-semibold">Add From Library</h2>
+          <Button variant="ghost" size="sm" onClick={onClose}>Close</Button>
+        </div>
+
+        {stage === 'choose' && (
+          <div className="p-4">
+            <p className="text-sm text-slate-600 mb-3">Choose a body part to target, or see all exercises.</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
+              {PARTS.map(p => (
+                <Button key={p.key} variant="outline" className="justify-start" onClick={() => { setSelectedPart(p.key); setStage('list'); }}>
+                  {p.label}
+                </Button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button onClick={() => { setSelectedPart('all'); setStage('list'); }} className="bg-indigo-600 hover:bg-indigo-700">
+                See All Exercises
+              </Button>
+              <Input placeholder="Quick search (optional)" value={search} onChange={e => setSearch(e.target.value)} />
+            </div>
+          </div>
+        )}
+
+        {stage === 'list' && (
+          <>
+            <div className="p-4 border-b flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setStage('choose')}>Change Body Part</Button>
+              <div className="text-sm text-slate-600">
+                {selectedPart === 'all' ? 'All exercises' : `Body part: ${PARTS.find(p => p.key === selectedPart)?.label || ''}`}
+              </div>
+            </div>
+            <div className="p-4 border-b">
+              <Input placeholder="Search exercises" value={search} onChange={e => setSearch(e.target.value)} />
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+              {filtered.map(ex => (
+                <div key={ex.id} className="flex items-center justify-between border rounded-lg px-3 py-2 hover:bg-indigo-50">
+                  <div className="flex flex-col">
+                    <span className="font-medium">{ex.name}</span>
+                    <span className="text-xs text-slate-500">{(ex.muscleGroups||[]).slice(0,3).join(', ')}</span>
+                  </div>
+                  <Button size="sm" onClick={() => onSelect(ex)}>Add</Button>
+                </div>
+              ))}
+              {filtered.length === 0 && <p className="text-sm text-slate-500">No matches.</p>}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

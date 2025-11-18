@@ -28,6 +28,9 @@ import Landing from "./pages/landing";
 import SearchPage from "./pages/search";
 import Notifications from "./pages/notifications";
 import Messages from "./pages/messages";
+import WorkoutHistory from "./pages/workout-history";
+import SavedWorkouts from "./pages/saved-workouts";
+import SampleWorkout from "./pages/sample-workout.tsx";
 
 
 
@@ -47,7 +50,7 @@ function BottomNavigation() {
   ];
 
   return (
-    <nav className="fixed bottom-0 w-full bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-50">
+    <nav className="fixed bottom-0 w-full bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-40 h-14">
       <div className="flex items-center justify-around py-2">
         {navItems.map(({ path, icon: Icon, label }) => {
           const isActive = location === path;
@@ -89,6 +92,9 @@ function Router() {
           <Route path="/exercise-library" component={ExerciseLibrary} />
           <Route path="/workout-session" component={WorkoutSession} />
           <Route path="/build-workout" component={BuildWorkout} />
+          <Route path="/workout-history" component={WorkoutHistory} />
+          <Route path="/saved-workouts" component={SavedWorkouts} />
+          <Route path="/sample-workout" component={SampleWorkout} />
 
           <Route path="/progress" component={Progress} />
           <Route path="/progress-insights" component={ProgressInsightsPage} />

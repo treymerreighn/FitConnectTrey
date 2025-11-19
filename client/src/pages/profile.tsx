@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,8 @@ import { CURRENT_USER_ID } from "@/lib/constants";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { uploadImage } from "@/lib/imageUpload";
+import { Link } from "@/components/ui/link";
+import { useAuth } from "@/hooks/useAuth";
 // apiRequest is not used directly here; use the `api` wrapper instead
 import type { User as UserType, Post, ProgressEntry } from "@shared/schema";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
@@ -323,42 +326,75 @@ export default function Profile() {
   const { toast } = useToast();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("posts");
+  const [openFollowList, setOpenFollowList] = useState<"followers" | "following" | null>(null);
+  const { user: authUser } = useAuth();
+  const authUserId = (authUser as UserType | undefined)?.id;
+  const canonicalViewerId = authUserId || CURRENT_USER_ID;
+  const FOLLOW_BUTTON_BASE_CLASS = "min-w-[110px] text-sm font-medium border transition-colors disabled:opacity-80";
+  const getFollowButtonClass = (isFollowing: boolean) =>
+    `${FOLLOW_BUTTON_BASE_CLASS} ${
+      isFollowing
+        ? "bg-gray-200 text-gray-700 border-gray-200 hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:border-gray-700"
+        : "bg-fit-green text-white border-fit-green hover:bg-fit-green/90 dark:border-fit-green"
+    }`;
 
   // Fetch the signed-in viewer so we can know following state
-  const { data: viewer } = useQuery<UserType | null>({
-    queryKey: [`/api/users/${CURRENT_USER_ID}`],
-    queryFn: () => api.getUserById(CURRENT_USER_ID),
+  const { data: viewerData } = useQuery<UserType | null>({
+    queryKey: [`/api/users/${canonicalViewerId}`],
+    queryFn: async () => {
+      try {
+        return await api.getUserById(canonicalViewerId);
+      } catch (_err) {
+        return null;
+      }
+    },
+  });
+  const { data: allUsers = [] } = useQuery<UserType[]>({
+    queryKey: ["/api/users"],
   });
 
   // Determine if we're viewing another user's profile via route param
   const [, routeParams] = useRoute("/profile/:id");
   const routeUserId = (routeParams as any)?.id;
 
-  // Fetch current/target user data (if route param present, show that user's profile)
+  const fallbackAuthUser = authUserId ? allUsers.find((u) => u.id === authUserId) : undefined;
+  const fallbackCanonicalUser = allUsers.find((u) => u.id === canonicalViewerId);
+  const fallbackFirstUser = allUsers.length > 0 ? allUsers[0] : undefined;
+
+  const resolvedViewer =
+    viewerData ||
+    fallbackAuthUser ||
+    fallbackCanonicalUser ||
+    fallbackFirstUser ||
+    null;
+
+  const viewerId = resolvedViewer?.id ?? canonicalViewerId;
+  const resolverFollowing = resolvedViewer?.following ?? [];
+  const viewerKeyTuple = viewerId ? (["/api/users", viewerId] as const) : null;
+  const viewerKeyString = viewerId ? ([`/api/users/${viewerId}`] as const) : null;
+  const fallbackViewerTuple = viewerId && viewerId !== canonicalViewerId ? (["/api/users", canonicalViewerId] as const) : null;
+  const fallbackViewerString = viewerId && viewerId !== canonicalViewerId ? ([`/api/users/${canonicalViewerId}`] as const) : null;
+
+  const profileUserId = routeUserId || resolvedViewer?.id || fallbackFirstUser?.id;
+  const profileUserKeyTuple = profileUserId ? (["/api/users", profileUserId] as const) : null;
+  const profileUserKeyString = profileUserId ? ([`/api/users/${profileUserId}`] as const) : null;
+
   const { data: currentUser, isLoading: userLoading } = useQuery<UserType | null>({
-    queryKey: ["/api/users", routeUserId || CURRENT_USER_ID],
+    queryKey: profileUserKeyTuple ?? ["/api/users", "pending-profile"],
     queryFn: async () => {
-      const targetId = routeUserId || CURRENT_USER_ID;
+      if (!profileUserId) return null;
       try {
-        return await api.getUserById(targetId);
+        return await api.getUserById(profileUserId);
       } catch (err) {
-        // If fetching target user fails and no explicit param, fall back to first user
-        if (!routeUserId) {
-          try {
-            const users = await api.getUsers();
-            return users && users.length ? users[0] : null;
-          } catch (_e) {
-            return null;
-          }
-        }
         return null;
       }
     },
+    enabled: Boolean(profileUserId),
   });
 
   // Determine the profile being viewed and whether it's the current user's own profile
-  const userId = routeUserId || currentUser?.id || CURRENT_USER_ID;
-  const isOwner = routeUserId ? routeUserId === CURRENT_USER_ID : true;
+  const userId = profileUserId ?? viewerId;
+  const isOwner = profileUserId === viewerId;
   const { data: userPosts = [], isLoading: postsLoading } = useQuery<Post[]>({
     queryKey: ["/api/posts", "user", userId],
     queryFn: () => api.getPostsByUserId(userId),
@@ -374,7 +410,6 @@ export default function Profile() {
     },
     enabled: Boolean(currentUser),
   });
-
   const form = useForm<EditProfileData>({
     resolver: zodResolver(editProfileSchema),
     defaultValues: {
@@ -390,62 +425,143 @@ export default function Profile() {
   // Follow/unfollow mutation for profile page actions
   const followMutation = useMutation({
     mutationFn: async (targetUserId: string) => {
-      const isFollowing = viewer?.following?.includes(targetUserId);
+      const isFollowing = resolverFollowing.includes(targetUserId);
       if (isFollowing) {
-        return api.unfollowUser(targetUserId, CURRENT_USER_ID);
+        return api.unfollowUser(targetUserId, viewerId);
       }
-      return api.followUser(targetUserId, CURRENT_USER_ID);
+      return api.followUser(targetUserId, viewerId);
     },
     onMutate: async (targetUserId: string) => {
-      await queryClient.cancelQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
+      if (viewerKeyTuple) await queryClient.cancelQueries({ queryKey: viewerKeyTuple });
+      if (viewerKeyString) await queryClient.cancelQueries({ queryKey: viewerKeyString });
+      if (fallbackViewerTuple) await queryClient.cancelQueries({ queryKey: fallbackViewerTuple });
+      if (fallbackViewerString) await queryClient.cancelQueries({ queryKey: fallbackViewerString });
       await queryClient.cancelQueries({ queryKey: ["/api/users"] });
+      if (profileUserKeyTuple) await queryClient.cancelQueries({ queryKey: profileUserKeyTuple });
+      if (profileUserKeyString) await queryClient.cancelQueries({ queryKey: profileUserKeyString });
 
-      const previousViewer = queryClient.getQueryData(["/api/users", CURRENT_USER_ID]);
-      const previousUsers = queryClient.getQueryData(["/api/users"]);
+      const previousViewerArray = viewerKeyTuple
+        ? queryClient.getQueryData<UserType>(viewerKeyTuple)
+        : undefined;
+      const previousViewerString = viewerKeyString
+        ? queryClient.getQueryData<UserType>(viewerKeyString)
+        : undefined;
+      const previousFallbackArray = fallbackViewerTuple
+        ? queryClient.getQueryData<UserType>(fallbackViewerTuple)
+        : undefined;
+      const previousFallbackString = fallbackViewerString
+        ? queryClient.getQueryData<UserType>(fallbackViewerString)
+        : undefined;
+      const previousUsers = queryClient.getQueryData<UserType[]>(["/api/users"]);
+      const previousProfileArray = profileUserKeyTuple
+        ? queryClient.getQueryData<UserType>(profileUserKeyTuple)
+        : undefined;
+      const previousProfileString = profileUserKeyString
+        ? queryClient.getQueryData<UserType>(profileUserKeyString)
+        : undefined;
 
-      // Optimistically update viewer
-      if (previousViewer) {
-        const isFollowing = (previousViewer as any).following?.includes(targetUserId);
-        const newFollowing = isFollowing
-          ? (previousViewer as any).following?.filter((id: string) => id !== targetUserId) || []
-          : [...((previousViewer as any).following || []), targetUserId];
-        queryClient.setQueryData(["/api/users", CURRENT_USER_ID], { ...(previousViewer as any), following: newFollowing });
+      const currentlyFollowing =
+        resolverFollowing.includes(targetUserId) ||
+        Boolean(previousViewerArray?.following?.includes(targetUserId)) ||
+        Boolean(previousViewerString?.following?.includes(targetUserId));
+
+      const adjustFollowing = (user?: UserType | null) => {
+        if (!user) return user;
+        const next = new Set(user.following || []);
+        if (currentlyFollowing) {
+          next.delete(targetUserId);
+        } else {
+          next.add(targetUserId);
+        }
+        return { ...user, following: Array.from(next) } as UserType;
+      };
+
+      const adjustFollowers = (user?: UserType | null) => {
+        if (!user) return user;
+        const followers = new Set(user.followers || []);
+        if (currentlyFollowing) {
+          followers.delete(viewerId);
+        } else {
+          followers.add(viewerId);
+        }
+        return { ...user, followers: Array.from(followers) } as UserType;
+      };
+
+      const viewerArrayNext = adjustFollowing(previousViewerArray);
+      if (viewerArrayNext && viewerKeyTuple) {
+        queryClient.setQueryData(viewerKeyTuple, viewerArrayNext);
+      }
+      const viewerStringNext = adjustFollowing(previousViewerString);
+      if (viewerStringNext && viewerKeyString) {
+        queryClient.setQueryData(viewerKeyString, viewerStringNext);
+      }
+      if (fallbackViewerTuple) {
+        const fallbackArrayNext = adjustFollowing(previousFallbackArray);
+        if (fallbackArrayNext) {
+          queryClient.setQueryData(fallbackViewerTuple, fallbackArrayNext);
+        }
+      }
+      if (fallbackViewerString) {
+        const fallbackStringNext = adjustFollowing(previousFallbackString);
+        if (fallbackStringNext) {
+          queryClient.setQueryData(fallbackViewerString, fallbackStringNext);
+        }
       }
 
-      // Optimistically update users list follower arrays
       if (previousUsers) {
-        const updated = (previousUsers as any[]).map((u) => {
+        const updatedUsers = previousUsers.map((u) => {
           if (u.id !== targetUserId) return u;
-          const isFollowing = u.followers?.includes(CURRENT_USER_ID);
-          const newFollowers = isFollowing
-            ? u.followers?.filter((id: string) => id !== CURRENT_USER_ID) || []
-            : [...(u.followers || []), CURRENT_USER_ID];
-          return { ...u, followers: newFollowers };
+          const followers = new Set(u.followers || []);
+          if (currentlyFollowing) {
+            followers.delete(viewerId);
+          } else {
+            followers.add(viewerId);
+          }
+          return { ...u, followers: Array.from(followers) } as UserType;
         });
-        queryClient.setQueryData(["/api/users"], updated);
+        queryClient.setQueryData(["/api/users"], updatedUsers);
       }
 
-      // Also update the displayed profile user's followers if cached at ["/api/users", userId]
-      const previousProfileUser = queryClient.getQueryData(["/api/users", userId]);
-      if (previousProfileUser) {
-        const isFollowing = (previousProfileUser as any).followers?.includes(CURRENT_USER_ID);
-        const newFollowers = isFollowing
-          ? (previousProfileUser as any).followers?.filter((id: string) => id !== CURRENT_USER_ID) || []
-          : [...((previousProfileUser as any).followers || []), CURRENT_USER_ID];
-        queryClient.setQueryData(["/api/users", userId], { ...(previousProfileUser as any), followers: newFollowers });
+      const profileArrayNext = adjustFollowers(previousProfileArray);
+      if (profileArrayNext && profileUserKeyTuple) {
+        queryClient.setQueryData(profileUserKeyTuple, profileArrayNext);
+      }
+      const profileStringNext = adjustFollowers(previousProfileString);
+      if (profileStringNext && profileUserKeyString) {
+        queryClient.setQueryData(profileUserKeyString, profileStringNext);
       }
 
-      return { previousViewer, previousUsers, previousProfileUser };
+      return {
+        previousViewerArray,
+        previousViewerString,
+        previousFallbackArray,
+        previousFallbackString,
+        previousUsers,
+        previousProfileArray,
+        previousProfileString,
+      };
     },
-    onError: (err, targetUserId, context: any) => {
-      if (context?.previousViewer) queryClient.setQueryData(["/api/users", CURRENT_USER_ID], context.previousViewer);
+    onError: (_err, _targetUserId, context: any) => {
+      if (viewerKeyTuple && context?.previousViewerArray) queryClient.setQueryData(viewerKeyTuple, context.previousViewerArray);
+      if (viewerKeyString && context?.previousViewerString) queryClient.setQueryData(viewerKeyString, context.previousViewerString);
+      if (fallbackViewerTuple && context?.previousFallbackArray) queryClient.setQueryData(fallbackViewerTuple, context.previousFallbackArray);
+      if (fallbackViewerString && context?.previousFallbackString) queryClient.setQueryData(fallbackViewerString, context.previousFallbackString);
       if (context?.previousUsers) queryClient.setQueryData(["/api/users"], context.previousUsers);
-      if (context?.previousProfileUser) queryClient.setQueryData(["/api/users", userId], context.previousProfileUser);
+      if (profileUserKeyTuple && context?.previousProfileArray) queryClient.setQueryData(profileUserKeyTuple, context.previousProfileArray);
+      if (profileUserKeyString && context?.previousProfileString) queryClient.setQueryData(profileUserKeyString, context.previousProfileString);
     },
-    onSettled: () => {
+    onSettled: (_data, _error, targetUserId) => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
-      queryClient.invalidateQueries({ queryKey: ["/api/users", userId] });
+      if (viewerKeyTuple) queryClient.invalidateQueries({ queryKey: viewerKeyTuple });
+      if (viewerKeyString) queryClient.invalidateQueries({ queryKey: viewerKeyString });
+      if (fallbackViewerTuple) queryClient.invalidateQueries({ queryKey: fallbackViewerTuple });
+      if (fallbackViewerString) queryClient.invalidateQueries({ queryKey: fallbackViewerString });
+      if (profileUserKeyTuple) queryClient.invalidateQueries({ queryKey: profileUserKeyTuple });
+      if (profileUserKeyString) queryClient.invalidateQueries({ queryKey: profileUserKeyString });
+      if (targetUserId) {
+        queryClient.invalidateQueries({ queryKey: ["/api/users", targetUserId] });
+        queryClient.invalidateQueries({ queryKey: [`/api/users/${targetUserId}`] });
+      }
     },
   });
 
@@ -454,16 +570,26 @@ export default function Profile() {
       return api.updateUser(id, updates);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
+      if (viewerKeyTuple) queryClient.invalidateQueries({ queryKey: viewerKeyTuple });
+      if (viewerKeyString) queryClient.invalidateQueries({ queryKey: viewerKeyString });
+      if (fallbackViewerTuple) queryClient.invalidateQueries({ queryKey: fallbackViewerTuple });
+      if (fallbackViewerString) queryClient.invalidateQueries({ queryKey: fallbackViewerString });
+      if (profileUserKeyTuple) queryClient.invalidateQueries({ queryKey: profileUserKeyTuple });
+      if (profileUserKeyString) queryClient.invalidateQueries({ queryKey: profileUserKeyString });
     },
   });
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: EditProfileData) => {
-      return api.updateUser(CURRENT_USER_ID, data);
+      return api.updateUser(userId, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
+      if (viewerKeyTuple) queryClient.invalidateQueries({ queryKey: viewerKeyTuple });
+      if (viewerKeyString) queryClient.invalidateQueries({ queryKey: viewerKeyString });
+      if (fallbackViewerTuple) queryClient.invalidateQueries({ queryKey: fallbackViewerTuple });
+      if (fallbackViewerString) queryClient.invalidateQueries({ queryKey: fallbackViewerString });
+      if (profileUserKeyTuple) queryClient.invalidateQueries({ queryKey: profileUserKeyTuple });
+      if (profileUserKeyString) queryClient.invalidateQueries({ queryKey: profileUserKeyString });
       toast({
         title: "Profile updated",
         description: "Your profile has been successfully updated.",
@@ -487,7 +613,7 @@ export default function Profile() {
       const result = await uploadImage(file);
       if (result.success) {
         await updateUserMutation.mutateAsync({ 
-          id: currentUser?.id || CURRENT_USER_ID, 
+          id: userId, 
           updates: { avatar: result.url }
         });
         toast({
@@ -592,9 +718,73 @@ export default function Profile() {
   const latestProgress = (progressEntries && progressEntries.length > 0) ? progressEntries[0] : null;
   const currentWeight = latestProgress?.weight ?? null;
   const currentHeight = (currentUser as any)?.height ?? null;
+  const followerUsers = (currentUser.followers ?? [])
+    .map(id => allUsers.find(u => u.id === id))
+    .filter((u): u is UserType => Boolean(u));
+  const followingUsers = (currentUser.following ?? [])
+    .map(id => allUsers.find(u => u.id === id))
+    .filter((u): u is UserType => Boolean(u));
+  const selectedList = openFollowList === "followers"
+    ? followerUsers
+    : openFollowList === "following"
+    ? followingUsers
+    : [];
+  const selectedTitle = openFollowList === "followers"
+    ? "Followers"
+    : openFollowList === "following"
+    ? "Following"
+    : "";
+  const modalPronoun = isOwner ? "you" : currentUser.name || "this user";
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <Dialog open={Boolean(openFollowList)} onOpenChange={(value) => { if (!value) setOpenFollowList(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{selectedTitle}</DialogTitle>
+            {selectedTitle && (
+              <DialogDescription>
+                {selectedList.length > 0
+                  ? `People ${selectedTitle === "Followers" ? "who follow" : "followed by"} ${modalPronoun}.`
+                  : `No ${selectedTitle.toLowerCase()} to show yet.`}
+              </DialogDescription>
+            )}
+          </DialogHeader>
+          <div className="space-y-3 max-h-80 overflow-y-auto">
+            {selectedList.length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">No users to show yet.</p>
+            ) : (
+              selectedList.map(user => (
+                <div key={user.id} className="flex items-center justify-between gap-3">
+                  <Link
+                    href={`/profile/${user.id}`}
+                    onClick={() => setOpenFollowList(null)}
+                    className="flex items-center gap-3 flex-1"
+                  >
+                    <UserAvatar
+                      src={user.avatar || ""}
+                      alt={user.name || user.username}
+                      name={user.name || user.username}
+                      className="h-10 w-10"
+                    />
+                    <div>
+                      <p className="font-medium text-sm text-gray-900 dark:text-gray-100">
+                        {user.name || user.username}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">@{user.username}</p>
+                    </div>
+                  </Link>
+                  {user.bio && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[160px]">
+                      {user.bio}
+                    </p>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
       <div className="max-w-4xl mx-auto px-4 py-6">
         {/* Profile Header */}
         <Card className="mb-6">
@@ -677,14 +867,14 @@ export default function Profile() {
                     ) : (
                       // Show follow/following button for other users
                       (() => {
-                        const isFollowing = viewer?.following?.includes(userId);
+                        const isFollowing = resolverFollowing.includes(userId);
                         return (
                           <Button
-                            variant={isFollowing ? "outline" : "default"}
+                            variant="outline"
                             size="sm"
                             onClick={() => followMutation.mutate(userId)}
                             disabled={followMutation.isPending}
-                            className={isFollowing ? "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-white" : "bg-fit-green hover:bg-fit-green/90"}
+                            className={getFollowButtonClass(isFollowing)}
                           >
                             {isFollowing ? "Following" : "Follow"}
                           </Button>
@@ -697,16 +887,48 @@ export default function Profile() {
                   {/* Stats */}
                 <div className="flex space-x-6 mt-4 pt-4 border-t">
                   <div className="text-center">
-                    <div className="text-xl font-bold text-gray-900 dark:text-white">
-                      {currentUser.followers?.length || 0}
-                    </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">Followers</div>
+                    {isOwner ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="flex flex-col items-center px-3 py-1 h-auto gap-0 text-gray-900 dark:text-white hover:bg-transparent"
+                        onClick={() => setOpenFollowList("followers")}
+                      >
+                        <span className="text-xl font-bold text-inherit">
+                          {currentUser.followers?.length || 0}
+                        </span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Followers</span>
+                      </Button>
+                    ) : (
+                      <>
+                        <div className="text-xl font-bold text-gray-900 dark:text-white">
+                          {currentUser.followers?.length || 0}
+                        </div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">Followers</div>
+                      </>
+                    )}
                   </div>
                   <div className="text-center">
-                    <div className="text-xl font-bold text-gray-900 dark:text-white">
-                      {currentUser.following?.length || 0}
-                    </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">Following</div>
+                    {isOwner ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="flex flex-col items-center px-3 py-1 h-auto gap-0 text-gray-900 dark:text-white hover:bg-transparent"
+                        onClick={() => setOpenFollowList("following")}
+                      >
+                        <span className="text-xl font-bold text-inherit">
+                          {currentUser.following?.length || 0}
+                        </span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Following</span>
+                      </Button>
+                    ) : (
+                      <>
+                        <div className="text-xl font-bold text-gray-900 dark:text-white">
+                          {currentUser.following?.length || 0}
+                        </div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">Following</div>
+                      </>
+                    )}
                   </div>
                   <div className="text-center">
                     <div className="text-xl font-bold text-gray-900 dark:text-white">
@@ -855,13 +1077,6 @@ export default function Profile() {
                             <button className="flex items-center space-x-1 hover:text-red-500">
                               <Heart className="h-4 w-4" />
                               <span>{post.likes}</span>
-                            </button>
-                            <button className="flex items-center space-x-1 hover:text-blue-500">
-                              <MessageCircle className="h-4 w-4" />
-                              <span>{post.comments}</span>
-                            </button>
-                            <button className="flex items-center space-x-1 hover:text-green-500">
-                              <Share2 className="h-4 w-4" />
                             </button>
                           </div>
                         </div>

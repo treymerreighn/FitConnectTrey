@@ -14,19 +14,60 @@ import { CURRENT_USER_ID } from "@/lib/constants";
 import type { User, Recipe, CommunityMeal } from "@shared/schema";
 import { MealHelper } from "@/components/meal-helper";
 import ShareMealModal from "@/components/share-meal-modal";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function SearchPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isShareMealModalOpen, setIsShareMealModalOpen] = useState(false);
   const queryClient = useQueryClient();
+  const usersQueryKey = ["/api/users"] as const;
+  const FOLLOW_BUTTON_BASE_CLASS = "min-w-[110px] text-sm font-medium border transition-colors disabled:opacity-80";
+  const [sessionFollowState, setSessionFollowState] = useState<Map<string, boolean>>(() => new Map());
+  const { user: authUser } = useAuth();
+  const authUserId = (authUser as User | undefined)?.id;
+  const canonicalViewerId = authUserId || CURRENT_USER_ID;
+  const getFollowButtonClass = (isFollowing: boolean) =>
+    `${FOLLOW_BUTTON_BASE_CLASS} ${
+      isFollowing
+        ? "bg-gray-200 text-gray-700 border-gray-200 hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:border-gray-700"
+        : "bg-fit-green text-white border-fit-green hover:bg-fit-green/90 dark:border-fit-green"
+    }`;
 
   const { data: users = [] } = useQuery<User[]>({
-    queryKey: ["/api/users"],
+    queryKey: usersQueryKey,
+  });
+  const filteredUsers = users.filter((user) => {
+    if (!searchTerm) return true;
+    return (
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.username.toLowerCase().includes(searchTerm.toLowerCase())
+    );
   });
 
-  const { data: currentUser } = useQuery<User>({
-    queryKey: [`/api/users/${CURRENT_USER_ID}`],
+  const { data: viewerData } = useQuery<User>({
+    queryKey: [`/api/users/${canonicalViewerId}`],
   });
+
+  const resolvedViewer =
+    viewerData ||
+    (authUserId ? filteredUsers.find((u) => u.id === authUserId) : undefined) ||
+    filteredUsers.find((u) => u.id === CURRENT_USER_ID) ||
+    null;
+
+  const viewerId = resolvedViewer?.id || authUserId || CURRENT_USER_ID;
+  const viewerKeyTuple = ["/api/users", viewerId] as const;
+  const viewerKeyString = [`/api/users/${viewerId}`] as const;
+  const fallbackViewerTuple = viewerId === canonicalViewerId ? null : (["/api/users", canonicalViewerId] as const);
+  const fallbackViewerString = viewerId === canonicalViewerId ? null : ([`/api/users/${canonicalViewerId}`] as const);
+
+  const resolvedFollowing = resolvedViewer?.following ?? [];
+
+  const computeIsFollowing = (userId: string) => {
+    if (sessionFollowState.has(userId)) {
+      return sessionFollowState.get(userId)!;
+    }
+    return resolvedFollowing.includes(userId);
+  };
 
   // Fetch community meals
   const { data: communityMeals = [] } = useQuery<CommunityMeal[]>({
@@ -35,76 +76,135 @@ export default function SearchPage() {
 
   const followMutation = useMutation({
     mutationFn: async (targetUserId: string) => {
-      const isFollowing = currentUser?.following?.includes(targetUserId);
+      const isFollowing = computeIsFollowing(targetUserId);
       const endpoint = isFollowing ? "unfollow" : "follow";
-      return apiRequest("POST", `/api/users/${targetUserId}/${endpoint}`, { followerId: CURRENT_USER_ID });
+      return apiRequest("POST", `/api/users/${targetUserId}/${endpoint}`, { followerId: viewerId });
     },
     onMutate: async (targetUserId: string) => {
-      await queryClient.cancelQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
-      await queryClient.cancelQueries({ queryKey: ["/api/users"] });
+      await queryClient.cancelQueries({ queryKey: viewerKeyTuple });
+      await queryClient.cancelQueries({ queryKey: viewerKeyString });
+      if (fallbackViewerTuple) await queryClient.cancelQueries({ queryKey: fallbackViewerTuple });
+      if (fallbackViewerString) await queryClient.cancelQueries({ queryKey: fallbackViewerString });
+      await queryClient.cancelQueries({ queryKey: usersQueryKey });
 
-      const previousViewerArray = queryClient.getQueryData<User>(["/api/users", CURRENT_USER_ID]);
-      const previousViewerString = queryClient.getQueryData<User>([`/api/users/${CURRENT_USER_ID}`]);
-      const previousUsers = queryClient.getQueryData<User[]>(["/api/users"]);
+      const previousViewerArray = queryClient.getQueryData<User>(viewerKeyTuple);
+      const previousViewerString = queryClient.getQueryData<User>(viewerKeyString);
+      const previousFallbackArray = fallbackViewerTuple
+        ? queryClient.getQueryData<User>(fallbackViewerTuple)
+        : undefined;
+      const previousFallbackString = fallbackViewerString
+        ? queryClient.getQueryData<User>(fallbackViewerString)
+        : undefined;
+      const previousUsers = queryClient.getQueryData<User[]>(usersQueryKey);
+      const previousSessionFollowState = new Map(sessionFollowState);
 
-      const previousViewer = previousViewerArray || previousViewerString;
+      const currentlyFollowing = computeIsFollowing(targetUserId);
 
-      // Optimistically update viewer following list (update both cached key shapes if present)
-      if (previousViewer) {
-        const isFollowing = previousViewer.following?.includes(targetUserId);
-        const newFollowing = isFollowing
-          ? previousViewer.following?.filter((id) => id !== targetUserId) || []
-          : [...(previousViewer.following || []), targetUserId];
-
-        if (previousViewerArray) {
-          queryClient.setQueryData(["/api/users", CURRENT_USER_ID], { ...previousViewerArray, following: newFollowing } as User);
+      const adjustFollowing = (user?: User | null) => {
+        if (!user) return user;
+        const next = new Set(user.following || []);
+        if (currentlyFollowing) {
+          next.delete(targetUserId);
+        } else {
+          next.add(targetUserId);
         }
-        if (previousViewerString) {
-          queryClient.setQueryData([`/api/users/${CURRENT_USER_ID}`], { ...previousViewerString, following: newFollowing } as User);
+        return { ...user, following: Array.from(next) } as User;
+      };
+
+      const viewerArrayNext = adjustFollowing(previousViewerArray);
+      if (viewerArrayNext) {
+        queryClient.setQueryData(viewerKeyTuple, viewerArrayNext);
+      }
+      const viewerStringNext = adjustFollowing(previousViewerString);
+      if (viewerStringNext) {
+        queryClient.setQueryData(viewerKeyString, viewerStringNext);
+      }
+      if (fallbackViewerTuple) {
+        const fallbackArrayNext = adjustFollowing(previousFallbackArray);
+        if (fallbackArrayNext) {
+          queryClient.setQueryData(fallbackViewerTuple, fallbackArrayNext);
+        }
+      }
+      if (fallbackViewerString) {
+        const fallbackStringNext = adjustFollowing(previousFallbackString);
+        if (fallbackStringNext) {
+          queryClient.setQueryData(fallbackViewerString, fallbackStringNext);
         }
       }
 
-      // Optimistically update users list follower arrays
       if (previousUsers) {
         const updated = previousUsers.map((u) => {
           if (u.id !== targetUserId) return u;
-          const isFollowing = u.followers?.includes(CURRENT_USER_ID);
-          const newFollowers = isFollowing
-            ? u.followers?.filter((id) => id !== CURRENT_USER_ID) || []
-            : [...(u.followers || []), CURRENT_USER_ID];
-          return { ...u, followers: newFollowers };
+          const followerSet = new Set(u.followers || []);
+          if (currentlyFollowing) {
+            followerSet.delete(viewerId);
+          } else {
+            followerSet.add(viewerId);
+          }
+          return { ...u, followers: Array.from(followerSet) };
         });
-        queryClient.setQueryData(["/api/users"], updated);
+        queryClient.setQueryData(usersQueryKey, updated);
       }
 
-      return { previousViewerArray, previousViewerString, previousUsers };
+      setSessionFollowState((prev) => {
+        const next = new Map(prev);
+        next.set(targetUserId, !currentlyFollowing);
+        return next;
+      });
+
+      return {
+        previousViewerArray,
+        previousViewerString,
+        previousFallbackArray,
+        previousFallbackString,
+        previousUsers,
+        previousSessionFollowState,
+      };
     },
-    onError: (err, targetUserId, context: any) => {
-      if (context?.previousViewer) {
-        queryClient.setQueryData(["/api/users", CURRENT_USER_ID], context.previousViewer);
+    onError: (_err, _targetUserId, context: any) => {
+      if (context?.previousViewerArray) {
+        queryClient.setQueryData(viewerKeyTuple, context.previousViewerArray);
+      }
+      if (context?.previousViewerString) {
+        queryClient.setQueryData(viewerKeyString, context.previousViewerString);
+      }
+      if (fallbackViewerTuple && context?.previousFallbackArray) {
+        queryClient.setQueryData(fallbackViewerTuple, context.previousFallbackArray);
+      }
+      if (fallbackViewerString && context?.previousFallbackString) {
+        queryClient.setQueryData(fallbackViewerString, context.previousFallbackString);
       }
       if (context?.previousUsers) {
-        queryClient.setQueryData(["/api/users"], context.previousUsers);
+        queryClient.setQueryData(usersQueryKey, context.previousUsers);
+      }
+      if (context?.previousSessionFollowState) {
+        setSessionFollowState(new Map(context.previousSessionFollowState));
       }
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
+    onSettled: (_, __, targetUserId) => {
+      queryClient.invalidateQueries({ queryKey: usersQueryKey });
+      queryClient.invalidateQueries({ queryKey: viewerKeyTuple });
+      queryClient.invalidateQueries({ queryKey: viewerKeyString });
+      if (fallbackViewerTuple) {
+        queryClient.invalidateQueries({ queryKey: fallbackViewerTuple });
+      }
+      if (fallbackViewerString) {
+        queryClient.invalidateQueries({ queryKey: fallbackViewerString });
+      }
+      queryClient.invalidateQueries({ queryKey: ["/api/users", targetUserId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${targetUserId}`] });
     },
   });
 
-  const filteredUsers = users.filter((user) => {
-    if (!searchTerm) return user.id !== CURRENT_USER_ID;
-    return (
-      user.id !== CURRENT_USER_ID &&
-      (user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.username.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
-  });
-
-  const suggestedUsers = users.filter(
-    (user) => user.id !== CURRENT_USER_ID && !currentUser?.following?.includes(user.id)
-  ).slice(0, 5);
+  const visibleUsers = filteredUsers.filter((user) => user.id !== viewerId);
+  const suggestedUsers = filteredUsers
+    .filter((user) => {
+      if (user.id === viewerId) return false;
+      const isFollowing = computeIsFollowing(user.id);
+      if (!isFollowing) return true;
+      return sessionFollowState.get(user.id) === true;
+    })
+    .slice(0, 5);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
@@ -147,13 +247,13 @@ export default function SearchPage() {
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Search Results
             </h2>
-            {filteredUsers.length === 0 ? (
+            {visibleUsers.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-gray-500 dark:text-gray-400">No users found</p>
               </div>
             ) : (
               <div className="space-y-2">
-                {filteredUsers.map((user) => (
+                {visibleUsers.map((user) => (
                   <Card key={user.id} className="border-0 shadow-sm">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
@@ -183,14 +283,14 @@ export default function SearchPage() {
                         </div>
                         {
                           (() => {
-                            const isFollowing = currentUser?.following?.includes(user.id);
+                            const isFollowing = computeIsFollowing(user.id);
                             return (
                               <Button
-                                variant={isFollowing ? "outline" : "default"}
+                                variant="outline"
                                 size="sm"
                                 onClick={() => followMutation.mutate(user.id)}
                                 disabled={followMutation.isPending}
-                                className={isFollowing ? "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-white" : "bg-fit-green hover:bg-fit-green/90"}
+                                className={getFollowButtonClass(isFollowing)}
                               >
                                 {isFollowing ? "Following" : "Follow"}
                               </Button>
@@ -248,14 +348,14 @@ export default function SearchPage() {
                         </div>
                         {
                           (() => {
-                            const isFollowing = currentUser?.following?.includes(user.id);
+                            const isFollowing = computeIsFollowing(user.id);
                             return (
                               <Button
-                                variant={isFollowing ? "outline" : "default"}
+                                variant="outline"
                                 size="sm"
                                 onClick={() => followMutation.mutate(user.id)}
                                 disabled={followMutation.isPending}
-                                className={isFollowing ? "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-white" : "bg-fit-green hover:bg-fit-green/90"}
+                                className={getFollowButtonClass(isFollowing)}
                               >
                                 {isFollowing ? "Following" : "Follow"}
                               </Button>

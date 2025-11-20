@@ -24,6 +24,7 @@ import { ProgressChart } from "@/components/ProgressChart";
 import { ProgressPhotoAnalysis } from "@/components/ProgressPhotoAnalysis";
 import { apiRequest } from "@/lib/queryClient";
 import { Link } from "@/components/ui/link";
+import { PremiumFeatureDialog } from "@/components/premium-feature-dialog";
 
 const progressFormSchema = z.object({
   date: z.string(),
@@ -43,8 +44,10 @@ export default function Progress() {
   const [showWeightChart, setShowWeightChart] = useState(true);
   const [weightTrendAnalysis, setWeightTrendAnalysis] = useState<any>(null);
   const [selectedPhotoForAnalysis, setSelectedPhotoForAnalysis] = useState<string | null>(null);
+  const [showPremiumDialog, setShowPremiumDialog] = useState(false);
 
   const userId = user?.id || CURRENT_USER_ID;
+  const isPremiumUser = user?.isPremium || user?.subscriptionTier === 'premium' || user?.subscriptionTier === 'pro';
 
   const { data: progressEntries = [], isLoading } = useQuery<ProgressEntry[]>({
     queryKey: ["/api/progress", userId],
@@ -171,6 +174,13 @@ export default function Progress() {
 
   const handleGenerateInsights = (entry: ProgressEntry) => {
     if (entry.photos.length === 0) return;
+    
+    // Check if user has premium access
+    if (!isPremiumUser) {
+      setShowPremiumDialog(true);
+      return;
+    }
+    
     setGeneratingInsights(entry.id);
     generateInsightsMutation.mutate({ id: entry.id, photos: entry.photos });
   };
@@ -236,41 +246,22 @@ export default function Progress() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
-      <div className="px-4 py-6">
+      <div className="px-4 py-4 sm:py-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-fit-green rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-4 h-4 text-white" />
+        <div className="space-y-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-fit-green rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+              </div>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Progress</h1>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Progress Tracking</h1>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Link href="/progress-insights" asChild>
-              <Button variant="outline" className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-none hover:from-purple-600 hover:to-pink-600">
-                <Brain className="w-4 h-4 mr-2" />
-                AI Insights
-                <Crown className="w-3 h-3 ml-1" />
-              </Button>
-            </Link>
-            <Link href="/exercise-progress" asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2"
-              >
-                <BarChart3 className="w-4 h-4" />
-                Exercise Progress
-              </Button>
-            </Link>
-          </div>
-          
-          <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-fit-green hover:bg-fit-green/90">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Entry
+            
+            <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+              <DialogTrigger asChild>
+              <Button className="bg-fit-green hover:bg-fit-green/90" size="sm">
+                <Plus className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Add Entry</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
@@ -370,21 +361,60 @@ export default function Progress() {
                 </Button>
               </form>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
+          
+          {/* Action Buttons Row */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => {
+                if (!isPremiumUser) {
+                  setShowPremiumDialog(true);
+                } else {
+                  window.location.href = '/progress-insights';
+                }
+              }}
+              className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-none hover:from-purple-600 hover:to-pink-600 flex-shrink-0"
+            >
+              <Brain className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="text-xs sm:text-sm">AI Insights</span>
+              <Crown className="w-3 h-3 ml-1" />
+            </Button>
+            
+            <Link href="/exercise-progress" asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-1 sm:gap-2 flex-shrink-0"
+              >
+                <BarChart3 className="w-4 h-4" />
+                <span className="text-xs sm:text-sm">Exercise Progress</span>
+              </Button>
+            </Link>
+          </div>
         </div>
+
+        {/* Premium Feature Dialog */}
+        <PremiumFeatureDialog 
+          open={showPremiumDialog}
+          onOpenChange={setShowPremiumDialog}
+          featureName="AI Progress Insights"
+        />
 
         {/* Progress Overview */}
         {progressStats && (
-          <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
             <Card className="border-0 shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
-                    <Weight className="w-5 h-5 text-blue-500" />
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center space-x-2 sm:space-x-3">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Weight className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Weight Change</p>
-                    <p className={`text-lg font-bold ${progressStats.weightChange && progressStats.weightChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Weight Change</p>
+                    <p className={`text-base sm:text-lg font-bold truncate ${progressStats.weightChange && progressStats.weightChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {progressStats.weightChange ? 
                         `${progressStats.weightChange > 0 ? '+' : ''}${progressStats.weightChange.toFixed(1)} lbs` : 
                         'No data'
@@ -394,14 +424,12 @@ export default function Progress() {
                 </div>
               </CardContent>
             </Card>
-            
-
           </div>
         )}
 
         {/* Progress Entries */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Progress History</h2>
+        <div className="space-y-3 sm:space-y-4">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Progress History</h2>
           
           {progressEntries.length === 0 ? (
             <div className="text-center py-12">
@@ -442,17 +470,19 @@ export default function Progress() {
                         size="sm"
                         onClick={() => handleGenerateInsights(entry)}
                         disabled={generatingInsights === entry.id}
-                        className="border-fit-green text-fit-green hover:bg-fit-green hover:text-white"
+                        className="border-purple-500 text-purple-600 hover:bg-purple-500 hover:text-white text-xs sm:text-sm"
                       >
                         {generatingInsights === entry.id ? (
                           <>
-                            <div className="w-4 h-4 border-2 border-fit-green border-t-transparent rounded-full animate-spin mr-2" />
-                            Analyzing...
+                            <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mr-1 sm:mr-2" />
+                            <span className="hidden sm:inline">Analyzing...</span>
                           </>
                         ) : (
                           <>
-                            <Sparkles className="w-4 h-4 mr-2" />
-                            Generate AI Insights
+                            <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                            <span className="hidden sm:inline">AI Insights</span>
+                            <span className="sm:hidden">AI</span>
+                            {!isPremiumUser && <Crown className="w-3 h-3 ml-1" />}
                           </>
                         )}
                       </Button>
@@ -460,13 +490,13 @@ export default function Progress() {
                   </div>
                 </CardHeader>
                 
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3 sm:space-y-4">
                   {/* Metrics */}
-                  <div className="flex flex-wrap gap-4">
+                  <div className="flex flex-wrap gap-2 sm:gap-4">
                     {entry.weight && (
-                      <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                        <div className="text-2xl font-bold text-gray-900 dark:text-white">{entry.weight}</div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">lbs</div>
+                      <div className="text-center p-2 sm:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg min-w-[70px]">
+                        <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{entry.weight}</div>
+                        <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">lbs</div>
                       </div>
                     )}
                     
@@ -476,14 +506,14 @@ export default function Progress() {
                   {/* Progress Photos */}
                   {entry.photos.length > 0 && (
                     <div>
-                      <h4 className="font-medium text-gray-900 dark:text-white mb-2">Progress Photos</h4>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      <h4 className="text-sm sm:text-base font-medium text-gray-900 dark:text-white mb-2">Progress Photos</h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                         {entry.photos.map((photo, index) => (
                           <img
                             key={index}
                             src={photo}
                             alt={`Progress ${index + 1}`}
-                            className="w-full h-40 object-cover rounded-lg"
+                            className="w-full h-32 sm:h-40 object-cover rounded-lg"
                           />
                         ))}
                       </div>
@@ -492,35 +522,38 @@ export default function Progress() {
 
                   {/* AI Insights */}
                   {entry.aiInsights && (
-                    <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
-                      <div className="flex items-center space-x-2 mb-3">
-                        <Brain className="w-5 h-5 text-purple-600" />
-                        <h4 className="font-medium text-purple-900 dark:text-purple-100">AI Insights</h4>
-                        <Badge variant="secondary" className="bg-purple-100 text-purple-800">
-                          {Math.round((entry.aiInsights.confidenceScore || 0) * 100)}% confidence
+                    <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 p-3 sm:p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                      <div className="flex items-center flex-wrap gap-2 mb-3">
+                        <div className="flex items-center space-x-2">
+                          <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
+                          <h4 className="text-sm sm:text-base font-medium text-purple-900 dark:text-purple-100">AI Insights</h4>
+                        </div>
+                        <Badge variant="secondary" className="bg-purple-100 text-purple-800 text-xs">
+                          <Crown className="w-3 h-3 mr-1" />
+                          Premium
                         </Badge>
                       </div>
                       
                       {entry.aiInsights.bodyComposition && (
                         <div className="mb-3">
-                          <h5 className="font-medium text-gray-900 dark:text-white mb-1">Body Composition Analysis</h5>
-                          <p className="text-sm text-gray-700 dark:text-gray-300">{entry.aiInsights.bodyComposition}</p>
+                          <h5 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white mb-1">Body Composition Analysis</h5>
+                          <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">{entry.aiInsights.bodyComposition}</p>
                         </div>
                       )}
                       
                       {entry.aiInsights.progressAnalysis && (
                         <div className="mb-3">
-                          <h5 className="font-medium text-gray-900 dark:text-white mb-1">Progress Analysis</h5>
-                          <p className="text-sm text-gray-700 dark:text-gray-300">{entry.aiInsights.progressAnalysis}</p>
+                          <h5 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white mb-1">Progress Analysis</h5>
+                          <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">{entry.aiInsights.progressAnalysis}</p>
                         </div>
                       )}
                       
                       {entry.aiInsights.recommendations.length > 0 && (
                         <div>
-                          <h5 className="font-medium text-gray-900 dark:text-white mb-2">Recommendations</h5>
+                          <h5 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white mb-2">Recommendations</h5>
                           <ul className="space-y-1">
                             {entry.aiInsights.recommendations.map((rec, index) => (
-                              <li key={index} className="text-sm text-gray-700 dark:text-gray-300 flex items-start space-x-2">
+                              <li key={index} className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 flex items-start space-x-2">
                                 <span className="text-purple-600 mt-1">•</span>
                                 <span>{rec}</span>
                               </li>
@@ -534,8 +567,8 @@ export default function Progress() {
                   {/* Notes */}
                   {entry.notes && (
                     <div>
-                      <h4 className="font-medium text-gray-900 dark:text-white mb-2">Notes</h4>
-                      <p className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+                      <h4 className="text-sm sm:text-base font-medium text-gray-900 dark:text-white mb-2">Notes</h4>
+                      <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 p-2 sm:p-3 rounded-lg">
                         {entry.notes}
                       </p>
                     </div>

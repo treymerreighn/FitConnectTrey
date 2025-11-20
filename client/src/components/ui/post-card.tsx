@@ -292,7 +292,9 @@ export function PostCard({ post }: PostCardProps) {
                 />
                 <div>
                   <p className="font-semibold text-sm text-gray-900 dark:text-gray-100">{user?.name}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">@{user?.username} • {formatTimeAgo(post.createdAt)}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {user?.location ? `${user.location} • ` : ''}{formatTimeAgo(post.createdAt)}
+                  </p>
                 </div>
               </div>
             </Link>

@@ -13,6 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { CURRENT_USER_ID } from "@/lib/constants";
+import { useAuth } from "@/hooks/useAuth";
+import { PremiumFeatureDialog } from "@/components/premium-feature-dialog";
 import { 
   Camera, 
   Brain, 
@@ -55,13 +57,16 @@ export function ProgressInsights({ userId = CURRENT_USER_ID }: ProgressInsightsP
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [showCompareDialog, setShowCompareDialog] = useState(false);
+  const [showPremiumDialog, setShowPremiumDialog] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const [currentImageUrl, setCurrentImageUrl] = useState("");
   const [previousImageUrl, setPreviousImageUrl] = useState("");
   const [timePeriod, setTimePeriod] = useState("1 month");
   
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
+  const isPremiumUser = user?.isPremium || user?.subscriptionTier === 'premium' || user?.subscriptionTier === 'pro';
 
   // Fetch user's progress insights
   const { data: insights, isLoading } = useQuery({
@@ -217,9 +222,18 @@ export function ProgressInsights({ userId = CURRENT_USER_ID }: ProgressInsightsP
         <div className="flex gap-2">
           <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
             <DialogTrigger asChild>
-              <Button className="bg-purple-600 hover:bg-purple-700">
+              <Button 
+                className="bg-purple-600 hover:bg-purple-700"
+                onClick={(e) => {
+                  if (!isPremiumUser) {
+                    e.preventDefault();
+                    setShowPremiumDialog(true);
+                  }
+                }}
+              >
                 <Upload className="w-4 h-4 mr-2" />
                 Analyze Photo
+                {!isPremiumUser && <Crown className="w-3 h-3 ml-1" />}
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -294,9 +308,18 @@ export function ProgressInsights({ userId = CURRENT_USER_ID }: ProgressInsightsP
 
           <Dialog open={showCompareDialog} onOpenChange={setShowCompareDialog}>
             <DialogTrigger asChild>
-              <Button variant="outline">
+              <Button 
+                variant="outline"
+                onClick={(e) => {
+                  if (!isPremiumUser) {
+                    e.preventDefault();
+                    setShowPremiumDialog(true);
+                  }
+                }}
+              >
                 <GitCompare className="w-4 h-4 mr-2" />
                 Compare Photos
+                {!isPremiumUser && <Crown className="w-3 h-3 ml-1" />}
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -407,6 +430,13 @@ export function ProgressInsights({ userId = CURRENT_USER_ID }: ProgressInsightsP
           </Dialog>
         </div>
       </div>
+
+      {/* Premium Feature Dialog */}
+      <PremiumFeatureDialog 
+        open={showPremiumDialog}
+        onOpenChange={setShowPremiumDialog}
+        featureName="AI Progress Analysis"
+      />
 
       {/* Insights List */}
       {!insights || insights.length === 0 ? (

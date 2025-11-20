@@ -111,28 +111,28 @@ function ProgressInsightsTab({ userId, isOwner }: { userId: string; isOwner?: bo
   ].filter(item => item.value > 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Progress Overview Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
         <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
-          <CardContent className="p-4 text-center">
-            <Activity className="w-6 h-6 mx-auto mb-2 text-blue-600" />
-            <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+          <CardContent className="p-3 sm:p-4 text-center">
+            <Activity className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-blue-600" />
+            <div className="text-lg sm:text-2xl font-bold text-blue-700 dark:text-blue-300">
               {progressEntries.length}
             </div>
-            <div className="text-xs text-blue-600 dark:text-blue-400">Progress Entries</div>
+            <div className="text-[10px] sm:text-xs text-blue-600 dark:text-blue-400">Progress Entries</div>
           </CardContent>
         </Card>
 
         <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20">
-          <CardContent className="p-4 text-center">
-            <Target className="w-6 h-6 mx-auto mb-2 text-green-600" />
-            <div className="text-2xl font-bold text-green-700 dark:text-green-300">
+          <CardContent className="p-3 sm:p-4 text-center">
+            <Target className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-green-600" />
+            <div className="text-lg sm:text-2xl font-bold text-green-700 dark:text-green-300">
               {isOwner ? (latestEntry?.weight ?? '--') : '--'}
             </div>
-            <div className="text-xs text-green-600 dark:text-green-400">Current Weight (lbs)</div>
+            <div className="text-[10px] sm:text-xs text-green-600 dark:text-green-400">Current Weight</div>
             {!isOwner && (
-              <div className="text-xs text-gray-400 mt-1 flex items-center justify-center gap-1">
+              <div className="text-[10px] sm:text-xs text-gray-400 mt-1 flex items-center justify-center gap-1">
                 <Lock className="w-3 h-3" />
                 <span>Private</span>
               </div>
@@ -141,12 +141,12 @@ function ProgressInsightsTab({ userId, isOwner }: { userId: string; isOwner?: bo
         </Card>
 
         <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20">
-          <CardContent className="p-4 text-center">
-            <TrendingUp className="w-6 h-6 mx-auto mb-2 text-purple-600" />
-            <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">
+          <CardContent className="p-3 sm:p-4 text-center">
+            <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-purple-600" />
+            <div className="text-lg sm:text-2xl font-bold text-purple-700 dark:text-purple-300">
               {isOwner ? (weightChange ? (weightChange > 0 ? '+' : '') + weightChange : '--') : '--'}
             </div>
-            <div className="text-xs text-purple-600 dark:text-purple-400">Weight Change (lbs)</div>
+            <div className="text-[10px] sm:text-xs text-purple-600 dark:text-purple-400">Weight Change</div>
           </CardContent>
         </Card>
 
@@ -785,22 +785,22 @@ export default function Profile() {
           </div>
         </DialogContent>
       </Dialog>
-      <div className="max-w-4xl mx-auto px-4 py-6">
+      <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {/* Profile Header */}
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-6">
+        <Card className="mb-4 sm:mb-6">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 md:space-x-6">
               {/* Avatar */}
               <div className="relative">
-                <Avatar className="w-24 h-24 md:w-32 md:h-32">
+                <Avatar className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32">
                   <AvatarImage src={currentUser.avatar || ""} alt={currentUser.name || ""} />
-                  <AvatarFallback className="text-2xl bg-fit-green text-white">
+                  <AvatarFallback className="text-xl sm:text-2xl bg-fit-green text-white">
                     {currentUser.name?.charAt(0).toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
                 {isOwner && (
-                  <label className="absolute -bottom-2 -right-2 rounded-full w-8 h-8 p-0 bg-fit-green hover:bg-fit-green/90 cursor-pointer flex items-center justify-center">
-                    <Camera className="h-4 w-4 text-white" />
+                  <label className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 rounded-full w-7 h-7 sm:w-8 sm:h-8 p-0 bg-fit-green hover:bg-fit-green/90 cursor-pointer flex items-center justify-center">
+                    <Camera className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
                     <input
                       type="file"
                       accept="image/*"
@@ -812,56 +812,54 @@ export default function Profile() {
               </div>
 
               {/* Profile Info */}
-              <div className="flex-1">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <div className="flex items-center space-x-2 mb-2">
-                      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center flex-wrap gap-2 mb-2">
+                      <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate">
                         {currentUser.name || "User"}
                       </h1>
                       {currentUser.isVerified && (
-                        <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                        <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
                           <Trophy className="h-3 w-3 mr-1" />
                           Verified
                         </Badge>
                       )}
                     </div>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
-                      @{currentUser.username}
-                    </p>
                     {currentUser.bio && (
-                      <p className="text-gray-700 dark:text-gray-300 mb-3 max-w-md">
+                      <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 mb-3 max-w-md line-clamp-3">
                         {currentUser.bio}
                       </p>
                     )}
-                    <div className="flex flex-wrap items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                       {currentUser.location && (
                         <div className="flex items-center space-x-1">
-                          <MapPin className="h-4 w-4" />
+                          <MapPin className="h-3 w-3 sm:h-4 sm:w-4" />
                           <span>{currentUser.location}</span>
                         </div>
                       )}
                       <div className="flex items-center space-x-1">
-                        <Calendar className="h-4 w-4" />
+                        <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
                         <span>Joined {joinDate}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex space-x-2 mt-4 md:mt-0">
+                  <div className="flex gap-2 flex-shrink-0">
                     {isOwner ? (
                       <>
                         <Button
                           onClick={() => setIsEditModalOpen(true)}
                           variant="outline"
-                          className="flex items-center space-x-2"
+                          size="sm"
+                          className="flex items-center gap-1 sm:gap-2"
                         >
-                          <Edit3 className="h-4 w-4" />
-                          <span>Edit Profile</span>
+                          <Edit3 className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <span className="text-xs sm:text-sm">Edit Profile</span>
                         </Button>
-                        <Button variant="outline" size="icon">
-                          <Settings className="h-4 w-4" />
+                        <Button variant="outline" size="sm" className="p-2">
+                          <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
                       </>
                     ) : (
@@ -885,67 +883,41 @@ export default function Profile() {
                 </div>
 
                   {/* Stats */}
-                <div className="flex space-x-6 mt-4 pt-4 border-t">
-                  <div className="text-center">
-                    {isOwner ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="flex flex-col items-center px-3 py-1 h-auto gap-0 text-gray-900 dark:text-white hover:bg-transparent"
-                        onClick={() => setOpenFollowList("followers")}
-                      >
-                        <span className="text-xl font-bold text-inherit">
-                          {currentUser.followers?.length || 0}
-                        </span>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">Followers</span>
-                      </Button>
-                    ) : (
-                      <>
-                        <div className="text-xl font-bold text-gray-900 dark:text-white">
-                          {currentUser.followers?.length || 0}
-                        </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">Followers</div>
-                      </>
-                    )}
+                <div className="grid grid-cols-4 gap-0 sm:gap-6 mt-3 sm:mt-4 pt-3 sm:pt-4 border-t -mx-[1.75rem] sm:-mx-6 px-0 sm:px-0">
+                  <div 
+                    className="text-center cursor-pointer hover:opacity-80 transition-opacity py-2"
+                    onClick={() => isOwner && setOpenFollowList("followers")}
+                  >
+                    <div className="text-base sm:text-xl font-bold text-gray-900 dark:text-white">
+                      {currentUser.followers?.length || 0}
+                    </div>
+                    <div className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 leading-tight">Followers</div>
                   </div>
-                  <div className="text-center">
-                    {isOwner ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="flex flex-col items-center px-3 py-1 h-auto gap-0 text-gray-900 dark:text-white hover:bg-transparent"
-                        onClick={() => setOpenFollowList("following")}
-                      >
-                        <span className="text-xl font-bold text-inherit">
-                          {currentUser.following?.length || 0}
-                        </span>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">Following</span>
-                      </Button>
-                    ) : (
-                      <>
-                        <div className="text-xl font-bold text-gray-900 dark:text-white">
-                          {currentUser.following?.length || 0}
-                        </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">Following</div>
-                      </>
-                    )}
+                  <div 
+                    className="text-center cursor-pointer hover:opacity-80 transition-opacity py-2"
+                    onClick={() => isOwner && setOpenFollowList("following")}
+                  >
+                    <div className="text-base sm:text-xl font-bold text-gray-900 dark:text-white">
+                      {currentUser.following?.length || 0}
+                    </div>
+                    <div className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 leading-tight">Following</div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-xl font-bold text-gray-900 dark:text-white">
+                  <div className="text-center py-2">
+                    <div className="text-base sm:text-xl font-bold text-gray-900 dark:text-white">
                       {totalWorkouts}
                     </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">Workouts</div>
+                    <div className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 leading-tight">Workouts</div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-xl font-bold text-gray-900 dark:text-white">
+                  <div className="text-center py-2">
+                    <div className="text-base sm:text-xl font-bold text-gray-900 dark:text-white">
                       {totalProgress}
                     </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">Progress</div>
+                    <div className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 leading-tight">Progress</div>
                   </div>
                 </div>
                 {/* Height / Weight (visible only to the profile owner) */}
                 {isOwner && (
-                  <div className="flex items-center space-x-6 mt-3 text-sm text-gray-600 dark:text-gray-400">
+                  <div className="flex flex-wrap items-center gap-3 sm:gap-6 mt-3 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                     <div className="flex items-center space-x-2">
                       <span className="text-xs text-gray-500">Height</span>
                       <span className="font-medium">{currentHeight ? `${currentHeight} in` : '—'}</span>
@@ -987,18 +959,18 @@ export default function Profile() {
         </Card>
 
         {/* Content Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-3 sm:space-y-4">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="posts" className="flex items-center space-x-2">
-              <MessageCircle className="h-4 w-4" />
+            <TabsTrigger value="posts" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4" />
               <span>Posts</span>
             </TabsTrigger>
-            <TabsTrigger value="workouts" className="flex items-center space-x-2">
-              <Dumbbell className="h-4 w-4" />
+            <TabsTrigger value="workouts" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <Dumbbell className="h-3 w-3 sm:h-4 sm:w-4" />
               <span>Workouts</span>
             </TabsTrigger>
-            <TabsTrigger value="progress" className="flex items-center space-x-2">
-              <TrendingUp className="h-4 w-4" />
+            <TabsTrigger value="progress" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
               <span>Progress</span>
             </TabsTrigger>
           </TabsList>
@@ -1032,20 +1004,20 @@ export default function Profile() {
                 </Button>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {userPosts.map((post) => (
                   <Card key={post.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start space-x-3">
-                        <Avatar className="w-10 h-10">
+                    <CardContent className="p-3 sm:p-4">
+                      <div className="flex items-start gap-2 sm:gap-3">
+                        <Avatar className="w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0">
                           <AvatarImage src={currentUser.avatar || ""} />
-                          <AvatarFallback className="bg-fit-green text-white text-sm">
+                          <AvatarFallback className="bg-fit-green text-white text-xs sm:text-sm">
                             {currentUser.name?.charAt(0).toUpperCase() || "U"}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <span className="font-medium text-gray-900 dark:text-white">
+                          <div className="flex items-center flex-wrap gap-1 sm:gap-2 mb-1">
+                            <span className="text-sm sm:text-base font-medium text-gray-900 dark:text-white truncate">
                               {currentUser.name || "User"}
                             </span>
                             <Badge variant="secondary" className="text-xs">
@@ -1055,7 +1027,7 @@ export default function Profile() {
                               {format(new Date(post.createdAt), "MMM d")}
                             </span>
                           </div>
-                          <p className="text-gray-700 dark:text-gray-300 mb-3">
+                          <p className="text-sm sm:text-base text-gray-900 dark:text-gray-100 mb-2 sm:mb-3 line-clamp-3">
                             {post.caption}
                           </p>
                           {post.images && post.images.length > 0 && (

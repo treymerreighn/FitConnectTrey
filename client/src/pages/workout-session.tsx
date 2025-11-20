@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useLocation } from 'wouter';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -7,7 +7,7 @@ import { Badge } from '../components/ui/badge';
 import { useToast } from '../hooks/use-toast';
 import { cn } from '../lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import { Loader2, Upload, FilePlus2 } from 'lucide-react';
+import { Loader2, PauseCircle, PlayCircle, Minus, Plus } from 'lucide-react';
 
 // Types for workout session based on unified schema
 interface WorkoutSet { reps: number; weight?: number; rest?: number; completed?: boolean; startedAt?: number; completedAt?: number; }
@@ -18,9 +18,35 @@ interface ActiveWorkoutPlan { id?: string; name?: string; exercises: WorkoutExer
 const formatTime = (seconds: number) => { const m = Math.floor(seconds / 60); const s = seconds % 60; return `${m}:${s.toString().padStart(2, '0')}`; };
 
 // Parse encoded workout plan from query string
-const parsePlanFromLocation = (fullLocation: string): ActiveWorkoutPlan | null => {
-  const queryIndex = fullLocation.indexOf('?');
-  const search = queryIndex >= 0 ? fullLocation.substring(queryIndex) : '';
+const extractSearch = (input: string): string => {
+  if (typeof window !== 'undefined' && window.location?.search) {
+    return window.location.search;
+  }
+  const queryIndex = input.indexOf('?');
+  return queryIndex >= 0 ? input.substring(queryIndex) : '';
+};
+
+const getNumberOr = (value: any, fallback: number): number => {
+  return Number.isFinite(value) ? Number(value) : fallback;
+};
+
+const normalizeWorkoutSet = (set: any): WorkoutSet => {
+  const reps = getNumberOr(set?.reps, getNumberOr(set?.targetReps, 0));
+  const weight = Number.isFinite(set?.weight)
+    ? Number(set.weight)
+    : Number.isFinite(set?.targetWeight)
+      ? Number(set.targetWeight)
+      : undefined;
+  const rest = getNumberOr(set?.rest, getNumberOr(set?.restTime, 60));
+  return {
+    reps,
+    weight,
+    rest,
+    completed: false,
+  };
+};
+
+const parsePlanFromSearch = (search: string): ActiveWorkoutPlan | null => {
   const params = new URLSearchParams(search);
   const raw = params.get('plan');
   if (!raw) return null;
@@ -39,12 +65,7 @@ const parsePlanFromLocation = (fullLocation: string): ActiveWorkoutPlan | null =
           muscleGroup: ex.muscleGroup,
           equipment: ex.equipment,
           isTemplate: ex.isTemplate,
-          sets: (ex.sets || []).map((s: any) => ({
-            reps: s.reps ?? 0,
-            weight: s.weight,
-            rest: s.rest ?? 60,
-            completed: false,
-          }))
+          sets: (ex.sets || []).map(normalizeWorkoutSet)
         })),
         startedAt: Date.now()
       }
@@ -58,16 +79,47 @@ const parsePlanFromLocation = (fullLocation: string): ActiveWorkoutPlan | null =
 const WorkoutSession: React.FC = () => {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
-  const [plan, setPlan] = useState<ActiveWorkoutPlan | null>(() => parsePlanFromLocation(location));
+  const initialSearch = extractSearch(location);
+  const initialPlan = useMemo(() => parsePlanFromSearch(initialSearch), [initialSearch]);
+  const [plan, setPlan] = useState<ActiveWorkoutPlan | null>(initialPlan);
+  const planSourceRef = useRef<string | null>(initialPlan ? initialSearch : null);
   const [activeRest, setActiveRest] = useState<number | null>(null);
   const [restTarget, setRestTarget] = useState<number>(0);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState<number>(0);
   const [currentSetIndex, setCurrentSetIndex] = useState<number>(0);
   const [showFinishDialog, setShowFinishDialog] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [ticker, setTicker] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [pauseStartedAt, setPauseStartedAt] = useState<number | null>(null);
+  const [pauseAccumulated, setPauseAccumulated] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => setTicker((t) => t + 1), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (plan) {
+      setPauseAccumulated(0);
+      setPauseStartedAt(null);
+      setIsPaused(false);
+    }
+  }, [plan?.id]);
+
+  useEffect(() => {
+    const search = extractSearch(location);
+    if (!search || planSourceRef.current === search) return;
+    const parsed = parsePlanFromSearch(search);
+    if (parsed) {
+      planSourceRef.current = search;
+      setPlan(parsed);
+    }
+  }, [location]);
 
   // Tick down active rest timer
   useEffect(() => {
+    if (isPaused) return;
     let interval: any;
     if (activeRest !== null && activeRest > 0) {
       interval = setInterval(() => {
@@ -75,7 +127,7 @@ const WorkoutSession: React.FC = () => {
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [activeRest]);
+  }, [activeRest, isPaused]);
 
   // Aggregate stats
   const stats = useMemo(() => {
@@ -95,8 +147,11 @@ const WorkoutSession: React.FC = () => {
 
   const workoutElapsed = useMemo(() => {
     if (!plan) return 0;
-    return Math.floor((Date.now() - plan.startedAt) / 1000);
-  }, [plan, stats.completedSets]);
+    const now = Date.now();
+    const pausedSlice = isPaused && pauseStartedAt ? now - pauseStartedAt : 0;
+    const elapsedMs = now - plan.startedAt - pauseAccumulated - pausedSlice;
+    return Math.max(0, Math.floor(elapsedMs / 1000));
+  }, [plan, ticker, pauseAccumulated, isPaused, pauseStartedAt]);
 
   const handleSetChange = (exerciseIdx: number, setIdx: number, field: keyof WorkoutSet, value: number) => {
     setPlan(prev => {
@@ -111,8 +166,46 @@ const WorkoutSession: React.FC = () => {
   };
 
   const startRest = (seconds: number) => {
-    setRestTarget(seconds);
-    setActiveRest(seconds);
+    const safeSeconds = Math.max(0, Math.round(seconds || 0));
+    setRestTarget(safeSeconds);
+    setActiveRest(safeSeconds);
+  };
+
+  const adjustRestTimer = (delta: number) => {
+    setRestTarget(prev => Math.max(0, prev + delta));
+    setActiveRest(prev => (prev !== null ? Math.max(0, prev + delta) : prev));
+  };
+
+  const togglePause = () => {
+    if (isPaused) {
+      setPauseAccumulated(prev => prev + (pauseStartedAt ? Date.now() - pauseStartedAt : 0));
+      setPauseStartedAt(null);
+      setIsPaused(false);
+    } else {
+      setPauseStartedAt(Date.now());
+      setIsPaused(true);
+    }
+  };
+
+  const buildSnapshot = () => {
+    if (!plan) return null;
+    return {
+      workoutType: plan.name,
+      duration: Math.max(1, Math.floor(workoutElapsed / 60)) || 1,
+      calories: Math.round(stats.volume / 100) + 50,
+      exercises: plan.exercises.map(ex => ({
+        id: ex.id,
+        exerciseName: ex.name,
+        sets: ex.sets.map(s => ({ reps: s.reps, weight: s.weight || 0 }))
+      }))
+    };
+  };
+
+  const goToPostScreen = () => {
+    const snapshot = buildSnapshot();
+    if (!snapshot) return;
+    const encoded = encodeURIComponent(JSON.stringify(snapshot));
+    setLocation(`/create-post?type=workout&workoutData=${encoded}`);
   };
 
   const completeSet = (exerciseIdx: number, setIdx: number) => {
@@ -159,25 +252,18 @@ const WorkoutSession: React.FC = () => {
       await new Promise(res => setTimeout(res, 800));
       toast({ title: 'Workout saved', description: 'Session data persisted.' });
       setShowFinishDialog(false);
-      // After finish, route to post creation with snapshot encoded
-      const snapshot = {
-        workoutType: plan.name,
-        duration: Math.floor(workoutElapsed / 60),
-        calories: Math.round(stats.volume / 100) + 50, // rough heuristic
-        exercises: plan.exercises.map(ex => ({
-          id: ex.id,
-          exerciseName: ex.name,
-          sets: ex.sets.map(s => ({ reps: s.reps, weight: s.weight }))
-        }))
-      };
-      const encoded = encodeURIComponent(JSON.stringify(snapshot));
-      setLocation(`/create-post?type=workout&workoutData=${encoded}`);
+      goToPostScreen();
     } catch (e) {
       console.error(e);
       toast({ title: 'Save failed', description: 'Unable to save workout right now.', variant: 'destructive' });
     } finally {
       setSaving(false);
     }
+  };
+
+  const postWorkoutNow = () => {
+    if (!plan) return;
+    goToPostScreen();
   };
 
   if (!plan) {
@@ -204,6 +290,7 @@ const WorkoutSession: React.FC = () => {
           <div className="flex flex-col">
             <h1 className="text-xl font-semibold tracking-tight">{plan.name || 'Workout Session'}</h1>
             <p className="text-xs text-muted-foreground">Logging your sets in real time</p>
+            {isPaused && <span className="text-[11px] uppercase tracking-wide text-amber-600 font-semibold">Paused</span>}
           </div>
           <div className="flex items-center gap-6 text-sm">
             <div className="flex flex-col items-center">
@@ -218,10 +305,19 @@ const WorkoutSession: React.FC = () => {
               <span className="font-medium">Volume</span>
               <Badge variant="outline" className="text-xs">{stats.volume} kg</Badge>
             </div>
+              <Button variant={isPaused ? 'default' : 'outline'} size="sm" onClick={togglePause} className="flex items-center gap-1">
+                {isPaused ? <PlayCircle className="h-4 w-4" /> : <PauseCircle className="h-4 w-4" />}
+                {isPaused ? 'Resume' : 'Pause'}
+              </Button>
               <Button variant="outline" size="sm" onClick={() => setShowFinishDialog(true)} disabled={stats.completedSets === 0}>Finish</Button>
           </div>
         </div>
       </div>
+      {isPaused && (
+        <div className="bg-amber-100 border-y border-amber-200 text-amber-900 text-center text-sm py-2">
+          Workout paused — resume to continue timing and rest countdowns.
+        </div>
+      )}
 
       {/* Rest Timer Banner */}
       {activeRest !== null && (
@@ -232,6 +328,10 @@ const WorkoutSession: React.FC = () => {
               <Badge className="bg-amber-600 hover:bg-amber-600 text-white font-mono">{formatTime(activeRest)}</Badge>
             </div>
             <div className="flex gap-2">
+              <div className="flex items-center gap-1">
+                <Button size="icon" variant="ghost" onClick={() => adjustRestTimer(-5)} disabled={activeRest === null || activeRest <= 0}><Minus className="h-4 w-4" /></Button>
+                <Button size="icon" variant="ghost" onClick={() => adjustRestTimer(5)} disabled={activeRest === null}><Plus className="h-4 w-4" /></Button>
+              </div>
               <Button size="sm" variant="ghost" onClick={() => setActiveRest(null)}>Skip</Button>
               <Button size="sm" variant="outline" onClick={() => setActiveRest(restTarget)}>Restart</Button>
             </div>
@@ -315,7 +415,7 @@ const WorkoutSession: React.FC = () => {
                                 {set.completed ? (
                                   <Button size="sm" variant="ghost" onClick={() => undoSet(exIdx, setIdx)}>Undo</Button>
                                 ) : (
-                                  <Button size="sm" onClick={() => completeSet(exIdx, setIdx)} disabled={!set.reps}>Complete</Button>
+                                  <Button size="sm" onClick={() => completeSet(exIdx, setIdx)} disabled={!set.reps || isPaused}>Complete</Button>
                                 )}
                               </td>
                             </tr>
@@ -342,8 +442,9 @@ const WorkoutSession: React.FC = () => {
             <span className="text-muted-foreground">Sets: <span className="font-medium text-foreground">{stats.completedSets}/{stats.totalSets}</span></span>
             <span className="text-muted-foreground">Volume: <span className="font-medium text-foreground">{stats.volume} kg</span></span>
           </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Button size="sm" variant="outline" onClick={() => setLocation('/workouts')}>Exit</Button>
+              <Button size="sm" variant="secondary" onClick={postWorkoutNow}>Post Workout</Button>
               <Button size="sm" onClick={() => setShowFinishDialog(true)} disabled={stats.completedSets === 0}>Record & Post</Button>
             </div>
         </div>

@@ -22,9 +22,13 @@ export class PgStorage implements IStorage {
   private savedWorkouts: Map<string, SavedWorkout[]> = new Map(); // in-memory bookmark persistence
 
   private async seedData() {
-    // Check if data already exists
-    const existingUsers = await db.select().from(users).limit(1);
-    if (existingUsers.length > 0) return;
+    // Skip seeding if database is not available
+    if (!db) return;
+    
+    try {
+      // Check if data already exists
+      const existingUsers = await db.select().from(users).limit(1);
+      if (existingUsers.length > 0) return;
 
     // Seed users
     const seedUsers = [
@@ -171,6 +175,9 @@ export class PgStorage implements IStorage {
     }
 
     console.log("Database seeded successfully");
+    } catch (error) {
+      console.warn('⚠️  Could not seed database, will use empty state');
+    }
   }
 
   // Users

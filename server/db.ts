@@ -5,11 +5,18 @@ import * as schema from "../shared/db-schema.ts";
 let sql: any = null;
 export let db: any = null;
 
-// Initialize only if DATABASE_URL is provided; otherwise skip for local/dev
-// Only connect to the remote DB in production when DATABASE_URL is provided.
-if (process.env.DATABASE_URL && process.env.NODE_ENV === 'production') {
-  sql = neon(process.env.DATABASE_URL);
-  db = drizzle(sql, { schema });
+// Initialize database only if DATABASE_URL is provided
+// App will work in development without a database (using in-memory storage)
+if (process.env.DATABASE_URL) {
+  try {
+    sql = neon(process.env.DATABASE_URL);
+    db = drizzle(sql, { schema });
+    console.log('✅ Connected to PostgreSQL database');
+  } catch (error) {
+    console.warn('⚠️  Database connection failed, falling back to in-memory storage');
+    sql = null;
+    db = null;
+  }
 }
 
 // Create tables if they don't exist (no-op when DATABASE_URL not provided)
@@ -134,8 +141,12 @@ export async function initializeDatabase() {
       )
     `;
 
-    console.log("Database tables initialized successfully");
+    console.log("✅ Database tables initialized successfully");
   } catch (error) {
     console.error("Error initializing database:", error);
+    console.warn("⚠️  Falling back to in-memory storage");
+    // Reset db and sql to null so storage will use MemStorage
+    db = null;
+    sql = null;
   }
 }

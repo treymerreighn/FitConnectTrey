@@ -352,13 +352,23 @@ router.post("/api/posts/:id/unlike", async (req, res) => {
 router.post("/api/users/:id/follow", async (req, res) => {
   try {
     const { followerId } = req.body;
+    const targetUserId = req.params.id;
+    
+    console.log(`[Follow] Follower ${followerId} attempting to follow ${targetUserId}`);
+    
     if (!followerId) {
       return res.status(400).json({ error: "Follower ID is required" });
     }
     
-    await storage.followUser(followerId, req.params.id);
+    await storage.followUser(followerId, targetUserId);
+    
+    // Verify the follow was successful
+    const follower = await storage.getUserById(followerId);
+    console.log(`[Follow] Success! Follower ${followerId} now following:`, follower?.following || []);
+    
     res.json({ success: true });
   } catch (error) {
+    console.error('[Follow] Error:', error);
     res.status(500).json({ error: "Failed to follow user" });
   }
 });
@@ -366,13 +376,23 @@ router.post("/api/users/:id/follow", async (req, res) => {
 router.post("/api/users/:id/unfollow", async (req, res) => {
   try {
     const { followerId } = req.body;
+    const targetUserId = req.params.id;
+    
+    console.log(`[Unfollow] Follower ${followerId} attempting to unfollow ${targetUserId}`);
+    
     if (!followerId) {
       return res.status(400).json({ error: "Follower ID is required" });
     }
     
-    await storage.unfollowUser(followerId, req.params.id);
+    await storage.unfollowUser(followerId, targetUserId);
+    
+    // Verify the unfollow was successful
+    const follower = await storage.getUserById(followerId);
+    console.log(`[Unfollow] Success! Follower ${followerId} now following:`, follower?.following || []);
+    
     res.json({ success: true });
   } catch (error) {
+    console.error('[Unfollow] Error:', error);
     res.status(500).json({ error: "Failed to unfollow user" });
   }
 });

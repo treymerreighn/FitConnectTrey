@@ -22,10 +22,10 @@ export default function SearchPage() {
   const queryClient = useQueryClient();
   const usersQueryKey = ["/api/users"] as const;
   const FOLLOW_BUTTON_BASE_CLASS = "min-w-[110px] text-sm font-medium border transition-colors disabled:opacity-80";
-  const [sessionFollowState, setSessionFollowState] = useState<Map<string, boolean>>(() => new Map());
   const { user: authUser } = useAuth();
   const authUserId = (authUser as User | undefined)?.id;
-  const canonicalViewerId = authUserId || CURRENT_USER_ID;
+  const viewerId = authUserId || CURRENT_USER_ID;
+  
   const getFollowButtonClass = (isFollowing: boolean) =>
     `${FOLLOW_BUTTON_BASE_CLASS} ${
       isFollowing
@@ -33,9 +33,18 @@ export default function SearchPage() {
         : "bg-fit-green text-white border-fit-green hover:bg-fit-green/90 dark:border-fit-green"
     }`;
 
+  // Fetch all users
   const { data: users = [] } = useQuery<User[]>({
     queryKey: usersQueryKey,
   });
+  
+  // Fetch current viewer data
+  const { data: viewerData } = useQuery<User>({
+    queryKey: ["/api/users", viewerId],
+    queryFn: () => apiRequest("GET", `/api/users/${viewerId}`),
+    enabled: Boolean(viewerId),
+  });
+
   const filteredUsers = users.filter((user) => {
     if (!searchTerm) return true;
     return (
@@ -44,29 +53,11 @@ export default function SearchPage() {
     );
   });
 
-  const { data: viewerData } = useQuery<User>({
-    queryKey: [`/api/users/${canonicalViewerId}`],
-  });
-
-  const resolvedViewer =
-    viewerData ||
-    (authUserId ? filteredUsers.find((u) => u.id === authUserId) : undefined) ||
-    filteredUsers.find((u) => u.id === CURRENT_USER_ID) ||
-    null;
-
-  const viewerId = resolvedViewer?.id || authUserId || CURRENT_USER_ID;
-  const viewerKeyTuple = ["/api/users", viewerId] as const;
-  const viewerKeyString = [`/api/users/${viewerId}`] as const;
-  const fallbackViewerTuple = viewerId === canonicalViewerId ? null : (["/api/users", canonicalViewerId] as const);
-  const fallbackViewerString = viewerId === canonicalViewerId ? null : ([`/api/users/${canonicalViewerId}`] as const);
-
-  const resolvedFollowing = resolvedViewer?.following ?? [];
+  // Get following list directly from viewer data
+  const currentFollowing = viewerData?.following ?? [];
 
   const computeIsFollowing = (userId: string) => {
-    if (sessionFollowState.has(userId)) {
-      return sessionFollowState.get(userId)!;
-    }
-    return resolvedFollowing.includes(userId);
+    return currentFollowing.includes(userId);
   };
 
   // Fetch community meals
@@ -77,122 +68,90 @@ export default function SearchPage() {
   const followMutation = useMutation({
     mutationFn: async (targetUserId: string) => {
       const isFollowing = computeIsFollowing(targetUserId);
-      const endpoint = isFollowing ? "unfollow" : "follow";
-      return apiRequest("POST", `/api/users/${targetUserId}/${endpoint}`, { followerId: viewerId });
+      console.log('[Follow Mutation] Target:', targetUserId, 'Currently Following:', isFollowing, 'Viewer ID:', viewerId);
+      if (isFollowing) {
+        const result = await apiRequest("POST", `/api/users/${targetUserId}/unfollow`, { followerId: viewerId });
+        console.log('[Follow Mutation] Unfollow result:', result);
+        return result;
+      } else {
+        const result = await apiRequest("POST", `/api/users/${targetUserId}/follow`, { followerId: viewerId });
+        console.log('[Follow Mutation] Follow result:', result);
+        return result;
+      }
     },
     onMutate: async (targetUserId: string) => {
-      await queryClient.cancelQueries({ queryKey: viewerKeyTuple });
-      await queryClient.cancelQueries({ queryKey: viewerKeyString });
-      if (fallbackViewerTuple) await queryClient.cancelQueries({ queryKey: fallbackViewerTuple });
-      if (fallbackViewerString) await queryClient.cancelQueries({ queryKey: fallbackViewerString });
+      console.log('[onMutate] Starting optimistic update for:', targetUserId);
+      
+      // Cancel outgoing queries for all relevant keys
+      await queryClient.cancelQueries({ queryKey: ["/api/users", viewerId] });
+      await queryClient.cancelQueries({ queryKey: [`/api/users/${viewerId}`] });
       await queryClient.cancelQueries({ queryKey: usersQueryKey });
 
-      const previousViewerArray = queryClient.getQueryData<User>(viewerKeyTuple);
-      const previousViewerString = queryClient.getQueryData<User>(viewerKeyString);
-      const previousFallbackArray = fallbackViewerTuple
-        ? queryClient.getQueryData<User>(fallbackViewerTuple)
-        : undefined;
-      const previousFallbackString = fallbackViewerString
-        ? queryClient.getQueryData<User>(fallbackViewerString)
-        : undefined;
+      // Snapshot previous values
+      const previousViewer = queryClient.getQueryData<User>(["/api/users", viewerId]);
       const previousUsers = queryClient.getQueryData<User[]>(usersQueryKey);
-      const previousSessionFollowState = new Map(sessionFollowState);
+
+      console.log('[onMutate] Previous viewer following:', previousViewer?.following);
 
       const currentlyFollowing = computeIsFollowing(targetUserId);
+      console.log('[onMutate] Currently following:', currentlyFollowing);
 
-      const adjustFollowing = (user?: User | null) => {
-        if (!user) return user;
-        const next = new Set(user.following || []);
-        if (currentlyFollowing) {
-          next.delete(targetUserId);
-        } else {
-          next.add(targetUserId);
-        }
-        return { ...user, following: Array.from(next) } as User;
-      };
-
-      const viewerArrayNext = adjustFollowing(previousViewerArray);
-      if (viewerArrayNext) {
-        queryClient.setQueryData(viewerKeyTuple, viewerArrayNext);
-      }
-      const viewerStringNext = adjustFollowing(previousViewerString);
-      if (viewerStringNext) {
-        queryClient.setQueryData(viewerKeyString, viewerStringNext);
-      }
-      if (fallbackViewerTuple) {
-        const fallbackArrayNext = adjustFollowing(previousFallbackArray);
-        if (fallbackArrayNext) {
-          queryClient.setQueryData(fallbackViewerTuple, fallbackArrayNext);
-        }
-      }
-      if (fallbackViewerString) {
-        const fallbackStringNext = adjustFollowing(previousFallbackString);
-        if (fallbackStringNext) {
-          queryClient.setQueryData(fallbackViewerString, fallbackStringNext);
-        }
+      // Optimistically update viewer's following list
+      if (previousViewer) {
+        const updatedFollowing = currentlyFollowing
+          ? previousViewer.following?.filter(id => id !== targetUserId) || []
+          : [...(previousViewer.following || []), targetUserId];
+        
+        console.log('[onMutate] Updated following list:', updatedFollowing);
+        
+        const updatedViewer = { ...previousViewer, following: updatedFollowing };
+        queryClient.setQueryData(["/api/users", viewerId], updatedViewer);
+        queryClient.setQueryData([`/api/users/${viewerId}`], updatedViewer);
       }
 
+      // Optimistically update target user's followers list in users array
       if (previousUsers) {
-        const updated = previousUsers.map((u) => {
-          if (u.id !== targetUserId) return u;
-          const followerSet = new Set(u.followers || []);
-          if (currentlyFollowing) {
-            followerSet.delete(viewerId);
-          } else {
-            followerSet.add(viewerId);
+        const updatedUsers = previousUsers.map(u => {
+          if (u.id === targetUserId) {
+            const updatedFollowers = currentlyFollowing
+              ? u.followers?.filter(id => id !== viewerId) || []
+              : [...(u.followers || []), viewerId];
+            return { ...u, followers: updatedFollowers };
           }
-          return { ...u, followers: Array.from(followerSet) };
+          return u;
         });
-        queryClient.setQueryData(usersQueryKey, updated);
+        queryClient.setQueryData(usersQueryKey, updatedUsers);
       }
 
-      setSessionFollowState((prev) => {
-        const next = new Map(prev);
-        next.set(targetUserId, !currentlyFollowing);
-        return next;
-      });
-
-      return {
-        previousViewerArray,
-        previousViewerString,
-        previousFallbackArray,
-        previousFallbackString,
-        previousUsers,
-        previousSessionFollowState,
-      };
+      return { previousViewer, previousUsers };
     },
     onError: (_err, _targetUserId, context: any) => {
-      if (context?.previousViewerArray) {
-        queryClient.setQueryData(viewerKeyTuple, context.previousViewerArray);
-      }
-      if (context?.previousViewerString) {
-        queryClient.setQueryData(viewerKeyString, context.previousViewerString);
-      }
-      if (fallbackViewerTuple && context?.previousFallbackArray) {
-        queryClient.setQueryData(fallbackViewerTuple, context.previousFallbackArray);
-      }
-      if (fallbackViewerString && context?.previousFallbackString) {
-        queryClient.setQueryData(fallbackViewerString, context.previousFallbackString);
+      // Rollback on error
+      if (context?.previousViewer) {
+        queryClient.setQueryData(["/api/users", viewerId], context.previousViewer);
+        queryClient.setQueryData([`/api/users/${viewerId}`], context.previousViewer);
       }
       if (context?.previousUsers) {
         queryClient.setQueryData(usersQueryKey, context.previousUsers);
       }
-      if (context?.previousSessionFollowState) {
-        setSessionFollowState(new Map(context.previousSessionFollowState));
-      }
     },
-    onSettled: (_, __, targetUserId) => {
-      queryClient.invalidateQueries({ queryKey: usersQueryKey });
-      queryClient.invalidateQueries({ queryKey: viewerKeyTuple });
-      queryClient.invalidateQueries({ queryKey: viewerKeyString });
-      if (fallbackViewerTuple) {
-        queryClient.invalidateQueries({ queryKey: fallbackViewerTuple });
-      }
-      if (fallbackViewerString) {
-        queryClient.invalidateQueries({ queryKey: fallbackViewerString });
-      }
-      queryClient.invalidateQueries({ queryKey: ["/api/users", targetUserId] });
-      queryClient.invalidateQueries({ queryKey: [`/api/users/${targetUserId}`] });
+    onSuccess: async (_data, targetUserId) => {
+      console.log('[onSuccess] Follow operation succeeded, invalidating queries');
+      
+      // Invalidate all relevant queries to ensure fresh data
+      await queryClient.invalidateQueries({ queryKey: ["/api/users", viewerId] });
+      await queryClient.invalidateQueries({ queryKey: [`/api/users/${viewerId}`] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/users", targetUserId] });
+      await queryClient.invalidateQueries({ queryKey: [`/api/users/${targetUserId}`] });
+      await queryClient.invalidateQueries({ queryKey: usersQueryKey });
+      
+      // Force refetch viewer data
+      const updatedViewer = await queryClient.fetchQuery({
+        queryKey: ["/api/users", viewerId],
+        queryFn: () => apiRequest("GET", `/api/users/${viewerId}`),
+      });
+      
+      console.log('[onSuccess] Refetched viewer following list:', updatedViewer.following);
     },
   });
 
@@ -200,9 +159,7 @@ export default function SearchPage() {
   const suggestedUsers = filteredUsers
     .filter((user) => {
       if (user.id === viewerId) return false;
-      const isFollowing = computeIsFollowing(user.id);
-      if (!isFollowing) return true;
-      return sessionFollowState.get(user.id) === true;
+      return !computeIsFollowing(user.id);
     })
     .slice(0, 5);
 

@@ -28,6 +28,7 @@ export type Conversation = {
 };
 import { nanoid } from "nanoid";
 import { PgStorage } from "./pg-storage.ts";
+import { db } from './db.ts';
 import fs from 'fs';
 import path from 'path';
 
@@ -1357,8 +1358,7 @@ export class MemStorage implements IStorage {
   }
 }
 
-// Switch between development (MemStorage) and production (PgStorage)
-// Use the Postgres-backed storage only in production environments where DATABASE_URL
-// is set. For local development we prefer the in-memory `MemStorage` to avoid
-// requiring a running remote database.
-export const storage = (process.env.DATABASE_URL && process.env.NODE_ENV === 'production') ? new PgStorage() : new MemStorage();
+// Use PgStorage only when database is successfully connected
+// Falls back to MemStorage for development without database
+// To persist messages, set DATABASE_URL in .env and restart server
+export const storage = db ? new PgStorage() : new MemStorage();

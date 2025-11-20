@@ -40,7 +40,7 @@ const PORT = process.env.PORT || 5000;
 
 async function startServer() {
   try {
-    // Initialize database
+    // Initialize database (non-blocking - will fall back to in-memory if fails)
     await initializeDatabase();
     
     // Check exercise library status (but don't auto-generate)

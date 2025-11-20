@@ -89,7 +89,7 @@ export function ImageUpload({
       {label && <Label>{label}</Label>}
       
       {!preview ? (
-        <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+        <div className="relative border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center overflow-hidden">
           <div className="space-y-2">
             <Upload className="mx-auto h-12 w-12 text-gray-400" />
             <div className="space-y-1">

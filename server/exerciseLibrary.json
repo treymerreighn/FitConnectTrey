@@ -1965,8 +1965,14 @@
     "id": "ai-gen-88",
     "name": "Romanian Deadlift",
     "category": "Strength",
-    "muscleGroups": ["hamstrings", "glutes", "lower back"],
-    "equipment": ["Barbell"],
+    "muscleGroups": [
+      "hamstrings",
+      "glutes",
+      "lower back"
+    ],
+    "equipment": [
+      "Barbell"
+    ],
     "difficulty": "Intermediate",
     "instructions": [
       "Stand with feet hip-width apart holding a barbell in front of your thighs.",
@@ -1985,8 +1991,14 @@
     "id": "ai-gen-89",
     "name": "Walking Lunge",
     "category": "Strength",
-    "muscleGroups": ["quadriceps", "glutes", "hamstrings"],
-    "equipment": ["Dumbbells"],
+    "muscleGroups": [
+      "quadriceps",
+      "glutes",
+      "hamstrings"
+    ],
+    "equipment": [
+      "Dumbbells"
+    ],
     "difficulty": "Beginner",
     "instructions": [
       "Stand tall holding dumbbells at your sides.",
@@ -2005,8 +2017,15 @@
     "id": "ai-gen-90",
     "name": "Bulgarian Split Squat",
     "category": "Strength",
-    "muscleGroups": ["quadriceps", "glutes", "hamstrings"],
-    "equipment": ["Dumbbells", "Bench"],
+    "muscleGroups": [
+      "quadriceps",
+      "glutes",
+      "hamstrings"
+    ],
+    "equipment": [
+      "Dumbbells",
+      "Bench"
+    ],
     "difficulty": "Intermediate",
     "instructions": [
       "Stand about two feet in front of a bench and place rear foot laces-down on top.",
@@ -2025,8 +2044,15 @@
     "id": "ai-gen-91",
     "name": "Incline Dumbbell Press",
     "category": "Strength",
-    "muscleGroups": ["chest", "shoulders", "triceps"],
-    "equipment": ["Dumbbells", "Bench"],
+    "muscleGroups": [
+      "chest",
+      "shoulders",
+      "triceps"
+    ],
+    "equipment": [
+      "Dumbbells",
+      "Bench"
+    ],
     "difficulty": "Intermediate",
     "instructions": [
       "Set bench to a 25–35° incline and sit with dumbbells resting on thighs.",
@@ -2045,8 +2071,14 @@
     "id": "ai-gen-92",
     "name": "Farmer's Carry",
     "category": "Functional",
-    "muscleGroups": ["forearms", "core", "traps"],
-    "equipment": ["Dumbbells"],
+    "muscleGroups": [
+      "forearms",
+      "core",
+      "traps"
+    ],
+    "equipment": [
+      "Dumbbells"
+    ],
     "difficulty": "Intermediate",
     "instructions": [
       "Stand tall holding heavy dumbbells at your sides.",
@@ -2060,5 +2092,26 @@
     "targetSets": 4,
     "targetReps": 40,
     "restTime": 60
+  },
+  {
+    "id": "vrd1fAGMwfvLhSGWIyQzl",
+    "name": "zercher squat",
+    "category": "strength",
+    "muscleGroups": [
+      "glutes",
+      "hamstrings",
+      "quadriceps"
+    ],
+    "equipment": [
+      "barbell"
+    ],
+    "difficulty": "beginner",
+    "instructions": [
+      "bar"
+    ],
+    "tips": [],
+    "safetyNotes": [],
+    "images": [],
+    "createdAt": "2025-11-20T01:26:53.347Z"
   }
 ]

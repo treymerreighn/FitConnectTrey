@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ArrowLeft, Plus, Trash2, Camera, Upload, X, Dumbbell, Clock, Flame, Target, Search, ChevronDown, ChevronUp, Save, Check, Filter, Book } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,23 +34,58 @@ interface WorkoutExercise {
   notes?: string;
 }
 
+const extractSearchParams = (path: string) => {
+  if (typeof window !== "undefined" && window.location?.search) {
+    return new URLSearchParams(window.location.search);
+  }
+  const queryIndex = path.indexOf("?");
+  const raw = queryIndex >= 0 ? path.substring(queryIndex) : "";
+  return new URLSearchParams(raw);
+};
+
+const parseWorkoutDataFromParams = (params: URLSearchParams) => {
+  const raw = params.get("workoutData");
+  if (!raw) return null;
+  try {
+    return JSON.parse(decodeURIComponent(raw));
+  } catch (err) {
+    console.error("Failed to parse workoutData", err);
+    return null;
+  }
+};
+
 export default function CreatePost() {
   const [location, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const searchParams = useMemo(() => extractSearchParams(location), [location]);
+  const incomingWorkoutData = useMemo(() => parseWorkoutDataFromParams(searchParams), [searchParams]);
 
   // Post type selection
-  const [postType, setPostType] = useState<"workout" | "nutrition" | "progress">("workout");
+  const [postType, setPostType] = useState<"workout" | "nutrition" | "progress">(incomingWorkoutData ? "workout" : "workout");
   
   // Common fields
   const [caption, setCaption] = useState("");
   const [images, setImages] = useState<string[]>([]);
   
   // Workout specific
-  const [workoutName, setWorkoutName] = useState("");
-  const [duration, setDuration] = useState<number>(0);
-  const [calories, setCalories] = useState<number>(0);
-  const [exercises, setExercises] = useState<WorkoutExercise[]>([]);
+  const [workoutName, setWorkoutName] = useState(incomingWorkoutData?.workoutType || "");
+  const [duration, setDuration] = useState<number>(incomingWorkoutData?.duration || 0);
+  const [calories, setCalories] = useState<number>(incomingWorkoutData?.calories || 0);
+  const [exercises, setExercises] = useState<WorkoutExercise[]>(
+    (incomingWorkoutData?.exercises || []).map((ex: any) => ({
+      id: ex.id,
+      name: ex.exerciseName || ex.name || "",
+      notes: ex.notes,
+      sets: (ex.sets || []).map((set: any) => ({
+        reps: set.reps ?? set.targetReps ?? 0,
+        weight: set.weight ?? set.targetWeight ?? 0,
+        duration: set.duration,
+        distance: set.distance,
+        rest: set.rest ?? set.restTime,
+      })),
+    }))
+  );
   const [exerciseSearchOpen, setExerciseSearchOpen] = useState<number | null>(null);
   const [expandedExercises, setExpandedExercises] = useState<Set<number>>(new Set());
   const [libraryOpen, setLibraryOpen] = useState(false);
@@ -207,10 +242,11 @@ export default function CreatePost() {
       return;
     }
 
+    const workoutCaptionFallback = workoutName ? `Just completed ${workoutName}! 💪` : "";
     let postData: InsertPost = {
       userId: CURRENT_USER_ID,
       type: postType,
-      caption: caption || (postType === "workout" ? `Just completed ${workoutName}! 💪` : ""),
+      caption: caption || (postType === "workout" ? workoutCaptionFallback : ""),
       images,
     };
 

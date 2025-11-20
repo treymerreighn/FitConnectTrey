@@ -826,6 +826,9 @@ export default function Profile() {
                         </Badge>
                       )}
                     </div>
+                    <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm mb-2 truncate">
+                      @{currentUser.username}
+                    </p>
                     {currentUser.bio && (
                       <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 mb-3 max-w-md line-clamp-3">
                         {currentUser.bio}

@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { projectWorkoutForUser } from "@/lib/workoutProjection";
+import { CURRENT_USER_ID } from "@/lib/constants";
 
 interface SavedWorkout {
   id: string;
@@ -25,12 +26,19 @@ export default function SavedWorkouts() {
   const queryClient = useQueryClient();
 
   const { data: savedWorkouts = [], isLoading } = useQuery<SavedWorkout[]>({
-    queryKey: ["/api/saved-workouts"],
+    queryKey: ["/api/saved-workouts", CURRENT_USER_ID],
+    queryFn: async () => {
+      const response = await fetch(`/api/saved-workouts?userId=${CURRENT_USER_ID}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to fetch saved workouts');
+      return response.json();
+    },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => apiRequest("DELETE", `/api/saved-workouts/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/saved-workouts"] }),
+    mutationFn: async (id: string) => apiRequest("DELETE", `/api/saved-workouts/${id}?userId=${CURRENT_USER_ID}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/saved-workouts", CURRENT_USER_ID] }),
   });
 
   const handleStartWorkout = (workout: SavedWorkout) => {

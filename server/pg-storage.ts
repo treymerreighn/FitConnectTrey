@@ -669,6 +669,14 @@ export class PgStorage implements IStorage {
   // Saved workouts CRUD (in-memory)
   async saveWorkout(data: InsertSavedWorkout): Promise<SavedWorkout> {
     const list = this.savedWorkouts.get(data.userId) || [];
+    
+    // Check if already saved to prevent duplicates
+    const existing = list.find(sw => sw.templateId === data.templateId && sw.sourceType === data.sourceType);
+    if (existing) {
+      console.log(`[PgStorage] Workout ${data.templateId} already saved for user ${data.userId}`);
+      return existing;
+    }
+    
     const saved: SavedWorkout = {
       id: crypto.randomUUID(),
       createdAt: new Date(),
@@ -676,17 +684,21 @@ export class PgStorage implements IStorage {
     } as SavedWorkout;
     list.unshift(saved);
     this.savedWorkouts.set(data.userId, list);
+    console.log(`[PgStorage] Saved workout ${saved.id} for user ${data.userId}. Total saved: ${list.length}`);
     return saved;
   }
 
   async listSavedWorkouts(userId: string): Promise<SavedWorkout[]> {
-    return this.savedWorkouts.get(userId) || [];
+    const list = this.savedWorkouts.get(userId) || [];
+    console.log(`[PgStorage] Listing saved workouts for user ${userId}: ${list.length} found`);
+    return list;
   }
 
   async deleteSavedWorkout(userId: string, savedWorkoutId: string): Promise<boolean> {
     const list = this.savedWorkouts.get(userId) || [];
     const newList = list.filter(sw => sw.id !== savedWorkoutId);
     const changed = newList.length !== list.length;
+    console.log(`[PgStorage] Delete workout ${savedWorkoutId} for user ${userId}: ${changed ? 'success' : 'not found'}`);
     if (changed) this.savedWorkouts.set(userId, newList);
     return changed;
   }

@@ -995,23 +995,32 @@ router.delete("/api/workout-templates/:id", async (req, res) => {
 router.get("/api/saved-workouts", async (req, res) => {
   try {
     const userId = (req.query as any).userId || (req as any).user?.claims?.sub || "user1";
+    console.log("[API] GET /api/saved-workouts - userId:", userId);
     const list = await storage.listSavedWorkouts(userId);
+    console.log("[API] Returning", list.length, "saved workouts");
     res.json(list);
   } catch (error) {
-    console.error("Error fetching saved workouts:", error);
+    console.error("[API] Error fetching saved workouts:", error);
     res.status(500).json({ error: "Failed to fetch saved workouts" });
   }
 });
 
 router.post("/api/saved-workouts", async (req, res) => {
   try {
+    console.log("[API] POST /api/saved-workouts - Request body:", JSON.stringify(req.body, null, 2));
     const payload = { ...req.body, userId: req.body.userId || (req as any).user?.claims?.sub || "user1" };
+    console.log("[API] Payload after userId resolution:", JSON.stringify(payload, null, 2));
     const validated = insertSavedWorkoutSchema.parse(payload);
+    console.log("[API] Payload validated successfully");
     const saved = await storage.saveWorkout(validated);
+    console.log("[API] Workout saved successfully:", saved.id);
     res.status(201).json(saved);
   } catch (error: any) {
-    if (error.name === "ZodError") return res.status(400).json({ error: error.errors });
-    console.error("Error saving workout:", error);
+    if (error.name === "ZodError") {
+      console.error("[API] Validation error:", error.errors);
+      return res.status(400).json({ error: error.errors });
+    }
+    console.error("[API] Error saving workout:", error);
     res.status(500).json({ error: "Failed to save workout" });
   }
 });

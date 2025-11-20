@@ -23,7 +23,6 @@ export function PostCard({ post }: PostCardProps) {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [showComments, setShowComments] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
   
   // ALL HOOKS MUST COME FIRST - NO CONDITIONAL LOGIC ABOVE HOOKS
   const { data: user } = useQuery<User>({
@@ -41,6 +40,31 @@ export function PostCard({ post }: PostCardProps) {
     staleTime: 1000 * 60 * 5,
   });
   const usersMap = Object.fromEntries((allUsers || []).map(u => [u.id, u]));
+
+  // Check if this workout is already saved
+  const { data: savedWorkouts = [] } = useQuery<any[]>({
+    queryKey: [`/api/saved-workouts`, CURRENT_USER_ID],
+    queryFn: async () => {
+      console.log("[Client Query] Fetching saved workouts for user:", CURRENT_USER_ID);
+      const response = await fetch(`/api/saved-workouts?userId=${CURRENT_USER_ID}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        console.log("[Client Query] Fetch failed:", response.status);
+        return [];
+      }
+      const data = await response.json();
+      console.log("[Client Query] Received saved workouts:", data);
+      return data;
+    },
+    enabled: !!post.workoutData,
+    staleTime: 1000 * 60 * 5,
+  });
+  
+  // Check if current post is saved
+  const savedWorkout = savedWorkouts.find((sw: any) => sw.templateId === post.id);
+  const isWorkoutSaved = !!savedWorkout;
+  console.log("[Client] Post", post.id, "- isWorkoutSaved:", isWorkoutSaved, "savedWorkouts count:", savedWorkouts.length);
 
   const [commentText, setCommentText] = useState("");
 
@@ -182,27 +206,47 @@ export function PostCard({ post }: PostCardProps) {
     setLocation(`/build-workout?from=post&exercises=${exerciseIds}&plan=${planParam}`);
   };
 
-  // Handle saving a workout as a template
+  // Handle saving/unsaving a workout as a template
   const handleSaveWorkout = async () => {
-    if (!post.workoutData) return;
+    if (!post.workoutData) {
+      console.log("[Client] No workout data to save");
+      return;
+    }
+    console.log("[Client] handleSaveWorkout called - isWorkoutSaved:", isWorkoutSaved);
     try {
-      await apiRequest("POST", "/api/saved-workouts", {
-        templateId: post.id,
-        sourceType: "post",
-        dataSnapshot: {
-          name: post.workoutData.workoutType || 'Saved Workout',
-          workoutData: post.workoutData,
-          author: user?.username,
-        }
-      });
-      setIsSaved(true);
-      queryClient.invalidateQueries({ queryKey: ["/api/saved-workouts"] });
-      toast({
-        title: "Workout Saved! 💪",
-        description: "Check it in your Saved Workouts collection",
-      });
+      if (isWorkoutSaved && savedWorkout) {
+        // Unsave the workout
+        console.log("[Client] Unsaving workout:", savedWorkout.id);
+        await apiRequest("DELETE", `/api/saved-workouts/${savedWorkout.id}?userId=${CURRENT_USER_ID}`);
+        queryClient.invalidateQueries({ queryKey: ["/api/saved-workouts", CURRENT_USER_ID] });
+        toast({
+          title: "Workout Removed",
+          description: "Removed from your Saved Workouts",
+        });
+      } else {
+        // Save the workout
+        const payload = {
+          userId: CURRENT_USER_ID,
+          templateId: post.id,
+          sourceType: "post" as const,
+          dataSnapshot: {
+            name: post.workoutData.workoutType || 'Saved Workout',
+            workoutData: post.workoutData,
+            author: user?.username,
+          }
+        };
+        console.log("[Client] Saving workout with payload:", payload);
+        const result = await apiRequest("POST", "/api/saved-workouts", payload);
+        console.log("[Client] Save result:", result);
+        queryClient.invalidateQueries({ queryKey: ["/api/saved-workouts", CURRENT_USER_ID] });
+        toast({
+          title: "Workout Saved! 💪",
+          description: "Check it in your Saved Workouts collection",
+        });
+      }
     } catch (e: any) {
-      toast({ title: "Save failed", description: e?.message || "Couldn't save workout", variant: "destructive" });
+      console.error("[Client] Save/unsave error:", e);
+      toast({ title: "Operation failed", description: e?.message || "Couldn't complete action", variant: "destructive" });
     }
   };
 
@@ -326,7 +370,7 @@ export function PostCard({ post }: PostCardProps) {
               </span>
             )}
           </div>
-          <p className="text-sm text-[#f0f0f0]">{post.caption}</p>
+          <p className="text-sm text-gray-900 dark:text-gray-100">{post.caption}</p>
         </div>
       </CardHeader>
       {post.images && post.images.length > 0 && (
@@ -375,10 +419,10 @@ export function PostCard({ post }: PostCardProps) {
           <Button
             variant="ghost"
             size="sm"
-            className={`p-0 h-auto ${isSaved ? 'text-blue-600' : 'text-gray-600'} hover:text-blue-600`}
+            className={`p-0 h-auto ${isWorkoutSaved ? 'text-blue-600' : 'text-gray-600'} hover:text-blue-600`}
             onClick={handleSaveWorkout}
           >
-            <Bookmark className={`h-5 w-5 ${isSaved ? 'fill-current' : ''}`} />
+            <Bookmark className={`h-5 w-5 ${isWorkoutSaved ? 'fill-current' : ''}`} />
           </Button>
         </div>
 
@@ -396,11 +440,11 @@ export function PostCard({ post }: PostCardProps) {
             <Button
               onClick={handleSaveWorkout}
               variant="outline"
-              className="border-blue-600 text-blue-600 hover:bg-blue-600/10"
+              className={isWorkoutSaved ? "border-blue-600 bg-blue-600 text-white hover:bg-blue-700" : "border-blue-600 text-blue-600 hover:bg-blue-600/10"}
               size="sm"
             >
               <Save className="h-4 w-4 mr-2" />
-              Save
+              {isWorkoutSaved ? 'Saved' : 'Save'}
             </Button>
           </div>
         )}

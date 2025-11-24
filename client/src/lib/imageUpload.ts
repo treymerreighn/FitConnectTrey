@@ -13,11 +13,19 @@ export interface MultipleImageUploadResult {
 }
 
 export async function uploadImage(file: File): Promise<ImageUploadResult> {
+  console.log('📤 uploadImage called with:', file.name, file.type, file.size);
   const formData = new FormData();
   formData.append('image', file);
-
-  const response = await apiRequest('POST', '/api/upload', formData);
-  return response.json();
+  
+  console.log('🌐 Making API request to /api/upload...');
+  try {
+    const response = await apiRequest('POST', '/api/upload', formData);
+    console.log('✅ API response:', response);
+    return response;
+  } catch (error) {
+    console.error('❌ API request failed:', error);
+    throw error;
+  }
 }
 
 export async function uploadMultipleImages(files: File[]): Promise<MultipleImageUploadResult> {
@@ -27,7 +35,7 @@ export async function uploadMultipleImages(files: File[]): Promise<MultipleImage
   });
 
   const response = await apiRequest('POST', '/api/upload-multiple', formData);
-  return response.json();
+  return response;
 }
 
 export function createImageUploadFormData(file: File): FormData {

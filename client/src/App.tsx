@@ -23,6 +23,7 @@ import Progress from "./pages/progress";
 import ProgressInsightsPage from "./pages/progress-insights";
 import ExerciseProgress from "./pages/exercise-progress";
 import TestUpload from "./pages/test-upload";
+import TestImagePost from "./pages/test-image-post";
 import RecipesPage from "./pages/recipes";
 import Landing from "./pages/landing";
 import SearchPage from "./pages/search";
@@ -104,6 +105,7 @@ function Router() {
           <Route path="/messages" component={Messages} />
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/test-upload" component={TestUpload} />
+          <Route path="/test-image-post" component={TestImagePost} />
           <Route path="/recipes" component={RecipesPage} />
           <Route path="/discover" component={SearchPage} />
         </>

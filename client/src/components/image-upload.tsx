@@ -31,9 +31,12 @@ export function ImageUpload({
     const file = event.target.files?.[0];
     if (!file) return;
 
+    console.log('📸 File selected:', file.name, file.type, file.size);
+
     // Validate file
     const validation = validateImageFile(file);
     if (!validation.valid) {
+      console.log('❌ Validation failed:', validation.error);
       toast({
         title: "Invalid file",
         description: validation.error,
@@ -42,6 +45,7 @@ export function ImageUpload({
       return;
     }
 
+    console.log('✅ Validation passed, starting upload...');
     setUploading(true);
     
     try {
@@ -53,7 +57,9 @@ export function ImageUpload({
       reader.readAsDataURL(file);
 
       // Upload to AWS S3
+      console.log('🚀 Calling uploadImage...');
       const result = await uploadImage(file);
+      console.log('📥 Upload result:', result);
       
       if (result.success) {
         onImageUploaded(result.url);
@@ -65,10 +71,10 @@ export function ImageUpload({
         throw new Error('Upload failed');
       }
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('❌ Upload error:', error);
       toast({
         title: "Upload failed",
-        description: "Failed to upload image. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to upload image. Please try again.",
         variant: "destructive",
       });
       setPreview(null);

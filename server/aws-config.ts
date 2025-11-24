@@ -1,5 +1,5 @@
 import { S3Client } from "@aws-sdk/client-s3";
-import { PutObjectCommand, GetObjectCommand, CreateBucketCommand, HeadBucketCommand } from "@aws-sdk/client-s3";
+import { PutObjectCommand, GetObjectCommand, CreateBucketCommand, HeadBucketCommand, PutBucketPolicyCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // AWS S3 Configuration
@@ -38,7 +38,35 @@ export class AWSImageService {
         
         await s3Client.send(new CreateBucketCommand(createParams));
         console.log(`Created S3 bucket: ${BUCKET_NAME} in region: ${process.env.AWS_REGION}`);
+        
+        // Set bucket policy to allow public read access
+        await this.setPublicReadPolicy();
       }
+    }
+  }
+
+  static async setPublicReadPolicy(): Promise<void> {
+    const policy = {
+      Version: "2012-10-17",
+      Statement: [
+        {
+          Sid: "PublicReadGetObject",
+          Effect: "Allow",
+          Principal: "*",
+          Action: "s3:GetObject",
+          Resource: `arn:aws:s3:::${BUCKET_NAME}/*`
+        }
+      ]
+    };
+
+    try {
+      await s3Client.send(new PutBucketPolicyCommand({
+        Bucket: BUCKET_NAME,
+        Policy: JSON.stringify(policy)
+      }));
+      console.log(`Set public read policy on bucket: ${BUCKET_NAME}`);
+    } catch (error) {
+      console.error('Failed to set bucket policy:', error);
     }
   }
 
@@ -56,7 +84,7 @@ export class AWSImageService {
       Key: key,
       Body: buffer,
       ContentType: contentType,
-      // Remove ACL for now to avoid permission issues
+      // ACL removed - using bucket policy for public access instead
     });
 
     await s3Client.send(command);

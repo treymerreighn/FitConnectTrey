@@ -328,10 +328,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Image upload endpoint
   app.post('/api/upload', isAuthenticated, upload.single('image'), async (req: any, res) => {
+    console.log('📸 Upload request received');
     try {
       if (!req.file) {
+        console.log('❌ No file in request');
         return res.status(400).json({ message: "No file uploaded" });
       }
+
+      console.log('📤 Uploading to S3:', {
+        filename: req.file.originalname,
+        size: req.file.size,
+        mimetype: req.file.mimetype
+      });
 
       const result = await AWSImageService.uploadImage(
         req.file.buffer,
@@ -339,13 +347,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.file.mimetype
       );
 
+      console.log('✅ Upload successful:', result.publicUrl);
+
       res.json({
         success: true,
         url: result.publicUrl,
         key: result.key,
       });
     } catch (error) {
-      console.error("Error uploading image:", error);
+      console.error("❌ Error uploading image:", error);
+      console.error("Full error stack:", error instanceof Error ? error.stack : error);
       res.status(500).json({ 
         message: "Failed to upload image",
         error: error instanceof Error ? error.message : "Unknown error"

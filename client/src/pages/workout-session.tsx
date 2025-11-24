@@ -340,7 +340,7 @@ const WorkoutSession: React.FC = () => {
       )}
 
       {/* Content */}
-      <div className="max-w-6xl mx-auto px-4 py-6">
+      <div className="max-w-6xl mx-auto px-4 py-6 pb-20">
         <div className="space-y-6">
           {plan.exercises.map((exercise, exIdx) => {
             const isCurrent = exIdx === currentExerciseIndex;
@@ -435,7 +435,7 @@ const WorkoutSession: React.FC = () => {
       </div>
 
       {/* Sticky Footer Summary */}
-      <div className="sticky bottom-0 z-30 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70 border-t">
+      <div className="sticky bottom-14 z-30 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70 border-t">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between text-sm">
           <div className="flex gap-4">
             <span className="text-muted-foreground">Elapsed: <span className="font-medium text-foreground">{formatTime(workoutElapsed)}</span></span>
@@ -445,7 +445,7 @@ const WorkoutSession: React.FC = () => {
             <div className="flex gap-2 flex-wrap">
               <Button size="sm" variant="outline" onClick={() => setLocation('/workouts')}>Exit</Button>
               <Button size="sm" variant="secondary" onClick={postWorkoutNow}>Post Workout</Button>
-              <Button size="sm" onClick={() => setShowFinishDialog(true)} disabled={stats.completedSets === 0}>Record & Post</Button>
+              <Button size="sm" onClick={() => setShowFinishDialog(true)}>Record & Post</Button>
             </div>
         </div>
       </div>

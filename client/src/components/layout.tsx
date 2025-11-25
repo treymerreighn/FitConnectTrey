@@ -26,21 +26,21 @@ export function Layout({ children }: LayoutProps) {
           <FAB />
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 w-full bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-50">
-        <div className="flex items-center justify-around py-2">
+        <div className="flex items-center justify-around py-3">
           {navItems.map(({ path, icon: Icon, label }) => {
             const isActive = location === path;
             return (
               <Link key={path} href={path} asChild>
                 <Button
                   variant="ghost"
-                  className={`flex flex-col items-center py-2 px-4 h-auto ${
+                  className={`flex items-center justify-center p-3 h-auto ${
                     isActive
                       ? "text-fit-green"
                       : "text-gray-600 dark:text-gray-400 hover:text-fit-green"
                   }`}
+                  aria-label={label}
                 >
-                  <Icon className="w-5 h-5 mb-1" />
-                  <span className="text-xs font-medium">{label}</span>
+                  <Icon className="w-7 h-7" />
                 </Button>
               </Link>
             );

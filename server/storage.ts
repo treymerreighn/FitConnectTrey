@@ -1,4 +1,4 @@
-import type { User, Post, Comment, Connection, ProgressEntry, Exercise, WorkoutSession, ExerciseProgress, Recipe, CommunityMeal, ProgressInsight, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, InsertWorkoutSession, InsertExerciseProgress, InsertProgressInsight } from "../shared/schema.ts";
+import type { User, Post, Comment, Connection, ProgressEntry, Exercise, WorkoutSession, ExerciseProgress, Recipe, CommunityMeal, ProgressInsight, Story, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, InsertWorkoutSession, InsertExerciseProgress, InsertProgressInsight, InsertStory } from "../shared/schema.ts";
 import type { WorkoutTemplate, InsertWorkoutTemplate, SavedWorkout, InsertSavedWorkout } from "../shared/workout-types.ts";
 // Lightweight messaging/notification types used by server storage
 export type Notification = {
@@ -158,6 +158,14 @@ export interface IStorage {
   getProgressInsightsByUserId(userId: string): Promise<ProgressInsight[]>;
   getProgressInsight(id: string): Promise<ProgressInsight | null>;
   deleteProgressInsight(id: string): Promise<boolean>;
+
+  // Stories operations - 24-hour disappearing stories
+  createStory(story: InsertStory): Promise<Story>;
+  getActiveStories(): Promise<Story[]>; // Get all non-expired stories
+  getStoriesByUserId(userId: string): Promise<Story[]>; // Get user's active stories
+  viewStory(storyId: string, userId: string): Promise<Story | null>; // Mark story as viewed
+  deleteStory(id: string): Promise<boolean>;
+  cleanupExpiredStories(): Promise<number>; // Remove expired stories, returns count
 }
 
 export class MemStorage implements IStorage {
@@ -175,6 +183,7 @@ export class MemStorage implements IStorage {
   private notifications: Map<string, Notification[]> = new Map();
   private conversations: Map<string, Conversation> = new Map();
   private messages: Map<string, Message[]> = new Map();
+  private stories: Map<string, Story> = new Map();
   private workoutTemplates: Map<string, WorkoutTemplate> = new Map();
   private savedWorkouts: Map<string, SavedWorkout[]> = new Map();
 
@@ -545,6 +554,31 @@ export class MemStorage implements IStorage {
     // Store users and posts
     users.forEach(user => this.users.set(user.id, user));
     posts.forEach(post => this.posts.set(post.id, post));
+
+    // Add mock stories for testing
+    const now = new Date();
+    const mockStories: Story[] = [
+      {
+        id: nanoid(),
+        userId: "user2", // Mike Rodriguez
+        image: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=1080&h=1920&fit=crop",
+        caption: "Morning workout complete! 💪",
+        createdAt: new Date(now.getTime() - 2 * 60 * 60 * 1000), // 2 hours ago
+        expiresAt: new Date(now.getTime() + 22 * 60 * 60 * 1000), // expires in 22 hours
+        views: ["user1", "user3"], // Sarah and Emma have viewed it
+      },
+      {
+        id: nanoid(),
+        userId: "user3", // Emma Thompson
+        image: "https://images.unsplash.com/photo-1540206395-68808572332f?w=1080&h=1920&fit=crop",
+        caption: "New gym selfie! Feeling strong 🔥",
+        createdAt: new Date(now.getTime() - 5 * 60 * 60 * 1000), // 5 hours ago
+        expiresAt: new Date(now.getTime() + 19 * 60 * 60 * 1000), // expires in 19 hours
+        views: [], // No one has viewed it yet
+      },
+    ];
+
+    mockStories.forEach(story => this.stories.set(story.id, story));
   }
 
   async createUser(user: InsertUser): Promise<User> {
@@ -1371,6 +1405,71 @@ export class MemStorage implements IStorage {
     }
 
     return msg;
+  }
+
+  // Stories
+  async createStory(story: InsertStory): Promise<Story> {
+    const id = nanoid();
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours from now
+    
+    const newStory: Story = {
+      id,
+      userId: story.userId,
+      image: story.image,
+      caption: story.caption,
+      createdAt: now,
+      expiresAt,
+      views: [],
+    };
+
+    this.stories.set(id, newStory);
+    return newStory;
+  }
+
+  async getActiveStories(): Promise<Story[]> {
+    const now = new Date();
+    return Array.from(this.stories.values())
+      .filter(story => story.expiresAt > now)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async getStoriesByUserId(userId: string): Promise<Story[]> {
+    const now = new Date();
+    return Array.from(this.stories.values())
+      .filter(story => story.userId === userId && story.expiresAt > now)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async viewStory(storyId: string, userId: string): Promise<Story | null> {
+    const story = this.stories.get(storyId);
+    if (!story) return null;
+
+    // Add userId to views if not already present
+    if (!story.views.includes(userId)) {
+      story.views.push(userId);
+      this.stories.set(storyId, story);
+    }
+
+    return story;
+  }
+
+  async deleteStory(id: string): Promise<boolean> {
+    return this.stories.delete(id);
+  }
+
+  async cleanupExpiredStories(): Promise<number> {
+    const now = new Date();
+    let count = 0;
+    
+    for (const [id, story] of this.stories.entries()) {
+      if (story.expiresAt <= now) {
+        this.stories.delete(id);
+        count++;
+      }
+    }
+    
+    return count;
   }
 }
 

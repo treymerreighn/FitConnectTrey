@@ -87,6 +87,18 @@ async function startServer() {
       // Setup production monitoring
       setupMemoryMonitoring();
       setupGracefulShutdown(server);
+
+      // Cleanup expired stories every hour
+      setInterval(async () => {
+        try {
+          const count = await storage.cleanupExpiredStories();
+          if (count > 0) {
+            console.log(`🧹 Cleaned up ${count} expired stories`);
+          }
+        } catch (error) {
+          console.error("Error cleaning up expired stories:", error);
+        }
+      }, 60 * 60 * 1000); // Run every hour
     });
   } catch (error) {
     console.error("Failed to start server:", error);

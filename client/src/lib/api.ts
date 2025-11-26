@@ -1,6 +1,6 @@
 import { apiRequest } from "./queryClient";
 import { uploadImage, uploadMultipleImages } from "./imageUpload";
-import type { Post, User, Comment, Connection, ProgressEntry, Exercise, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise } from "@shared/schema";
+import type { Post, User, Comment, Connection, ProgressEntry, Exercise, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, Story, InsertStory } from "@shared/schema";
 
 export const api = {
   // Posts
@@ -154,5 +154,26 @@ export const api = {
   
   uploadMultipleImages: async (files: File[]) => {
     return await uploadMultipleImages(files);
+  },
+
+  // Stories
+  createStory: async (story: InsertStory): Promise<Story> => {
+    return await apiRequest("POST", "/api/stories", story);
+  },
+
+  getActiveStories: async (): Promise<Story[]> => {
+    return await apiRequest("GET", "/api/stories");
+  },
+
+  getUserStories: async (userId: string): Promise<Story[]> => {
+    return await apiRequest("GET", `/api/stories/user/${userId}`);
+  },
+
+  viewStory: async (storyId: string, userId: string): Promise<Story> => {
+    return await apiRequest("POST", `/api/stories/${storyId}/view`, { userId });
+  },
+
+  deleteStory: async (id: string): Promise<{ success: boolean }> => {
+    return await apiRequest("DELETE", `/api/stories/${id}`);
   },
 };

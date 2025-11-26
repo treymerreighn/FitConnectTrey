@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Clock, Users, ChefHat, Filter, Star, Sparkles, Brain } from "lucide-react";
+import { Search, Clock, Users, ChefHat, Filter, Star, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MealHelper } from "@/components/meal-helper";
+
 import type { Recipe } from "@shared/schema";
 import { OptimizedImage } from "@/components/OptimizedImage";
 
@@ -80,16 +80,12 @@ export default function RecipesPage() {
             Meal Helper & Recipes
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Get personalized AI-generated recipes and discover meals shared by our community
+            Discover recipes and meals shared by our community
           </p>
         </div>
 
-        <Tabs defaultValue="meal-helper" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="meal-helper">
-              <Brain className="h-4 w-4 mr-2" />
-              AI Meal Helper
-            </TabsTrigger>
+        <Tabs defaultValue="ai-recipes" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="ai-recipes">
               <ChefHat className="h-4 w-4 mr-2" />
               Recipe Library
@@ -99,10 +95,6 @@ export default function RecipesPage() {
               Community Meals
             </TabsTrigger>
           </TabsList>
-
-          <TabsContent value="meal-helper" className="space-y-6">
-            <MealHelper />
-          </TabsContent>
 
           <TabsContent value="ai-recipes" className="space-y-6">
             {/* Search and Filters */}

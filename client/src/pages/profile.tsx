@@ -111,11 +111,11 @@ function ProgressInsightsTab({ userId, isOwner }: { userId: string; isOwner?: bo
   ].filter(item => item.value > 0);
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="w-full">
       {/* Progress Overview Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
-          <CardContent className="p-3 sm:p-4 text-center">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border-b">
+        <Card className="rounded-none border-r border-b bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+          <CardContent className="p-4 text-center">
             <Activity className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-blue-600" />
             <div className="text-lg sm:text-2xl font-bold text-blue-700 dark:text-blue-300">
               {progressEntries.length}
@@ -124,8 +124,8 @@ function ProgressInsightsTab({ userId, isOwner }: { userId: string; isOwner?: bo
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20">
-          <CardContent className="p-3 sm:p-4 text-center">
+        <Card className="rounded-none border-r border-b bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20">
+          <CardContent className="p-4 text-center">
             <Target className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-green-600" />
             <div className="text-lg sm:text-2xl font-bold text-green-700 dark:text-green-300">
               {isOwner ? (latestEntry?.weight ?? '--') : '--'}
@@ -140,8 +140,8 @@ function ProgressInsightsTab({ userId, isOwner }: { userId: string; isOwner?: bo
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20">
-          <CardContent className="p-3 sm:p-4 text-center">
+        <Card className="rounded-none border-r border-b lg:border-r bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20">
+          <CardContent className="p-4 text-center">
             <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 text-purple-600" />
             <div className="text-lg sm:text-2xl font-bold text-purple-700 dark:text-purple-300">
               {isOwner ? (weightChange ? (weightChange > 0 ? '+' : '') + weightChange : '--') : '--'}
@@ -150,7 +150,7 @@ function ProgressInsightsTab({ userId, isOwner }: { userId: string; isOwner?: bo
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20">
+        <Card className="rounded-none border-b bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20">
           <CardContent className="p-4 text-center">
             <Brain className="w-6 h-6 mx-auto mb-2 text-orange-600" />
             <div className="text-2xl font-bold text-orange-700 dark:text-orange-300">
@@ -163,7 +163,7 @@ function ProgressInsightsTab({ userId, isOwner }: { userId: string; isOwner?: bo
 
       {/* Progress Charts */}
       {chartData.length > 0 && (
-        <Card className="border-0 shadow-xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm">
+        <Card className="rounded-none border-0 border-b bg-white dark:bg-gray-800">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
@@ -219,8 +219,8 @@ function ProgressInsightsTab({ userId, isOwner }: { userId: string; isOwner?: bo
 
       {/* Activity Breakdown */}
       {activityData.length > 0 && (
-        <div className="grid md:grid-cols-2 gap-6">
-          <Card className="border-0 shadow-xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm">
+        <div className="grid md:grid-cols-2 gap-0">
+          <Card className="rounded-none border-0 border-b md:border-r bg-white dark:bg-gray-800">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Activity className="w-5 h-5 text-green-500" />
@@ -261,7 +261,7 @@ function ProgressInsightsTab({ userId, isOwner }: { userId: string; isOwner?: bo
           </Card>
 
           {/* Recent Progress Photos */}
-          <Card className="border-0 shadow-xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm">
+          <Card className="rounded-none border-0 border-b bg-white dark:bg-gray-800">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Camera className="w-5 h-5 text-purple-500" />
@@ -737,7 +737,7 @@ export default function Profile() {
   const modalPronoun = isOwner ? "you" : currentUser.name || "this user";
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-16">
       <Dialog open={Boolean(openFollowList)} onOpenChange={(value) => { if (!value) setOpenFollowList(null); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -785,22 +785,22 @@ export default function Profile() {
           </div>
         </DialogContent>
       </Dialog>
-      <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+      <div className="w-full h-full">
         {/* Profile Header */}
-        <Card className="mb-4 sm:mb-6">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 md:space-x-6">
+        <Card className="rounded-none border-0 border-b">
+          <CardContent className="p-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
               {/* Avatar */}
               <div className="relative">
-                <Avatar className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32">
+                <Avatar className="w-16 h-16 sm:w-20 sm:h-20">
                   <AvatarImage src={currentUser.avatar || ""} alt={currentUser.name || ""} />
                   <AvatarFallback className="text-xl sm:text-2xl bg-fit-green text-white">
                     {currentUser.name?.charAt(0).toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
                 {isOwner && (
-                  <label className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 rounded-full w-7 h-7 sm:w-8 sm:h-8 p-0 bg-fit-green hover:bg-fit-green/90 cursor-pointer flex items-center justify-center">
-                    <Camera className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
+                  <label className="absolute -bottom-1 -right-1 rounded-full w-6 h-6 p-0 bg-fit-green hover:bg-fit-green/90 cursor-pointer flex items-center justify-center">
+                    <Camera className="h-3 w-3 text-white" />
                     <input
                       type="file"
                       accept="image/*"
@@ -812,11 +812,11 @@ export default function Profile() {
               </div>
 
               {/* Profile Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="flex items-center flex-wrap gap-2 mb-2">
-                      <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate">
+              <div className="flex-1">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                  <div>
+                    <div className="flex items-center flex-wrap gap-2 mb-1">
+                      <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
                         {currentUser.name || "User"}
                       </h1>
                       {currentUser.isVerified && (
@@ -826,15 +826,15 @@ export default function Profile() {
                         </Badge>
                       )}
                     </div>
-                    <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm mb-2 truncate">
+                    <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm mb-1 truncate">
                       @{currentUser.username}
                     </p>
                     {currentUser.bio && (
-                      <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 mb-3 max-w-md line-clamp-3">
+                      <p className="text-sm text-gray-700 dark:text-gray-300 mb-2 line-clamp-2">
                         {currentUser.bio}
                       </p>
                     )}
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                       {currentUser.location && (
                         <div className="flex items-center space-x-1">
                           <MapPin className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -884,9 +884,13 @@ export default function Profile() {
                     )}
                   </div>
                 </div>
+              </div>
+            </div>
 
-                  {/* Stats */}
-                <div className="grid grid-cols-4 gap-0 sm:gap-6 mt-3 sm:mt-4 pt-3 sm:pt-4 border-t -mx-[1.75rem] sm:-mx-6 px-0 sm:px-0">
+            {/* Stats - Centered Section */}
+            <div className="flex justify-center mt-2 pt-2 border-t">
+              <div className="w-full max-w-lg">
+                <div className="grid grid-cols-4 gap-4">
                   <div 
                     className="text-center cursor-pointer hover:opacity-80 transition-opacity py-2"
                     onClick={() => isOwner && setOpenFollowList("followers")}
@@ -918,34 +922,37 @@ export default function Profile() {
                     <div className="text-[10px] sm:text-sm text-gray-500 dark:text-gray-400 leading-tight">Progress</div>
                   </div>
                 </div>
-                {/* Height / Weight (visible only to the profile owner) */}
-                {isOwner && (
-                  <div className="flex flex-wrap items-center gap-3 sm:gap-6 mt-3 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xs text-gray-500">Height</span>
-                      <span className="font-medium">{currentHeight ? `${currentHeight} in` : '—'}</span>
-                      <span className="ml-2 text-xs text-gray-400 flex items-center gap-1">
-                        <Lock className="w-3 h-3" />
-                        <span>Private</span>
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xs text-gray-500">Weight</span>
-                      <span className="font-medium">{currentWeight ? `${currentWeight} lbs` : '—'}</span>
-                      <span className="ml-2 text-xs text-gray-400 flex items-center gap-1">
-                        <Lock className="w-3 h-3" />
-                        <span>Private</span>
-                      </span>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 
+            {/* Height / Weight (visible only to the profile owner) - Centered */}
+            {isOwner && (
+              <div className="flex justify-center mt-2 pb-2">
+                <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-gray-600 dark:text-gray-400">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs text-gray-500">Height</span>
+                    <span className="font-medium">{currentHeight ? `${currentHeight} in` : '—'}</span>
+                    <span className="ml-2 text-xs text-gray-400 flex items-center gap-1">
+                      <Lock className="w-3 h-3" />
+                      <span>Private</span>
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs text-gray-500">Weight</span>
+                    <span className="font-medium">{currentWeight ? `${currentWeight} lbs` : '—'}</span>
+                    <span className="ml-2 text-xs text-gray-400 flex items-center gap-1">
+                      <Lock className="w-3 h-3" />
+                      <span>Private</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Fitness Goals */}
             {currentUser.fitnessGoals && currentUser.fitnessGoals.length > 0 && (
-              <div className="mt-4 pt-4 border-t">
-                <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+              <div className="mt-3 pt-3 border-t">
+                <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-1.5">
                   Fitness Goals
                 </h3>
                 <div className="flex flex-wrap gap-2">
@@ -962,8 +969,8 @@ export default function Profile() {
         </Card>
 
         {/* Content Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-3 sm:space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 rounded-none">
             <TabsTrigger value="posts" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
               <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4" />
               <span>Posts</span>
@@ -978,12 +985,12 @@ export default function Profile() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="posts" className="space-y-4">
+          <TabsContent value="posts" className="p-0">
             {postsLoading ? (
               <div className="text-center py-8">
-                <div className="animate-pulse space-y-4">
+                <div className="animate-pulse space-y-0">
                   {[1, 2, 3].map((i) => (
-                    <Card key={i}>
+                    <Card key={i} className="rounded-none border-0 border-b">
                       <CardContent className="p-4">
                         <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
                         <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
@@ -1007,10 +1014,10 @@ export default function Profile() {
                 </Button>
               </div>
             ) : (
-              <div className="space-y-3 sm:space-y-4">
+              <div className="space-y-0">
                 {userPosts.map((post) => (
-                  <Card key={post.id}>
-                    <CardContent className="p-3 sm:p-4">
+                  <Card key={post.id} className="rounded-none border-0 border-b">
+                    <CardContent className="p-4">
                       <div className="flex items-start gap-2 sm:gap-3">
                         <Avatar className="w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0">
                           <AvatarImage src={currentUser.avatar || ""} />
@@ -1063,10 +1070,10 @@ export default function Profile() {
             )}
           </TabsContent>
 
-          <TabsContent value="workouts" className="space-y-4">
-            <div className="space-y-4">
+          <TabsContent value="workouts" className="p-0">
+            <div className="space-y-0">
               {/* Workout filter tabs */}
-              <div className="flex space-x-2">
+              <div className="flex space-x-2 p-4 border-b">
                 <Button variant="outline" size="sm" className="bg-fit-green text-white border-fit-green">
                   All Workouts
                 </Button>
@@ -1075,8 +1082,8 @@ export default function Profile() {
               </div>
 
               {/* Sample workout history */}
-              <div className="space-y-3">
-                <Card>
+              <div className="space-y-0">
+                <Card className="rounded-none border-0 border-b">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center space-x-3">
@@ -1128,7 +1135,7 @@ export default function Profile() {
                 </Card>
 
                 {/* Placeholder for when workout is shared to feed */}
-                <Card className="border-dashed border-2 border-gray-200 dark:border-gray-700">
+                <Card className="border-dashed border-2 border-gray-200 dark:border-gray-700 rounded-none border-x-0">
                   <CardContent className="p-6 text-center">
                     <Dumbbell className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                     <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -1143,7 +1150,7 @@ export default function Profile() {
             </div>
           </TabsContent>
 
-          <TabsContent value="progress" className="space-y-4">
+          <TabsContent value="progress" className="p-0">
             <ProgressInsightsTab userId={userId} isOwner={isOwner} />
           </TabsContent>
         </Tabs>

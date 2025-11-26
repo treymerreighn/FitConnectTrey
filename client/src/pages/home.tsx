@@ -73,7 +73,7 @@ export default function Home() {
       {/* Main Content */}
       <main className="pt-16 pb-20">
         {/* Stories Row */}
-        <Stories users={users} posts={posts} />
+        <Stories users={users} />
 
         {/* Feed Posts */}
         <div className="space-y-6 py-4">

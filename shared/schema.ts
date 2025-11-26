@@ -310,6 +310,22 @@ export type ExerciseProgress = z.infer<typeof exerciseProgressSchema>;
 export const insertWorkoutSessionSchema = workoutSessionSchema.omit({ id: true, createdAt: true });
 export const insertExerciseProgressSchema = exerciseProgressSchema.omit({ id: true, createdAt: true });
 
+// Story schema - for 24-hour disappearing stories
+export const storySchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  image: z.string(), // S3 URL
+  caption: z.string().optional(),
+  createdAt: z.date().default(() => new Date()),
+  expiresAt: z.date(), // 24 hours from creation
+  views: z.array(z.string()).default([]), // array of userIds who viewed
+});
+
+export type Story = z.infer<typeof storySchema>;
+
+export const insertStorySchema = storySchema.omit({ id: true, createdAt: true, views: true, expiresAt: true });
+export type InsertStory = z.infer<typeof insertStorySchema>;
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertPost = z.infer<typeof insertPostSchema>;
 export type InsertComment = z.infer<typeof insertCommentSchema>;

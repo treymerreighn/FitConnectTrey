@@ -3,7 +3,7 @@ import { db } from "./db.ts";
 import { users, posts, comments, connections, progressEntries, exercises, notifications, conversations, messages } from "../shared/db-schema.ts";
 import type { IStorage, Notification, Message, Conversation } from "./storage.ts";
 import type { WorkoutTemplate, InsertWorkoutTemplate, SavedWorkout, InsertSavedWorkout } from "../shared/workout-types.ts";
-import type { User, Post, Comment, Connection, ProgressEntry, Exercise, Recipe, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, WorkoutSession, InsertWorkoutSession, ExerciseProgress, InsertExerciseProgress, CommunityMeal, ProgressInsight, InsertProgressInsight } from "../shared/schema.ts";
+import type { User, Post, Comment, Connection, ProgressEntry, Exercise, Recipe, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, WorkoutSession, InsertWorkoutSession, ExerciseProgress, InsertExerciseProgress, CommunityMeal, ProgressInsight, InsertProgressInsight, Story, InsertStory } from "../shared/schema.ts";
 
 export class PgStorage implements IStorage {
   constructor() {
@@ -20,6 +20,7 @@ export class PgStorage implements IStorage {
   private progressInsights: Map<string, ProgressInsight> = new Map();
   private workoutTemplates: Map<string, WorkoutTemplate> = new Map(); // in-memory until table added
   private savedWorkouts: Map<string, SavedWorkout[]> = new Map(); // in-memory bookmark persistence
+  private stories: Map<string, Story> = new Map(); // in-memory until table added
 
   private async seedData() {
     // Skip seeding if database is not available
@@ -1039,5 +1040,71 @@ export class PgStorage implements IStorage {
     await db.update(conversations).set({ updatedAt: new Date(), lastMessageId: m.id }).where(eq(conversations.id, conversationId));
 
     return m;
+  }
+
+  // Stories (in-memory until DB table added)
+  async createStory(story: InsertStory): Promise<Story> {
+    const { nanoid } = await import("nanoid");
+    const id = nanoid();
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours from now
+    
+    const newStory: Story = {
+      id,
+      userId: story.userId,
+      image: story.image,
+      caption: story.caption,
+      createdAt: now,
+      expiresAt,
+      views: [],
+    };
+
+    this.stories.set(id, newStory);
+    return newStory;
+  }
+
+  async getActiveStories(): Promise<Story[]> {
+    const now = new Date();
+    return Array.from(this.stories.values())
+      .filter(story => story.expiresAt > now)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async getStoriesByUserId(userId: string): Promise<Story[]> {
+    const now = new Date();
+    return Array.from(this.stories.values())
+      .filter(story => story.userId === userId && story.expiresAt > now)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async viewStory(storyId: string, userId: string): Promise<Story | null> {
+    const story = this.stories.get(storyId);
+    if (!story) return null;
+
+    // Add userId to views if not already present
+    if (!story.views.includes(userId)) {
+      story.views.push(userId);
+      this.stories.set(storyId, story);
+    }
+
+    return story;
+  }
+
+  async deleteStory(id: string): Promise<boolean> {
+    return this.stories.delete(id);
+  }
+
+  async cleanupExpiredStories(): Promise<number> {
+    const now = new Date();
+    let count = 0;
+    
+    for (const [id, story] of this.stories.entries()) {
+      if (story.expiresAt <= now) {
+        this.stories.delete(id);
+        count++;
+      }
+    }
+    
+    return count;
   }
 }

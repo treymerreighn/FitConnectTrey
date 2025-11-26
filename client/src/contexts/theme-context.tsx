@@ -23,18 +23,12 @@ interface ThemeProviderProps {
 }
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>("light");
+  const [theme, setTheme] = useState<Theme>("dark");
 
   useEffect(() => {
-    // Check localStorage for saved theme
-    const savedTheme = localStorage.getItem("theme") as Theme;
-    if (savedTheme) {
-      setTheme(savedTheme);
-    } else {
-      // Check system preference
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-      setTheme(systemTheme);
-    }
+    // Force dark mode
+    setTheme("dark");
+    localStorage.setItem("theme", "dark");
   }, []);
 
   useEffect(() => {

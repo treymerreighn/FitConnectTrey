@@ -1728,4 +1728,67 @@ router.get('/api/personal-records', async (req, res) => {
   }
 });
 
+// Stories
+router.post('/api/stories', async (req, res) => {
+  try {
+    const userId = req.body.userId || (req as any).user?.claims?.sub || "44595091";
+    const story = await storage.createStory({
+      userId,
+      image: req.body.image,
+      caption: req.body.caption,
+    });
+    res.json(story);
+  } catch (error: any) {
+    console.error('❌ [Stories API] Error creating story:', error);
+    res.status(500).json({ error: 'Failed to create story' });
+  }
+});
+
+router.get('/api/stories', async (req, res) => {
+  try {
+    const stories = await storage.getActiveStories();
+    res.json(stories);
+  } catch (error: any) {
+    console.error('Error fetching stories:', error);
+    res.status(500).json({ error: 'Failed to fetch stories' });
+  }
+});
+
+router.get('/api/stories/user/:userId', async (req, res) => {
+  try {
+    const stories = await storage.getStoriesByUserId(req.params.userId);
+    res.json(stories);
+  } catch (error: any) {
+    console.error('Error fetching user stories:', error);
+    res.status(500).json({ error: 'Failed to fetch user stories' });
+  }
+});
+
+router.post('/api/stories/:id/view', async (req, res) => {
+  try {
+    const userId = req.body.userId || (req as any).user?.claims?.sub || "44595091";
+    const story = await storage.viewStory(req.params.id, userId);
+    if (!story) {
+      return res.status(404).json({ error: 'Story not found' });
+    }
+    res.json(story);
+  } catch (error: any) {
+    console.error('Error viewing story:', error);
+    res.status(500).json({ error: 'Failed to view story' });
+  }
+});
+
+router.delete('/api/stories/:id', async (req, res) => {
+  try {
+    const success = await storage.deleteStory(req.params.id);
+    if (!success) {
+      return res.status(404).json({ error: 'Story not found' });
+    }
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('Error deleting story:', error);
+    res.status(500).json({ error: 'Failed to delete story' });
+  }
+});
+
 export default router;

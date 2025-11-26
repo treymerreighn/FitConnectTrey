@@ -43,7 +43,7 @@ type CreateExerciseFormData = z.infer<typeof createExerciseFormSchema>;
 
 export default function Workouts() {
   const [location, setLocation] = useLocation();
-  const [trendingPeriod, setTrendingPeriod] = useState(24);
+  const [trendingPeriod, setTrendingPeriod] = useState(168);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState("");
@@ -167,13 +167,9 @@ export default function Workouts() {
     <div className="min-h-screen bg-white dark:bg-gray-950">
       <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div>
-              <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Workouts</h1>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
+        <div className="space-y-4">
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 text-center">WORKOUTS</h1>
+          <div className="flex items-center justify-center gap-2">
             <Button onClick={() => setLocation("/saved-workouts")} variant="outline" size="sm">
               <Bookmark className="h-4 w-4 mr-2" /> Saved
             </Button>
@@ -799,22 +795,10 @@ export default function Workouts() {
             {/* Trending Workouts */}
             <Card className="border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="h-6 w-6 text-blue-500" />
-                    Trending Workouts
-                  </CardTitle>
-                  <Select value={trendingPeriod.toString()} onValueChange={(value) => setTrendingPeriod(Number(value))}>
-                    <SelectTrigger className="w-[140px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="24">Last 24h</SelectItem>
-                      <SelectItem value="168">Last week</SelectItem>
-                      <SelectItem value="720">Last month</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <CardTitle className="flex items-center justify-center gap-2">
+                  <TrendingUp className="h-6 w-6 text-blue-500" />
+                  Trending Workouts
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {trendingLoading ? (

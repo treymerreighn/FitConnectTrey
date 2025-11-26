@@ -242,14 +242,13 @@ export default function BuildWorkout() {
     <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
       {/* Header */}
       <div className="sticky top-0 z-30 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-950/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-slate-950/60">
-        <div className="mx-auto max-w-4xl px-5 py-4 flex items-center gap-3">
-          <Dumbbell className="h-6 w-6 text-indigo-600" />
-          <h1 className="text-xl md:text-2xl font-semibold tracking-tight">Workout Builder</h1>
+        <div className="mx-auto max-w-4xl px-5 py-4 flex items-center justify-center">
+          <h1 className="text-xl md:text-2xl font-semibold tracking-tight">BUILD</h1>
         </div>
       </div>
 
       {/* Content */}
-      <div className="mx-auto max-w-4xl px-5 pt-6 pb-40 md:pb-36 pb-[calc(env(safe-area-inset-bottom)+9rem)]">
+      <div className="mx-auto max-w-4xl px-5 pt-6 pb-60 md:pb-56">
         {/* Workout meta */}
         <Card className="border-slate-200 shadow-sm bg-white dark:bg-slate-900 dark:border-slate-800">
           <CardHeader className="pb-3">

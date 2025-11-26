@@ -112,8 +112,10 @@ export default function CreatePost() {
   });
 
   const addImage = (imageUrl: string) => {
+    console.log('🖼️ Adding image to post:', imageUrl);
     if (images.length < 4) {
       setImages([...images, imageUrl]);
+      console.log('✅ Images array now:', [...images, imageUrl]);
       toast({
         title: "Photo added!",
         description: "Photo uploaded successfully.",
@@ -204,7 +206,10 @@ export default function CreatePost() {
 
   const createPostMutation = useMutation({
     mutationFn: async (postData: InsertPost) => {
-      return api.createPost(postData);
+      console.log('📤 Sending post data:', JSON.stringify(postData, null, 2));
+      const result = await api.createPost(postData);
+      console.log('✅ Post created:', result);
+      return result;
     },
     onSuccess: () => {
       toast({

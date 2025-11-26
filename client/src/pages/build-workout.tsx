@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/contexts/theme-context";
+import { api } from "@/lib/api";
 
 type SetRow = { id: string; reps: number; weight?: number; restTime?: number };
 type ExerciseRow = { id: string; name: string; notes?: string; sets: SetRow[]; expanded?: boolean; sourceExerciseId?: string };
@@ -23,6 +24,20 @@ const generateId = () => {
   }
   return `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
+
+// Calculate suggested weight based on last performance using Brzycki formula
+function calculateSuggestedWeight(lastWeight?: number, lastReps?: number, targetReps = 10): number {
+  if (!lastWeight || !lastReps || lastReps <= 0) return 0;
+  
+  // Brzycki 1RM formula: 1RM = weight / (1.0278 - 0.0278 * reps)
+  const oneRepMax = lastWeight / (1.0278 - 0.0278 * lastReps);
+  
+  // Calculate weight for target reps: weight = 1RM * (1.0278 - 0.0278 * targetReps)
+  const suggestedWeight = oneRepMax * (1.0278 - 0.0278 * targetReps);
+  
+  // Round to nearest 2.5kg increment (common plate size)
+  return Math.round(suggestedWeight / 2.5) * 2.5;
+}
 
 function makeExercise(name: string, exerciseId?: string, defaultWeight = 0, defaultReps = 10, defaultRest = 90): ExerciseRow {
   return {
@@ -65,8 +80,22 @@ export default function BuildWorkout() {
     return { totalSets, estMinutes, volume };
   }, [exercises]);
 
-  function addExerciseFromLibrary(ex: LibraryExercise) {
-    setExercises((prev) => [...prev, makeExercise(ex.name, ex.id)]);
+  async function addExerciseFromLibrary(ex: LibraryExercise) {
+    try {
+      // Fetch user's last performance for this exercise
+      const progress = await api.getExerciseProgress(ex.id, user?.id);
+      let suggestedWeight = 0;
+      if (progress.length > 0) {
+        // Get the most recent entry
+        const lastEntry = progress[progress.length - 1];
+        suggestedWeight = calculateSuggestedWeight(lastEntry.weight, lastEntry.reps, 10);
+      }
+      setExercises((prev) => [...prev, makeExercise(ex.name, ex.id, suggestedWeight)]);
+    } catch (error) {
+      console.error('Failed to fetch exercise progress:', error);
+      // Fallback to default weight
+      setExercises((prev) => [...prev, makeExercise(ex.name, ex.id)]);
+    }
   }
 
   function removeExercise(id: string) {
@@ -352,7 +381,7 @@ export default function BuildWorkout() {
           </div>
         </div>
       </div>
-      {showPicker && <ExercisePickerModal onClose={() => setShowPicker(false)} onSelect={ex => { addExerciseFromLibrary(ex); setShowPicker(false); }} search={pickerSearch} setSearch={setPickerSearch} />}
+      {showPicker && <ExercisePickerModal onClose={() => setShowPicker(false)} onSelect={async ex => { await addExerciseFromLibrary(ex); setShowPicker(false); }} search={pickerSearch} setSearch={setPickerSearch} />}
     </div>
   );
 }
@@ -447,7 +476,7 @@ function StepInput({ value, onChange, min = 0, max = 999, step = 1 }: { value: n
   );
 }
 
-function ExercisePickerModal({ onClose, onSelect, search, setSearch }: { onClose: () => void; onSelect: (ex: LibraryExercise) => void; search: string; setSearch: (v: string) => void }) {
+function ExercisePickerModal({ onClose, onSelect, search, setSearch }: { onClose: () => void; onSelect: (ex: LibraryExercise) => void | Promise<void>; search: string; setSearch: (v: string) => void }) {
   const { data: libraryExercises = [] } = useQuery<LibraryExercise[]>({ queryKey: ["/api/exercises"] });
 
   // Step 1: choose body part or "See All"

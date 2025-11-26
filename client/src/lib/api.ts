@@ -139,6 +139,14 @@ export const api = {
     return await apiRequest("GET", `/api/users/${userId}/exercises`);
   },
 
+  // Exercise progress
+  getExerciseProgress: async (exerciseId: string, userId?: string): Promise<{ date: string; weight?: number; reps: number; oneRepMax?: number }[]> => {
+    const params = new URLSearchParams();
+    if (userId) params.append("userId", userId);
+    const queryString = params.toString();
+    return await apiRequest("GET", `/api/exercise-progress/${exerciseId}${queryString ? `?${queryString}` : ""}`);
+  },
+
   // Image uploads
   uploadImage: async (file: File) => {
     return await uploadImage(file);

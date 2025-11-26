@@ -251,19 +251,25 @@ router.get("/api/workouts/completed/:userId", async (req, res) => {
 
 router.post("/api/posts", async (req, res) => {
   try {
+    console.log('📝 Creating post with data:', JSON.stringify(req.body, null, 2));
+    
     const postData = {
       ...req.body,
-      images: req.body.image ? [req.body.image] : [],
+      // Handle both singular 'image' and plural 'images' fields
+      images: req.body.images || (req.body.image ? [req.body.image] : []),
       createdAt: new Date(),
       likes: [],
       comments: []
     };
     delete postData.image; // Remove the single image field since we use images array
     
+    console.log('💾 Post data after processing:', JSON.stringify({ ...postData, images: postData.images?.length || 0 + ' images' }));
+    
     const post = await storage.createPost(postData);
+    console.log('✅ Post created successfully with ID:', post.id);
     res.status(201).json(post);
   } catch (error) {
-    console.error("Failed to create post:", error);
+    console.error("❌ Failed to create post:", error);
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: error.errors });
     }

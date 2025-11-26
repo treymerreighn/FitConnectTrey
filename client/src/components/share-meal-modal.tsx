@@ -14,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Camera, Upload, X, Plus, Minus, Share2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { uploadImage as uploadImageToS3 } from "@/lib/imageUpload";
 
 const shareMealSchema = z.object({
   caption: z.string().min(1, "Caption is required"),
@@ -123,20 +124,8 @@ export default function ShareMealModal({ isOpen, onClose, recipeData }: ShareMea
   };
 
   const uploadImage = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append("image", file);
-
-    const response = await fetch("/api/upload", {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to upload image");
-    }
-
-    const data = await response.json();
-    return data.url;
+    const result = await uploadImageToS3(file);
+    return result.url;
   };
 
   const addIngredient = () => {

@@ -1,18 +1,19 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Users, Brain, Share2, Heart, MessageCircle, Utensils, Crown } from "lucide-react";
+import { Search, Users, Share2, Heart, MessageCircle, Utensils, Crown, Dumbbell } from "lucide-react";
 import { Link } from "@/components/ui/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { Card, CardContent } from "@/components/ui/card";
+import { PostCard } from "@/components/ui/post-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { CURRENT_USER_ID } from "@/lib/constants";
-import type { User, Recipe, CommunityMeal } from "@shared/schema";
-import { MealHelper } from "@/components/meal-helper";
+import type { User, Recipe, CommunityMeal, Post } from "@shared/schema";
+
 import ShareMealModal from "@/components/share-meal-modal";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -44,6 +45,14 @@ export default function SearchPage() {
     queryFn: () => apiRequest("GET", `/api/users/${viewerId}`),
     enabled: Boolean(viewerId),
   });
+
+  // Fetch all posts for workout filtering
+  const { data: allPosts = [] } = useQuery<Post[]>({
+    queryKey: ["/api/posts"],
+  });
+
+  // Filter workout posts
+  const workoutPosts = allPosts.filter(post => post.type === 'workout');
 
   const filteredUsers = users.filter((user) => {
     if (!searchTerm) return true;
@@ -176,13 +185,13 @@ export default function SearchPage() {
             <Users className="w-4 h-4" />
             Find Users
           </TabsTrigger>
+          <TabsTrigger value="community-workouts" className="flex items-center gap-2">
+            <Dumbbell className="w-4 h-4 text-blue-600" />
+            Workouts
+          </TabsTrigger>
           <TabsTrigger value="community-meals" className="flex items-center gap-2">
             <Utensils className="w-4 h-4 text-green-600" />
-            Community Meals
-          </TabsTrigger>
-          <TabsTrigger value="meal-helper" className="flex items-center gap-2">
-            <Brain className="w-4 h-4 text-orange-500" />
-            AI Meal Helper
+            Meals
           </TabsTrigger>
         </TabsList>
 
@@ -327,6 +336,40 @@ export default function SearchPage() {
             )}
           </div>
         )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="community-workouts" className="space-y-4 mt-4">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Community Workouts</h2>
+            </div>
+            
+            {workoutPosts.length === 0 ? (
+              <Card className="p-8 text-center">
+                <CardContent>
+                  <Dumbbell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    No community workouts yet
+                  </h3>
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">
+                    Be the first to share your workout with the community!
+                  </p>
+                  <Link href="/workouts">
+                    <Button className="bg-blue-600 hover:bg-blue-700">
+                      <Dumbbell className="h-4 w-4 mr-2" />
+                      Create Workout
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-6">
+                {workoutPosts.map((post) => (
+                  <PostCard key={post.id} post={post} />
+                ))}
+              </div>
+            )}
           </div>
         </TabsContent>
 
@@ -483,82 +526,12 @@ export default function SearchPage() {
             )}
           </div>
         </TabsContent>
-
-        <TabsContent value="meal-helper" className="space-y-4 mt-4">
-          <div className="bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded-lg p-4 mb-4">
-            <div className="flex items-center space-x-2 mb-2">
-              <Brain className="h-5 w-5 text-orange-600" />
-              <h3 className="font-semibold text-orange-900 dark:text-orange-100">AI Meal Helper - Premium Feature</h3>
-            </div>
-            <p className="text-sm text-orange-800 dark:text-orange-200 mb-3">
-              Generate personalized healthy recipes with AI based on your dietary preferences and goals.
-            </p>
-            <Button className="bg-orange-600 hover:bg-orange-700 text-white">
-              <Crown className="h-4 w-4 mr-2 text-yellow-300" />
-              Upgrade to Premium
-            </Button>
-          </div>
-          <MealHelper />
-        </TabsContent>
       </Tabs>
 
       <ShareMealModal 
         isOpen={isShareMealModalOpen}
         onClose={() => setIsShareMealModalOpen(false)}
       />
-    </div>
-  );
-}
-
-function MealHelperTabContent({ onShareMeal }: { onShareMeal: () => void }) {
-  const [activeTab, setActiveTab] = useState("ai-helper");
-
-  const { data: communityMeals = [] } = useQuery<CommunityMeal[]>({
-    queryKey: ["/api/community-meals"],
-  });
-
-  return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="text-center py-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          Meal Helper & Recipes
-        </h2>
-        <p className="text-gray-600 dark:text-gray-400">
-          Get personalized AI-generated recipes and discover meals shared by our community
-        </p>
-      </div>
-
-      {/* Sub-tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="ai-helper" className="flex items-center gap-2">
-            <Brain className="w-4 h-4" />
-            AI Meal Helper
-          </TabsTrigger>
-          <TabsTrigger value="recipe-library" className="flex items-center gap-2">
-            📚 Recipe Library
-          </TabsTrigger>
-          <TabsTrigger value="community-meals" className="flex items-center gap-2">
-            👥 Community Meals
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="ai-helper" className="mt-4">
-          <MealHelper />
-        </TabsContent>
-
-        <TabsContent value="recipe-library" className="mt-4">
-          <HealthyRecipesTab />
-        </TabsContent>
-
-        <TabsContent value="community-meals" className="mt-4">
-          <CommunityMealSharing 
-            meals={communityMeals}
-            onShareMeal={onShareMeal}
-          />
-        </TabsContent>
-      </Tabs>
     </div>
   );
 }

@@ -23,12 +23,24 @@ interface ThemeProviderProps {
 }
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setTheme] = useState<Theme>(() => {
+    // Initialize from localStorage or default to dark
+    const stored = localStorage.getItem("theme");
+    if (stored === "dark" || stored === "light") {
+      return stored;
+    }
+    // Force dark mode as default
+    localStorage.setItem("theme", "dark");
+    return "dark";
+  });
 
   useEffect(() => {
-    // Force dark mode
-    setTheme("dark");
-    localStorage.setItem("theme", "dark");
+    // Force dark mode on mount if not already set
+    const stored = localStorage.getItem("theme");
+    if (!stored || stored !== "dark") {
+      setTheme("dark");
+      localStorage.setItem("theme", "dark");
+    }
   }, []);
 
   useEffect(() => {

@@ -63,15 +63,8 @@ export default function BuildWorkout() {
   const [pickerSearch, setPickerSearch] = useState("");
   const { toast } = useToast();
   const { user } = useAuth();
-  const { theme, setTheme } = useTheme();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
-
-  useEffect(() => {
-    if (theme !== "light") {
-      setTheme("light");
-    }
-  }, [theme, setTheme]);
 
   const totals = useMemo(() => {
     const totalSets = exercises.reduce((acc, e) => acc + e.sets.length, 0);

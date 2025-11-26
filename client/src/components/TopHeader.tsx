@@ -1,32 +1,40 @@
 import React from "react";
 import { useLocation } from "wouter";
-import { Dumbbell, Heart, MessageCircle } from "lucide-react";
+import { Dumbbell, Heart, MessageCircle, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface TopHeaderProps {
   notificationsCount?: number;
   messagesCount?: number;
   className?: string;
+  showSearch?: boolean;
 }
 
-export default function TopHeader({ notificationsCount = 0, messagesCount = 0, className = "" }: TopHeaderProps) {
+export default function TopHeader({ notificationsCount = 0, messagesCount = 0, className = "", showSearch = false }: TopHeaderProps) {
   const [, setLocation] = useLocation();
 
   return (
     <header className={`fixed top-0 w-full bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-50 ${className}`}>
       <div className="flex items-center justify-between px-4 py-4">
+        {showSearch && (
+          <div className="absolute left-4">
+            <Button variant="ghost" size="sm" className="p-2 mobile-touch-target" onClick={() => setLocation('/discover')}>
+              <Search className="w-8 h-8 text-gray-600 dark:text-gray-300" />
+            </Button>
+          </div>
+        )}
         <div className="flex-1 flex justify-center">
           <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white tracking-wide">KRATOS</h1>
         </div>
         <div className="flex items-center space-x-3 absolute right-4">
           <Button variant="ghost" size="sm" className="relative p-2 mobile-touch-target" onClick={() => setLocation('/notifications')}>
-            <Heart className="w-6 h-6 text-gray-600 dark:text-gray-300" />
+            <Heart className="w-8 h-8 text-gray-600 dark:text-gray-300" />
             <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
               {notificationsCount}
             </span>
           </Button>
           <Button variant="ghost" size="sm" className="relative p-2 mobile-touch-target" onClick={() => setLocation('/messages')}>
-            <MessageCircle className="w-6 h-6 text-gray-600 dark:text-gray-300" />
+            <MessageCircle className="w-8 h-8 text-gray-600 dark:text-gray-300" />
             <span className="absolute -top-1 -right-1 w-4 h-4 bg-fit-blue rounded-full text-xs text-white flex items-center justify-center">
               {messagesCount}
             </span>

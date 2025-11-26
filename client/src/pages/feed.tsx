@@ -94,7 +94,7 @@ export default function Feed() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <TopHeader />
+      <TopHeader showSearch={true} />
 
       {/* Main Content */}
       <main className="pt-16 pb-20">

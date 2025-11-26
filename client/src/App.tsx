@@ -2,7 +2,7 @@ import { Route, Switch } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
-import { Home, Search, Dumbbell, TrendingUp, User } from "lucide-react";
+import { Home, UtensilsCrossed, Dumbbell, TrendingUp, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { Link } from "@/components/ui/link";
@@ -32,6 +32,7 @@ import Messages from "./pages/messages";
 import WorkoutHistory from "./pages/workout-history";
 import SavedWorkouts from "./pages/saved-workouts";
 import SampleWorkout from "./pages/sample-workout.tsx";
+import MealsPage from "./pages/meals";
 
 
 
@@ -44,7 +45,7 @@ function BottomNavigation() {
   
   const navItems = [
     { path: "/", icon: Home, label: "Home" },
-    { path: "/discover", icon: Search, label: "Discover" },
+    { path: "/meals", icon: UtensilsCrossed, label: "Meals" },
     { path: "/workouts", icon: Dumbbell, label: "Workouts" },
     { path: "/progress", icon: TrendingUp, label: "Progress" },
     { path: "/profile", icon: User, label: "Profile" },
@@ -52,21 +53,21 @@ function BottomNavigation() {
 
   return (
     <nav className="fixed bottom-0 w-full bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-40 h-16">
-      <div className="flex items-center justify-around py-2">
+      <div className="flex items-center justify-around h-full">
         {navItems.map(({ path, icon: Icon, label }) => {
           const isActive = location === path;
           return (
             <Link key={path} href={path} asChild>
               <Button
                 variant="ghost"
-                className={`flex items-center justify-center p-2 h-auto ${
+                className={`flex items-center justify-center p-0 h-full [&_svg]:!size-auto ${
                   isActive
                     ? "text-fit-green"
                     : "text-gray-600 dark:text-gray-300 hover:text-fit-green"
                 }`}
                 aria-label={label}
               >
-                <Icon className="w-10 h-10" />
+                <Icon className="w-[56px] h-[56px]" strokeWidth={1.5} />
               </Button>
             </Link>
           );
@@ -108,6 +109,7 @@ function Router() {
           <Route path="/test-image-post" component={TestImagePost} />
           <Route path="/recipes" component={RecipesPage} />
           <Route path="/discover" component={SearchPage} />
+          <Route path="/meals" component={MealsPage} />
         </>
       )}
       <Route component={NotFound} />

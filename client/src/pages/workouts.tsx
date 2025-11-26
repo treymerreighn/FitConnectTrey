@@ -169,12 +169,8 @@ export default function Workouts() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-900">
-              <Dumbbell className="h-6 w-6 text-gray-800 dark:text-gray-200" />
-            </div>
             <div>
               <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Workouts</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Browse community plans or build your own</p>
             </div>
           </div>
           <div className="flex items-center gap-2">

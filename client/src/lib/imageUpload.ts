@@ -17,7 +17,7 @@ export async function uploadImage(file: File): Promise<ImageUploadResult> {
   formData.append('image', file);
 
   const response = await apiRequest('POST', '/api/upload', formData);
-  return response.json();
+  return response;
 }
 
 export async function uploadMultipleImages(files: File[]): Promise<MultipleImageUploadResult> {
@@ -27,7 +27,7 @@ export async function uploadMultipleImages(files: File[]): Promise<MultipleImage
   });
 
   const response = await apiRequest('POST', '/api/upload-multiple', formData);
-  return response.json();
+  return response;
 }
 
 export function createImageUploadFormData(file: File): FormData {

@@ -37,19 +37,27 @@ export function Stories({ users }: StoriesProps) {
 
   const createStoryMutation = useMutation({
     mutationFn: async (data: { image: string; caption: string }) => {
-      return await api.createStory({
+      console.log('🔄 Mutation function called with:', data);
+      const result = await api.createStory({
         userId: CURRENT_USER_ID,
         image: data.image,
         caption: data.caption,
       });
+      console.log('✅ Mutation successful:', result);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('✅ onSuccess called with:', data);
       queryClient.invalidateQueries({ queryKey: ["/api/stories"] });
       setShowCreateDialog(false);
       setSelectedImage(null);
       setPreviewUrl("");
       setCaption("");
     },
+    onError: (error: any) => {
+      console.error('❌ Mutation error:', error);
+      console.error('❌ Error response:', error.response?.data);
+    }
   });
 
   const viewStoryMutation = useMutation({
@@ -69,13 +77,35 @@ export function Stories({ users }: StoriesProps) {
   };
 
   const handleCreateStory = async () => {
-    if (!selectedImage) return;
+    if (!selectedImage) {
+      console.error('No image selected');
+      return;
+    }
 
     try {
-      const imageUrl = await api.uploadImage(selectedImage);
-      await createStoryMutation.mutateAsync({ image: imageUrl, caption });
-    } catch (error) {
-      console.error("Failed to create story:", error);
+      console.log('🚀 Starting story creation...');
+      console.log('📷 Selected image:', selectedImage.name, selectedImage.type, selectedImage.size);
+      
+      console.log('⬆️ Uploading image...');
+      const uploadResult = await api.uploadImage(selectedImage);
+      console.log('✅ Image uploaded successfully:', uploadResult);
+      
+      const imageUrl = uploadResult.url;
+      console.log('📝 Creating story with data:', { 
+        userId: CURRENT_USER_ID, 
+        image: imageUrl, 
+        caption 
+      });
+      const result = await createStoryMutation.mutateAsync({ image: imageUrl, caption });
+      console.log('✅ Story created successfully:', result);
+    } catch (error: any) {
+      console.error("❌ Failed to create story:", error);
+      console.error("❌ Error details:", {
+        message: error.message,
+        response: error.response,
+        stack: error.stack
+      });
+      alert(`Failed to create story: ${error.message || 'Unknown error'}`);
     }
   };
 
@@ -171,6 +201,15 @@ export function Stories({ users }: StoriesProps) {
             {/* Other users' stories - only show users with stories */}
             {Object.entries(storiesByUser)
               .filter(([userId]) => userId !== CURRENT_USER_ID)
+              .sort(([userIdA, storiesA], [userIdB, storiesB]) => {
+                // Sort by unviewed stories first (unviewed before viewed)
+                const unviewedA = hasUnviewedStories(storiesA);
+                const unviewedB = hasUnviewedStories(storiesB);
+                
+                if (unviewedA && !unviewedB) return -1; // A has unviewed, comes first
+                if (!unviewedA && unviewedB) return 1;  // B has unviewed, comes first
+                return 0; // Both viewed or both unviewed, keep original order
+              })
               .map(([userId, userStories]) => {
                 const user = users.find(u => u.id === userId);
                 if (!user) return null;
@@ -180,8 +219,8 @@ export function Stories({ users }: StoriesProps) {
                 return (
                   <div key={userId} className="flex-shrink-0 text-center pt-1">
                     <button onClick={() => handleStoryClick(userStories[0])} className="relative">
-                      <div className={`w-16 h-16 rounded-full bg-gradient-to-tr from-fit-green to-fit-blue p-0.5 shadow-md ${
-                        unviewed ? 'ring-2 ring-fit-green ring-offset-1 dark:ring-offset-gray-800 animate-pulse' : ''
+                      <div className={`w-16 h-16 rounded-full bg-gradient-to-tr from-fit-green to-fit-blue shadow-md ${
+                        unviewed ? 'ring-1 ring-fit-green ring-offset-0 dark:ring-offset-0 animate-pulse p-[3px]' : 'p-0.5'
                       }`}>
                         <div className="w-full h-full rounded-full bg-white dark:bg-gray-800 p-0.5">
                           <UserAvatar
@@ -223,14 +262,9 @@ export function Stories({ users }: StoriesProps) {
 
       {/* Create Story Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg [&>button]:!right-4 [&>button]:!top-4">
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Create Story</h3>
-              <button onClick={() => setShowCreateDialog(false)}>
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+            <h3 className="text-lg font-semibold">Create Story</h3>
 
             {previewUrl && (
               <div className="relative aspect-[9/16] max-h-[500px] mx-auto bg-black rounded-lg overflow-hidden">
@@ -260,8 +294,11 @@ export function Stories({ users }: StoriesProps) {
       {/* Story Viewer Dialog */}
       {selectedStory && (
         <Dialog open={!!selectedStory} onOpenChange={() => setSelectedStory(null)}>
-          <DialogContent className="max-w-full w-screen h-screen p-0 bg-black m-0 rounded-none">
-            <div className="relative w-full h-full cursor-pointer" onClick={handleStoryScreenClick}>
+          <DialogContent 
+            className="!max-w-none w-screen h-screen p-0 bg-black m-0 rounded-none border-0 !translate-x-0 !translate-y-0 !left-0 !top-0 flex focus:outline-none focus-visible:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0 [&>button]:!absolute [&>button]:!right-4 [&>button]:!top-4 [&>button]:z-[60] [&>button]:!text-white [&>button]:!opacity-100 [&>button]:!bg-transparent [&>button]:hover:!opacity-100 [&>button]:focus:!ring-0 [&>button]:focus:!ring-offset-0 [&>button]:focus-visible:!ring-0 [&>button]:!rounded-full [&>button]:!p-1"
+            style={{ outline: 'none', boxShadow: 'none' }}
+          >
+            <div className="relative w-full h-full cursor-pointer outline-none focus:outline-none" onClick={handleStoryScreenClick}>
               <img src={selectedStory.image} alt="Story" className="w-full h-full object-cover pointer-events-none" />
               
               {/* Story header */}
@@ -289,14 +326,6 @@ export function Stories({ users }: StoriesProps) {
                   <p className="text-white text-center">{selectedStory.caption}</p>
                 </div>
               )}
-
-              {/* Close button */}
-              <button
-                onClick={() => setSelectedStory(null)}
-                className="absolute top-4 right-4 text-white bg-black/50 rounded-full p-2"
-              >
-                <X className="w-5 h-5" />
-              </button>
             </div>
           </DialogContent>
         </Dialog>

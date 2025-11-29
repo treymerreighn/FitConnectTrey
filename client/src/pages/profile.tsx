@@ -16,7 +16,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { api } from "@/lib/api";
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { CURRENT_USER_ID } from "@/lib/constants";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -324,6 +324,7 @@ function ProgressInsightsTab({ userId, isOwner }: { userId: string; isOwner?: bo
 export default function Profile() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("posts");
   const [openFollowList, setOpenFollowList] = useState<"followers" | "following" | null>(null);
@@ -861,7 +862,7 @@ export default function Profile() {
                           <Edit3 className="h-3 w-3 sm:h-4 sm:w-4" />
                           <span className="text-xs sm:text-sm">Edit Profile</span>
                         </Button>
-                        <Button variant="outline" size="sm" className="p-2">
+                        <Button variant="outline" size="sm" className="p-2" onClick={() => setLocation('/settings')}>
                           <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
                       </>

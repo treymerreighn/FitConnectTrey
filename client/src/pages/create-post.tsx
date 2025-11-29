@@ -61,8 +61,13 @@ export default function CreatePost() {
   const searchParams = useMemo(() => extractSearchParams(location), [location]);
   const incomingWorkoutData = useMemo(() => parseWorkoutDataFromParams(searchParams), [searchParams]);
 
+  // Get type from URL query params if provided
+  const urlType = new URLSearchParams(location.split('?')[1]).get('type');
+  const initialType = (urlType === 'nutrition' || urlType === 'progress') ? urlType : 
+                      incomingWorkoutData ? "workout" : "workout";
+
   // Post type selection
-  const [postType, setPostType] = useState<"workout" | "nutrition" | "progress">(incomingWorkoutData ? "workout" : "workout");
+  const [postType, setPostType] = useState<"workout" | "nutrition" | "progress">(initialType);
   
   // Common fields
   const [caption, setCaption] = useState("");

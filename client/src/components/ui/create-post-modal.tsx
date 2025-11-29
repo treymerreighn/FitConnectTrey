@@ -140,15 +140,15 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
       return;
     }
     if (type === "nutrition") {
-      // Navigate to meal generator instead of using simple form
+      // Navigate to create post page with nutrition type
       handleClose();
-      setLocation("/recipes");
+      setLocation("/create-post?type=nutrition");
       return;
     }
     if (type === "progress") {
-      // Navigate to progress tracker instead of using simple form
+      // Navigate to create post page with progress type
       handleClose();
-      setLocation("/progress");
+      setLocation("/create-post?type=progress");
       return;
     }
     setSelectedType(type);

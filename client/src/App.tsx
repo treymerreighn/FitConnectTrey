@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { Link } from "@/components/ui/link";
 import { ThemeProvider } from "@/contexts/theme-context";
+import { PreferencesProvider } from "@/contexts/preferences-context";
 
 import { useAuth } from "@/hooks/useAuth";
 import Feed from "./pages/feed";
@@ -33,6 +34,7 @@ import WorkoutHistory from "./pages/workout-history";
 import SavedWorkouts from "./pages/saved-workouts";
 import SampleWorkout from "./pages/sample-workout.tsx";
 import MealsPage from "./pages/meals";
+import Settings from "./pages/settings";
 
 
 
@@ -110,6 +112,7 @@ function Router() {
           <Route path="/recipes" component={RecipesPage} />
           <Route path="/discover" component={SearchPage} />
           <Route path="/meals" component={MealsPage} />
+          <Route path="/settings" component={Settings} />
         </>
       )}
       <Route component={NotFound} />
@@ -120,13 +123,15 @@ function Router() {
 export default function App() {
   return (
     <ThemeProvider>
-      <QueryClientProvider client={queryClient}>
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-          <Router />
-          <BottomNavigation />
-          <Toaster />
-        </div>
-      </QueryClientProvider>
+      <PreferencesProvider>
+        <QueryClientProvider client={queryClient}>
+          <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+            <Router />
+            <BottomNavigation />
+            <Toaster />
+          </div>
+        </QueryClientProvider>
+      </PreferencesProvider>
     </ThemeProvider>
   );
 }

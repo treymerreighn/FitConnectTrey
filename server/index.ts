@@ -36,7 +36,7 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
   res.status(500).json({ error: "Something went wrong!" });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
 async function startServer() {
   try {

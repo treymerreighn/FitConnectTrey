@@ -7,7 +7,10 @@ import { Badge } from '../components/ui/badge';
 import { useToast } from '../hooks/use-toast';
 import { cn } from '../lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import { Loader2, PauseCircle, PlayCircle, Minus, Plus } from 'lucide-react';
+import { Loader2, PauseCircle, PlayCircle, Minus, Plus, PlusCircle, Search } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import type { Exercise } from '@shared/schema';
+import { usePreferences } from '@/contexts/preferences-context';
 
 // Types for workout session based on unified schema
 interface WorkoutSet { reps: number; weight?: number; rest?: number; completed?: boolean; startedAt?: number; completedAt?: number; }
@@ -79,6 +82,7 @@ const parsePlanFromSearch = (search: string): ActiveWorkoutPlan | null => {
 const WorkoutSession: React.FC = () => {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
+  const { weightUnit } = usePreferences();
   const initialSearch = extractSearch(location);
   const initialPlan = useMemo(() => parsePlanFromSearch(initialSearch), [initialSearch]);
   const [plan, setPlan] = useState<ActiveWorkoutPlan | null>(initialPlan);
@@ -88,11 +92,19 @@ const WorkoutSession: React.FC = () => {
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState<number>(0);
   const [currentSetIndex, setCurrentSetIndex] = useState<number>(0);
   const [showFinishDialog, setShowFinishDialog] = useState(false);
+  const [showAddExerciseDialog, setShowAddExerciseDialog] = useState(false);
+  const [exerciseSearchQuery, setExerciseSearchQuery] = useState('');
   const [saving, setSaving] = useState(false);
   const [ticker, setTicker] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [pauseStartedAt, setPauseStartedAt] = useState<number | null>(null);
   const [pauseAccumulated, setPauseAccumulated] = useState(0);
+
+  // Fetch exercises for adding to workout
+  const { data: allExercises = [] } = useQuery<Exercise[]>({
+    queryKey: ['/api/exercises'],
+    enabled: showAddExerciseDialog,
+  });
 
   useEffect(() => {
     const interval = setInterval(() => setTicker((t) => t + 1), 1000);
@@ -245,6 +257,46 @@ const WorkoutSession: React.FC = () => {
     });
   };
 
+  const addExerciseToWorkout = (exercise: Exercise) => {
+    const newExercise: WorkoutExercise = {
+      id: exercise.id,
+      name: exercise.name,
+      difficulty: exercise.difficulty,
+      muscleGroup: exercise.muscleGroups?.[0],
+      equipment: exercise.equipment?.[0],
+      sets: [
+        { reps: 10, weight: 0, rest: 60, completed: false },
+        { reps: 10, weight: 0, rest: 60, completed: false },
+        { reps: 10, weight: 0, rest: 60, completed: false },
+      ]
+    };
+    
+    setPlan(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        exercises: [...prev.exercises, newExercise]
+      };
+    });
+    
+    setShowAddExerciseDialog(false);
+    setExerciseSearchQuery('');
+    toast({
+      title: 'Exercise added',
+      description: `${exercise.name} has been added to your workout.`
+    });
+  };
+
+  const filteredExercises = useMemo(() => {
+    if (!exerciseSearchQuery.trim()) return allExercises;
+    const query = exerciseSearchQuery.toLowerCase();
+    return allExercises.filter(ex => 
+      ex.name.toLowerCase().includes(query) ||
+      ex.muscleGroups?.some(mg => mg.toLowerCase().includes(query)) ||
+      ex.category?.toLowerCase().includes(query)
+    );
+  }, [allExercises, exerciseSearchQuery]);
+
   const finishWorkout = async () => {
     if (!plan) return;
     setSaving(true);
@@ -283,27 +335,27 @@ const WorkoutSession: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50/80">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
-      <div className="sticky top-0 z-20 border-b bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+      <div className="sticky top-0 z-20 border-b bg-white dark:bg-gray-900 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-gray-900/60">
         <div className="max-w-6xl mx-auto px-4 py-3 flex flex-wrap gap-4 items-center justify-between">
           <div className="flex flex-col">
-            <h1 className="text-xl font-semibold tracking-tight">{plan.name || 'Workout Session'}</h1>
+            <h1 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">{plan.name || 'Workout Session'}</h1>
             <p className="text-xs text-muted-foreground">Logging your sets in real time</p>
-            {isPaused && <span className="text-[11px] uppercase tracking-wide text-amber-600 font-semibold">Paused</span>}
+            {isPaused && <span className="text-[11px] uppercase tracking-wide text-amber-600 dark:text-amber-400 font-semibold">Paused</span>}
           </div>
           <div className="flex items-center gap-6 text-sm">
             <div className="flex flex-col items-center">
-              <span className="font-medium">Time</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">Time</span>
               <Badge variant="secondary" className="text-xs font-mono">{formatTime(workoutElapsed)}</Badge>
             </div>
             <div className="flex flex-col items-center">
-              <span className="font-medium">Sets</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">Sets</span>
               <Badge variant="outline" className="text-xs">{stats.completedSets}/{stats.totalSets}</Badge>
             </div>
             <div className="flex flex-col items-center">
-              <span className="font-medium">Volume</span>
-              <Badge variant="outline" className="text-xs">{stats.volume} kg</Badge>
+              <span className="font-medium text-gray-900 dark:text-gray-100">Volume</span>
+              <Badge variant="outline" className="text-xs">{stats.volume} {weightUnit}</Badge>
             </div>
               <Button variant={isPaused ? 'default' : 'outline'} size="sm" onClick={togglePause} className="flex items-center gap-1">
                 {isPaused ? <PlayCircle className="h-4 w-4" /> : <PauseCircle className="h-4 w-4" />}
@@ -314,17 +366,17 @@ const WorkoutSession: React.FC = () => {
         </div>
       </div>
       {isPaused && (
-        <div className="bg-amber-100 border-y border-amber-200 text-amber-900 text-center text-sm py-2">
+        <div className="bg-amber-100 dark:bg-amber-900/30 border-y border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-center text-sm py-2">
           Workout paused — resume to continue timing and rest countdowns.
         </div>
       )}
 
       {/* Rest Timer Banner */}
       {activeRest !== null && (
-        <div className="sticky top-[64px] z-10 bg-amber-50 border-y border-amber-200">
+        <div className="sticky top-[64px] z-10 bg-amber-50 dark:bg-amber-900/20 border-y border-amber-200 dark:border-amber-800">
           <div className="max-w-6xl mx-auto px-4 py-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-amber-800">Rest</span>
+              <span className="text-sm font-medium text-amber-800 dark:text-amber-300">Rest</span>
               <Badge className="bg-amber-600 hover:bg-amber-600 text-white font-mono">{formatTime(activeRest)}</Badge>
             </div>
             <div className="flex gap-2">
@@ -365,7 +417,7 @@ const WorkoutSession: React.FC = () => {
                         <tr className="text-xs text-muted-foreground">
                           <th className="font-medium text-left py-2 pr-2">Set</th>
                           <th className="font-medium text-left py-2 pr-2 w-24">Reps</th>
-                          <th className="font-medium text-left py-2 pr-2 w-28">Weight</th>
+                          <th className="font-medium text-left py-2 pr-2 w-28">Weight ({weightUnit})</th>
                           <th className="font-medium text-left py-2 pr-2 w-20">Rest</th>
                           <th className="font-medium text-left py-2 pr-2 w-24">Status</th>
                           <th className="py-2" />
@@ -375,7 +427,7 @@ const WorkoutSession: React.FC = () => {
                         {exercise.sets.map((set, setIdx) => {
                           const isActiveRow = isCurrent && setIdx === currentSetIndex;
                           return (
-                            <tr key={setIdx} className={cn('group border-t text-xs', set.completed ? 'bg-green-50/60' : isActiveRow ? 'bg-primary/5' : 'hover:bg-muted/50')}>
+                            <tr key={setIdx} className={cn('group border-t text-xs', set.completed ? 'bg-green-50/60 dark:bg-green-900/20' : isActiveRow ? 'bg-primary/5' : 'hover:bg-muted/50')}>
                               <td className="py-2 pr-2 font-mono w-10">{setIdx + 1}</td>
                               <td className="py-2 pr-2">
                                 <Input
@@ -431,16 +483,26 @@ const WorkoutSession: React.FC = () => {
               </Card>
             )
           })}
+          
+          {/* Add Exercise Button */}
+          <Button 
+            variant="outline" 
+            className="w-full flex items-center gap-2 border-dashed" 
+            onClick={() => setShowAddExerciseDialog(true)}
+          >
+            <PlusCircle className="h-4 w-4" />
+            Add Exercise
+          </Button>
         </div>
       </div>
 
       {/* Sticky Footer Summary */}
-      <div className="sticky bottom-14 z-30 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70 border-t">
+      <div className="sticky bottom-14 z-30 bg-white dark:bg-gray-900 backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-gray-900/70 border-t border-gray-200 dark:border-gray-800">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between text-sm">
           <div className="flex gap-4">
             <span className="text-muted-foreground">Elapsed: <span className="font-medium text-foreground">{formatTime(workoutElapsed)}</span></span>
             <span className="text-muted-foreground">Sets: <span className="font-medium text-foreground">{stats.completedSets}/{stats.totalSets}</span></span>
-            <span className="text-muted-foreground">Volume: <span className="font-medium text-foreground">{stats.volume} kg</span></span>
+            <span className="text-muted-foreground">Volume: <span className="font-medium text-foreground">{stats.volume} {weightUnit}</span></span>
           </div>
             <div className="flex gap-2 flex-wrap">
               <Button size="sm" variant="outline" onClick={() => setLocation('/workouts')}>Exit</Button>
@@ -461,6 +523,49 @@ const WorkoutSession: React.FC = () => {
               <Button variant="outline" onClick={() => setShowFinishDialog(false)}>Cancel</Button>
               <Button onClick={finishWorkout} disabled={saving}>{saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Record & Continue</Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Exercise Dialog */}
+      <Dialog open={showAddExerciseDialog} onOpenChange={setShowAddExerciseDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Add Exercise to Workout</DialogTitle>
+          </DialogHeader>
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search exercises..."
+              value={exerciseSearchQuery}
+              onChange={(e) => setExerciseSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <div className="flex-1 overflow-y-auto space-y-2">
+            {filteredExercises.map((exercise) => (
+              <Card 
+                key={exercise.id} 
+                className="p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => addExerciseToWorkout(exercise)}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-sm">{exercise.name}</h4>
+                    <div className="flex gap-1 mt-1 flex-wrap">
+                      {exercise.muscleGroups?.slice(0, 2).map(mg => (
+                        <Badge key={mg} variant="secondary" className="text-xs">{mg}</Badge>
+                      ))}
+                      <Badge variant="outline" className="text-xs">{exercise.difficulty}</Badge>
+                    </div>
+                  </div>
+                  <PlusCircle className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                </div>
+              </Card>
+            ))}
+            {filteredExercises.length === 0 && (
+              <p className="text-center text-muted-foreground py-8">No exercises found</p>
+            )}
           </div>
         </DialogContent>
       </Dialog>

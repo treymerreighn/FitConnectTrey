@@ -268,20 +268,7 @@ export default function ExerciseLibrary() {
                     <CardContent className="p-3">
                       <div className="flex items-center space-x-4">
                         {/* Exercise Image */}
-                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-700 flex-shrink-0">
-                          {exercise.thumbnailUrl ? (
-                            <OptimizedImage
-                              src={exercise.thumbnailUrl}
-                              alt={exercise.name}
-                              className="w-full h-full object-cover"
-                              width={48}
-                              height={48}
-                              placeholder="blur"
-                            />
-                          ) : (
-                            <ExerciseThumb exercise={exercise} size={48} />
-                          )}
-                        </div>
+                        <ExerciseThumb exercise={exercise} size={48} />
 
                         {/* Exercise Info */}
                         <div className="flex-1">

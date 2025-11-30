@@ -789,7 +789,7 @@ export default function Profile() {
       <div className="w-full h-full">
         {/* Profile Header */}
         <Card className="rounded-none border-0 border-b">
-          <CardContent className="p-3">
+          <CardContent className="p-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
               {/* Avatar */}
               <div className="relative">

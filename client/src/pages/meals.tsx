@@ -31,7 +31,7 @@ export default function MealsPage() {
   const [isShareMealModalOpen, setIsShareMealModalOpen] = useState(false);
 
   const { data: communityMeals = [], isLoading } = useQuery<CommunityMeal[]>({
-    queryKey: ["/api/meals"],
+    queryKey: ["/api/community-meals"],
   });
 
   const { data: users = [] } = useQuery<User[]>({
@@ -40,6 +40,32 @@ export default function MealsPage() {
 
   const getUserById = (id: string) => users.find(user => user.id === id);
 
+  // Sort meals: most liked from past 24 hours at top, then by recency
+  const sortedMeals = [...communityMeals].sort((a, b) => {
+    const now = new Date();
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    
+    const aDate = new Date(a.createdAt);
+    const bDate = new Date(b.createdAt);
+    
+    const aIsRecent = aDate >= twentyFourHoursAgo;
+    const bIsRecent = bDate >= twentyFourHoursAgo;
+    
+    // Both are from past 24 hours - sort by likes
+    if (aIsRecent && bIsRecent) {
+      return (b.likes?.length || 0) - (a.likes?.length || 0);
+    }
+    
+    // Only a is recent - a comes first
+    if (aIsRecent) return -1;
+    
+    // Only b is recent - b comes first
+    if (bIsRecent) return 1;
+    
+    // Neither is recent - sort by date (newest first)
+    return bDate.getTime() - aDate.getTime();
+  });
+
   const handleShareMeal = () => {
     setIsShareMealModalOpen(true);
   };
@@ -47,27 +73,13 @@ export default function MealsPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <main className="pt-4 pb-20">
-        <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+        <div className="space-y-6">
           {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Community Meals</h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Share your meals and discover recipes from the community
-              </p>
-            </div>
-            <Button
-              onClick={handleShareMeal}
-              className="bg-fit-green hover:bg-fit-green/90 text-white"
-            >
-              <Share2 className="h-4 w-4 mr-2" />
-              Share Meal
-            </Button>
-          </div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white text-center px-4">COMMUNITY MEALS</h1>
 
           {/* Loading State */}
           {isLoading && (
-            <div className="space-y-4">
+            <div className="space-y-4 px-4">
               {[1, 2, 3].map((i) => (
                 <Card key={i} className="animate-pulse">
                   <CardContent className="p-0">
@@ -84,7 +96,7 @@ export default function MealsPage() {
 
           {/* Empty State */}
           {!isLoading && communityMeals.length === 0 && (
-            <Card className="text-center py-12">
+            <Card className="text-center py-12 mx-4">
               <CardContent>
                 <div className="flex flex-col items-center space-y-4">
                   <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
@@ -113,7 +125,7 @@ export default function MealsPage() {
           {/* Meals Grid */}
           {!isLoading && communityMeals.length > 0 && (
             <div className="grid gap-4">
-              {communityMeals.map((meal) => {
+              {sortedMeals.map((meal) => {
                 const user = getUserById(meal.userId);
                 const hasMacros = meal.calories || meal.protein || meal.carbs || meal.fat;
                 

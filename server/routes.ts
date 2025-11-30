@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import { nanoid } from "nanoid";
 import { storage } from "./storage.ts";
 import { insertWorkoutTemplateSchema, insertSavedWorkoutSchema } from "../shared/workout-types.ts";
 import { insertUserSchema, insertPostSchema, insertCommentSchema, insertConnectionSchema, insertProgressEntrySchema, insertExerciseSchema } from "../shared/schema.ts";
@@ -1444,7 +1445,7 @@ router.post("/api/meals/share", async (req, res) => {
     const { caption, ingredients = [], calories, protein, carbs, fat, fiber, imageUrl, postToFeed = true } = req.body;
     
     const communityMeal = {
-      id: require("nanoid").nanoid(),
+      id: nanoid(),
       userId: "44595091", // Current user ID
       caption,
       imageUrl,
@@ -1463,7 +1464,7 @@ router.post("/api/meals/share", async (req, res) => {
     // If posting to feed, also create a post
     if (postToFeed) {
       const post = {
-        id: require("nanoid").nanoid(),
+        id: nanoid(),
         userId: "44595091",
         type: "nutrition" as const,
         caption,

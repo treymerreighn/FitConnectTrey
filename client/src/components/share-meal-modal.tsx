@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -11,10 +11,12 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Camera, Upload, X, Plus, Minus, Share2 } from "lucide-react";
+import { Camera, Upload, X, Plus, Minus, Share2, Search } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { uploadImage as uploadImageToS3 } from "@/lib/imageUpload";
+import { INGREDIENT_DATABASE, searchIngredients, type IngredientData } from "@shared/ingredient-database";
 
 const shareMealSchema = z.object({
   caption: z.string().min(1, "Caption is required"),
@@ -43,11 +45,20 @@ interface ShareMealModalProps {
   };
 }
 
+interface TrackedIngredient {
+  name: string;
+  quantity: number;
+  unit: string;
+  data: IngredientData;
+}
+
 export default function ShareMealModal({ isOpen, onClose, recipeData }: ShareMealModalProps) {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [ingredientInput, setIngredientInput] = useState("");
-  const [showMacros, setShowMacros] = useState(false);
+  const [ingredientSearch, setIngredientSearch] = useState("");
+  const [searchResults, setSearchResults] = useState<IngredientData[]>([]);
+  const [trackedIngredients, setTrackedIngredients] = useState<TrackedIngredient[]>([]);
+  const [showSearch, setShowSearch] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -65,6 +76,34 @@ export default function ShareMealModal({ isOpen, onClose, recipeData }: ShareMea
       postToFeed: true,
     },
   });
+
+  // Calculate nutrition automatically when ingredients change
+  useEffect(() => {
+    if (trackedIngredients.length > 0) {
+      const totals = trackedIngredients.reduce((acc, ing) => {
+        const multiplier = ing.quantity / 100; // Data is per 100g
+        return {
+          calories: acc.calories + (ing.data.calories * multiplier),
+          protein: acc.protein + (ing.data.protein * multiplier),
+          carbs: acc.carbs + (ing.data.carbs * multiplier),
+          fat: acc.fat + (ing.data.fat * multiplier),
+          fiber: acc.fiber + (ing.data.fiber * multiplier),
+        };
+      }, { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
+
+      form.setValue("calories", Math.round(totals.calories));
+      form.setValue("protein", Math.round(totals.protein * 10) / 10);
+      form.setValue("carbs", Math.round(totals.carbs * 10) / 10);
+      form.setValue("fat", Math.round(totals.fat * 10) / 10);
+      form.setValue("fiber", Math.round(totals.fiber * 10) / 10);
+      
+      // Update ingredients list
+      const ingredientNames = trackedIngredients.map(ing => 
+        `${ing.name} (${ing.quantity}${ing.unit})`
+      );
+      form.setValue("ingredients", ingredientNames);
+    }
+  }, [trackedIngredients, form]);
 
   const ingredients = form.watch("ingredients") || [];
 
@@ -97,9 +136,43 @@ export default function ShareMealModal({ isOpen, onClose, recipeData }: ShareMea
     form.reset();
     setSelectedImage(null);
     setImagePreview(null);
-    setIngredientInput("");
-    setShowMacros(false);
+    setIngredientSearch("");
+    setSearchResults([]);
+    setTrackedIngredients([]);
+    setShowSearch(false);
     setIsUploading(false);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setIngredientSearch(value);
+    if (value.length > 1) {
+      const results = searchIngredients(value);
+      setSearchResults(results);
+    } else {
+      setSearchResults([]);
+    }
+  };
+
+  const addTrackedIngredient = (ingredientData: IngredientData) => {
+    setTrackedIngredients([...trackedIngredients, {
+      name: ingredientData.name,
+      quantity: 100,
+      unit: "g",
+      data: ingredientData
+    }]);
+    setIngredientSearch("");
+    setSearchResults([]);
+    setShowSearch(false);
+  };
+
+  const updateIngredientQuantity = (index: number, quantity: number) => {
+    const updated = [...trackedIngredients];
+    updated[index].quantity = quantity;
+    setTrackedIngredients(updated);
+  };
+
+  const removeTrackedIngredient = (index: number) => {
+    setTrackedIngredients(trackedIngredients.filter((_, i) => i !== index));
   };
 
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -126,19 +199,6 @@ export default function ShareMealModal({ isOpen, onClose, recipeData }: ShareMea
   const uploadImage = async (file: File): Promise<string> => {
     const result = await uploadImageToS3(file);
     return result.url;
-  };
-
-  const addIngredient = () => {
-    if (ingredientInput.trim()) {
-      const currentIngredients = form.getValues("ingredients") || [];
-      form.setValue("ingredients", [...currentIngredients, ingredientInput.trim()]);
-      setIngredientInput("");
-    }
-  };
-
-  const removeIngredient = (index: number) => {
-    const currentIngredients = form.getValues("ingredients") || [];
-    form.setValue("ingredients", currentIngredients.filter((_, i) => i !== index));
   };
 
   const onSubmit = async (data: ShareMealFormData) => {
@@ -169,9 +229,8 @@ export default function ShareMealModal({ isOpen, onClose, recipeData }: ShareMea
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
-            <Share2 className="h-5 w-5 text-green-600" />
-            <span>Share Your Meal</span>
+          <DialogTitle>
+            Share Your Meal
           </DialogTitle>
         </DialogHeader>
 
@@ -242,124 +301,138 @@ export default function ShareMealModal({ isOpen, onClose, recipeData }: ShareMea
             )}
           </div>
 
-          {/* Ingredients Section */}
+          {/* Ingredients Section with Nutrition Tracking */}
           <div>
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">Ingredients (Optional)</Label>
+            <div className="flex items-center justify-between mb-2">
+              <Label className="text-sm font-medium">Ingredients & Nutrition</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowSearch(!showSearch)}
+              >
+                <Search className="h-4 w-4 mr-2" />
+                Add Ingredient
+              </Button>
             </div>
             
-            {ingredients.length > 0 && (
-              <Card className="mt-2">
-                <CardContent className="pt-4">
-                  <div className="space-y-2">
-                    {ingredients.map((ingredient, index) => (
-                      <div key={index} className="flex items-center justify-between">
-                        <span className="text-sm">{ingredient}</span>
+            {showSearch && (
+              <div className="mb-4">
+                <Input
+                  placeholder="Search ingredients (e.g., chicken breast, brown rice)..."
+                  value={ingredientSearch}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  autoFocus
+                />
+                {searchResults.length > 0 && (
+                  <Card className="mt-2 max-h-60 overflow-y-auto">
+                    <CardContent className="p-2">
+                      {searchResults.map((result, index) => (
                         <Button
+                          key={index}
                           type="button"
                           variant="ghost"
-                          size="sm"
-                          onClick={() => removeIngredient(index)}
+                          className="w-full justify-start text-left"
+                          onClick={() => addTrackedIngredient(result)}
                         >
-                          <Minus className="h-4 w-4" />
+                          <div className="flex-1">
+                            <div className="font-medium">{result.name}</div>
+                            <div className="text-xs text-gray-500">
+                              {result.category} • {result.calories}cal/100g
+                            </div>
+                          </div>
                         </Button>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
+
+            {trackedIngredients.length > 0 && (
+              <Card className="mb-4">
+                <CardContent className="pt-4">
+                  <div className="space-y-3">
+                    {trackedIngredients.map((ingredient, index) => (
+                      <div key={index} className="space-y-2 pb-3 border-b last:border-0">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="font-medium text-sm">{ingredient.name}</div>
+                            <Badge variant="secondary" className="text-xs mt-1">
+                              {ingredient.data.category}
+                            </Badge>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeTrackedIngredient(index)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Input
+                            type="number"
+                            value={ingredient.quantity}
+                            onChange={(e) => updateIngredientQuantity(index, Number(e.target.value))}
+                            className="w-24"
+                            min="1"
+                          />
+                          <span className="text-sm text-gray-600">grams</span>
+                          <div className="flex-1 text-xs text-gray-500 text-right">
+                            {Math.round(ingredient.data.calories * ingredient.quantity / 100)} cal • 
+                            {Math.round(ingredient.data.protein * ingredient.quantity / 10) / 10}g protein
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
                 </CardContent>
               </Card>
             )}
-
-            <div className="flex space-x-2 mt-2">
-              <Input
-                placeholder="Add an ingredient..."
-                value={ingredientInput}
-                onChange={(e) => setIngredientInput(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    addIngredient();
-                  }
-                }}
-              />
-              <Button type="button" variant="outline" onClick={addIngredient}>
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
           </div>
 
-          {/* Macros Section */}
-          <div>
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">Nutrition Information (Optional)</Label>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowMacros(!showMacros)}
-              >
-                {showMacros ? "Hide" : "Show"} Macros
-              </Button>
-            </div>
-
-            {showMacros && (
-              <Card className="mt-2">
-                <CardContent className="pt-4">
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="calories" className="text-xs">Calories</Label>
-                      <Input
-                        id="calories"
-                        type="number"
-                        placeholder="0"
-                        {...form.register("calories", { valueAsNumber: true })}
-                      />
+          {/* Nutrition Summary - Auto-calculated */}
+          {trackedIngredients.length > 0 && (
+            <Card className="bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border-green-200 dark:border-green-800">
+              <CardContent className="pt-4">
+                <Label className="text-sm font-medium mb-3 block">Total Nutrition (Auto-calculated)</Label>
+                <div className="grid grid-cols-3 md:grid-cols-5 gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-700 dark:text-green-300">
+                      {form.watch("calories") || 0}
                     </div>
-                    <div>
-                      <Label htmlFor="protein" className="text-xs">Protein (g)</Label>
-                      <Input
-                        id="protein"
-                        type="number"
-                        step="0.1"
-                        placeholder="0"
-                        {...form.register("protein", { valueAsNumber: true })}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="carbs" className="text-xs">Carbs (g)</Label>
-                      <Input
-                        id="carbs"
-                        type="number"
-                        step="0.1"
-                        placeholder="0"
-                        {...form.register("carbs", { valueAsNumber: true })}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="fat" className="text-xs">Fat (g)</Label>
-                      <Input
-                        id="fat"
-                        type="number"
-                        step="0.1"
-                        placeholder="0"
-                        {...form.register("fat", { valueAsNumber: true })}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="fiber" className="text-xs">Fiber (g)</Label>
-                      <Input
-                        id="fiber"
-                        type="number"
-                        step="0.1"
-                        placeholder="0"
-                        {...form.register("fiber", { valueAsNumber: true })}
-                      />
-                    </div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400">Calories</div>
                   </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+                      {form.watch("protein") || 0}g
+                    </div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400">Protein</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-orange-700 dark:text-orange-300">
+                      {form.watch("carbs") || 0}g
+                    </div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400">Carbs</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-yellow-700 dark:text-yellow-300">
+                      {form.watch("fat") || 0}g
+                    </div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400">Fat</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">
+                      {form.watch("fiber") || 0}g
+                    </div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400">Fiber</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <Separator />
 
@@ -393,15 +466,9 @@ export default function ShareMealModal({ isOpen, onClose, recipeData }: ShareMea
               className="flex-1 bg-green-600 hover:bg-green-700"
             >
               {isUploading || shareMealMutation.isPending ? (
-                <>
-                  <Upload className="h-4 w-4 mr-2 animate-pulse" />
-                  Sharing...
-                </>
+                "Sharing..."
               ) : (
-                <>
-                  <Share2 className="h-4 w-4 mr-2" />
-                  {form.watch("postToFeed") ? "Share to Community" : "Save to Profile"}
-                </>
+                form.watch("postToFeed") ? "Share to Community" : "Save to Profile"
               )}
             </Button>
           </div>

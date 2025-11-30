@@ -168,7 +168,11 @@ export default function Workouts() {
       <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
         {/* Header */}
         <div className="space-y-4">
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 text-center">WORKOUTS</h1>
+          <div className="flex items-center justify-between">
+            <div className="flex-1"></div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-center flex-1">WORKOUTS</h1>
+            <div className="flex-1"></div>
+          </div>
           <div className="flex items-center justify-center gap-2">
             <Button onClick={() => setLocation("/saved-workouts")} variant="outline" size="sm">
               <Bookmark className="h-4 w-4 mr-2" /> Saved

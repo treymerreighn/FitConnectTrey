@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Utensils, Share2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import ShareMealModal from "@/components/share-meal-modal";
 import TopHeader from "@/components/TopHeader";
 import { OptimizedImage } from "@/components/OptimizedImage";
+import { useLocation } from "wouter";
 import type { User } from "@shared/schema";
 
 interface CommunityMeal {
@@ -28,7 +29,18 @@ interface CommunityMeal {
 }
 
 export default function MealsPage() {
+  const [location, setLocation] = useLocation();
   const [isShareMealModalOpen, setIsShareMealModalOpen] = useState(false);
+
+  // Check URL parameter to auto-open modal
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('create') === 'true') {
+      setIsShareMealModalOpen(true);
+      // Clean up URL
+      setLocation('/meals');
+    }
+  }, [location, setLocation]);
 
   const { data: communityMeals = [], isLoading } = useQuery<CommunityMeal[]>({
     queryKey: ["/api/community-meals"],
@@ -75,7 +87,20 @@ export default function MealsPage() {
       <main className="pt-4 pb-20">
         <div className="space-y-6">
           {/* Header */}
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white text-center px-4">COMMUNITY MEALS</h1>
+          <div className="flex items-center justify-between px-4">
+            <div className="flex-1"></div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white text-center flex-1 whitespace-nowrap">COMMUNITY MEALS</h1>
+            <div className="flex-1 flex justify-end">
+              <Button 
+                className="bg-fit-green hover:bg-fit-green/90" 
+                size="sm"
+                onClick={handleShareMeal}
+              >
+                <Plus className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Add Meal</span>
+              </Button>
+            </div>
+          </div>
 
           {/* Loading State */}
           {isLoading && (
@@ -227,16 +252,6 @@ export default function MealsPage() {
           )}
         </div>
       </main>
-
-      {/* Floating Action Button */}
-      <div className="fixed bottom-24 right-4 z-40">
-        <Button 
-          className="w-16 h-16 bg-gradient-to-r from-fit-green to-emerald-500 hover:from-fit-green/90 hover:to-emerald-500/90 text-white rounded-full shadow-xl hover:shadow-2xl transition-all duration-200 hover:scale-105"
-          onClick={handleShareMeal}
-        >
-          <Plus className="w-7 h-7" />
-        </Button>
-      </div>
 
       {/* Share Meal Modal */}
       <ShareMealModal

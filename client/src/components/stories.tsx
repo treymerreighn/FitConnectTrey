@@ -220,7 +220,7 @@ export function Stories({ users }: StoriesProps) {
                   <div key={userId} className="flex-shrink-0 text-center pt-1">
                     <button onClick={() => handleStoryClick(userStories[0])} className="relative">
                       <div className={`w-16 h-16 rounded-full bg-gradient-to-tr from-fit-green to-fit-blue shadow-md ${
-                        unviewed ? 'ring-1 ring-fit-green ring-offset-0 dark:ring-offset-0 animate-pulse p-[3px]' : 'p-0.5'
+                        unviewed ? 'ring-2 ring-fit-blue ring-offset-0 dark:ring-offset-0 p-[3px]' : 'p-0.5'
                       }`}>
                         <div className="w-full h-full rounded-full bg-white dark:bg-gray-800 p-0.5">
                           <UserAvatar

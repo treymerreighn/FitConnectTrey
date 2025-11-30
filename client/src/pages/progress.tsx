@@ -25,6 +25,7 @@ import { ProgressPhotoAnalysis } from "@/components/ProgressPhotoAnalysis";
 import { apiRequest } from "@/lib/queryClient";
 import { Link } from "@/components/ui/link";
 import { PremiumFeatureDialog } from "@/components/premium-feature-dialog";
+import { useLocation } from "wouter";
 
 const progressFormSchema = z.object({
   date: z.string(),
@@ -38,6 +39,7 @@ type ProgressFormData = z.infer<typeof progressFormSchema>;
 export default function Progress() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const [location, setLocation] = useLocation();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [generatingInsights, setGeneratingInsights] = useState<string | null>(null);
@@ -48,6 +50,16 @@ export default function Progress() {
 
   const userId = user?.id || CURRENT_USER_ID;
   const isPremiumUser = user?.isPremium || user?.subscriptionTier === 'premium' || user?.subscriptionTier === 'pro';
+
+  // Check URL parameter to auto-open modal
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('create') === 'true') {
+      setIsCreateModalOpen(true);
+      // Clean up URL
+      setLocation('/progress');
+    }
+  }, [location, setLocation]);
 
   const { data: progressEntries = [], isLoading } = useQuery<ProgressEntry[]>({
     queryKey: ["/api/progress", userId],
@@ -246,25 +258,21 @@ export default function Progress() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
-      <div className="px-4 py-4 sm:py-6">
+      <div className="py-4 sm:py-6">
         {/* Header */}
-        <div className="space-y-4 mb-6">
+        <div className="space-y-4 mb-6 px-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2 sm:space-x-3">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-fit-green rounded-lg flex items-center justify-center">
-                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-              </div>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Progress</h1>
-            </div>
-            
-            <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-              <DialogTrigger asChild>
-              <Button className="bg-fit-green hover:bg-fit-green/90" size="sm">
-                <Plus className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Add Entry</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex-1"></div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white text-center flex-1">PROGRESS</h1>
+            <div className="flex-1 flex justify-end">
+              <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-fit-green hover:bg-fit-green/90" size="sm">
+                    <Plus className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Add Entry</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Add Progress Entry</DialogTitle>
               </DialogHeader>
@@ -280,12 +288,13 @@ export default function Progress() {
                 </div>
 
                 <div>
-                  <Label htmlFor="weight">Weight (lbs) - Optional</Label>
+                  <Label htmlFor="weight">Weight (lbs)</Label>
                   <Input
                     id="weight"
                     type="number"
                     step="0.1"
                     placeholder="Enter your current weight"
+                    autoFocus
                     {...form.register("weight", { valueAsNumber: true })}
                   />
                 </div>
@@ -361,11 +370,12 @@ export default function Progress() {
                 </Button>
               </form>
             </DialogContent>
-            </Dialog>
+              </Dialog>
+            </div>
           </div>
           
           {/* Action Buttons Row */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2">
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 px-4">
             <Button 
               variant="outline" 
               size="sm"
@@ -405,7 +415,7 @@ export default function Progress() {
 
         {/* Progress Overview */}
         {progressStats && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6 px-4">
             <Card className="border-0 shadow-sm">
               <CardContent className="p-3 sm:p-4">
                 <div className="flex items-center space-x-2 sm:space-x-3">
@@ -429,10 +439,10 @@ export default function Progress() {
 
         {/* Progress Entries */}
         <div className="space-y-3 sm:space-y-4">
-          <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Progress History</h2>
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white px-4">Progress History</h2>
           
           {progressEntries.length === 0 ? (
-            <div className="text-center py-12">
+            <div className="text-center py-12 px-4">
               <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
                 <TrendingUp className="h-8 w-8 text-gray-400" />
               </div>

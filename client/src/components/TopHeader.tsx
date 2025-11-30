@@ -19,25 +19,29 @@ export default function TopHeader({ notificationsCount = 0, messagesCount = 0, c
         {showSearch && (
           <div className="absolute left-4">
             <Button variant="ghost" size="sm" className="p-2 mobile-touch-target" onClick={() => setLocation('/discover')}>
-              <Search className="w-8 h-8 text-gray-600 dark:text-gray-300" />
+              <Search className="!w-[20px] !h-[20px] text-gray-600 dark:text-gray-300" />
             </Button>
           </div>
         )}
         <div className="flex-1 flex justify-center">
-          <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white tracking-wide">KRATOS</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-wide">KRATOS</h1>
         </div>
-        <div className="flex items-center space-x-3 absolute right-4">
+        <div className="flex items-center space-x-1 absolute right-2">
           <Button variant="ghost" size="sm" className="relative p-2 mobile-touch-target" onClick={() => setLocation('/notifications')}>
-            <Heart className="w-8 h-8 text-gray-600 dark:text-gray-300" />
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
-              {notificationsCount}
-            </span>
+            <Heart className="!w-[20px] !h-[20px] text-gray-600 dark:text-gray-300" />
+            {notificationsCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
+                {notificationsCount}
+              </span>
+            )}
           </Button>
           <Button variant="ghost" size="sm" className="relative p-2 mobile-touch-target" onClick={() => setLocation('/messages')}>
-            <MessageCircle className="w-8 h-8 text-gray-600 dark:text-gray-300" />
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-fit-blue rounded-full text-xs text-white flex items-center justify-center">
-              {messagesCount}
-            </span>
+            <MessageCircle className="!w-[20px] !h-[20px] text-gray-600 dark:text-gray-300" />
+            {messagesCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-fit-blue rounded-full text-xs text-white flex items-center justify-center">
+                {messagesCount}
+              </span>
+            )}
           </Button>
         </div>
       </div>

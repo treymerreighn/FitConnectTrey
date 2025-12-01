@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Trash2, Dumbbell, Timer, Save, Play, ChevronDown, ChevronUp, Share2 } from "lucide-react";
+import { Plus, Trash2, Dumbbell, Timer, Save, Play, ChevronDown, ChevronUp, Share2, TrendingUp, Crown } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,10 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/contexts/theme-context";
 import { api } from "@/lib/api";
+import { ExerciseStatsPremium } from "@/components/exercise-stats-premium";
+import { CURRENT_USER_ID } from "@/lib/constants";
 
 type SetRow = { id: string; reps: number; weight?: number; restTime?: number };
 type ExerciseRow = { id: string; name: string; notes?: string; sets: SetRow[]; expanded?: boolean; sourceExerciseId?: string };
@@ -61,10 +64,19 @@ export default function BuildWorkout() {
   const [exercises, setExercises] = useState<ExerciseRow[]>([]);
   const [showPicker, setShowPicker] = useState(false);
   const [pickerSearch, setPickerSearch] = useState("");
+  const [selectedExerciseForStats, setSelectedExerciseForStats] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
+
+  // Check if user has premium access
+  const isPremium = user?.isPremium || 
+                   user?.subscriptionTier === 'premium' || 
+                   user?.subscriptionTier === 'pro' ||
+                   localStorage.getItem('fitconnect-mock-premium') === 'true';
+  
+  const userId = user?.id || CURRENT_USER_ID;
 
   const totals = useMemo(() => {
     const totalSets = exercises.reduce((acc, e) => acc + e.sets.length, 0);
@@ -97,6 +109,19 @@ export default function BuildWorkout() {
 
   function updateExercise(id: string, updater: (e: ExerciseRow) => ExerciseRow) {
     setExercises((prev) => prev.map((e) => (e.id === id ? updater({ ...e }) : e)));
+  }
+
+  // Auto-load weight for all sets in an exercise
+  function autoLoadWeightForExercise(exerciseId: string, weight: number) {
+    updateExercise(exerciseId, (ex) => ({
+      ...ex,
+      sets: ex.sets.map(set => ({ ...set, weight }))
+    }));
+    toast({
+      title: "Weights Auto-Loaded! 💪",
+      description: `Set all sets to ${weight} lbs`,
+    });
+    setSelectedExerciseForStats(null);
   }
 
   // Save for later: create a template, then bookmark it as a saved workout
@@ -308,6 +333,8 @@ export default function BuildWorkout() {
                 ex={ex}
                 onRemove={() => removeExercise(ex.id)}
                 onChange={(updater) => updateExercise(ex.id, updater)}
+                onShowStats={() => setSelectedExerciseForStats(ex.name)}
+                isPremium={isPremium}
               />
             </motion.div>
           ))}
@@ -373,12 +400,54 @@ export default function BuildWorkout() {
           </div>
         </div>
       </div>
+
+      {/* Exercise Stats Dialog */}
+      {selectedExerciseForStats && (
+        <Dialog open={true} onOpenChange={() => setSelectedExerciseForStats(null)}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                {selectedExerciseForStats} - Exercise History
+                {isPremium && <Crown className="h-4 w-4 text-amber-500" />}
+              </DialogTitle>
+            </DialogHeader>
+            <ExerciseStatsPremium
+              exerciseName={selectedExerciseForStats}
+              userId={userId}
+              isPremium={isPremium}
+              onLoadWeight={(weight) => {
+                // Find the exercise by name
+                const exercise = exercises.find(ex => ex.name === selectedExerciseForStats);
+                if (exercise) {
+                  autoLoadWeightForExercise(exercise.id, weight);
+                }
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+
       {showPicker && <ExercisePickerModal onClose={() => setShowPicker(false)} onSelect={async ex => { await addExerciseFromLibrary(ex); setShowPicker(false); }} search={pickerSearch} setSearch={setPickerSearch} />}
     </div>
   );
 }
 
-function ExerciseCard({ index, ex, onRemove, onChange }: { index: number; ex: ExerciseRow; onRemove: () => void; onChange: (updater: (e: ExerciseRow) => ExerciseRow) => void; }) {
+function ExerciseCard({ 
+  index, 
+  ex, 
+  onRemove, 
+  onChange,
+  onShowStats,
+  isPremium 
+}: { 
+  index: number; 
+  ex: ExerciseRow; 
+  onRemove: () => void; 
+  onChange: (updater: (e: ExerciseRow) => ExerciseRow) => void;
+  onShowStats: () => void;
+  isPremium: boolean;
+}) {
   const volume = ex.sets.reduce((v, s) => v + (s.weight || 0) * (s.reps || 0), 0);
 
   function addSet() {
@@ -401,6 +470,16 @@ function ExerciseCard({ index, ex, onRemove, onChange }: { index: number; ex: Ex
             <div className="mt-2 flex flex-wrap gap-2">
               <Badge variant="outline" className="dark:border-slate-700 dark:text-slate-200">Volume: {Intl.NumberFormat().format(volume)} lb</Badge>
               <Badge variant="outline" className="dark:border-slate-700 dark:text-slate-200">Sets: {ex.sets.length}</Badge>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={onShowStats}
+                className="h-7 px-2 flex items-center gap-1"
+              >
+                <TrendingUp className="h-3 w-3" />
+                <span className="hidden sm:inline text-xs">Stats</span>
+                {isPremium && <Crown className="h-3 w-3 text-amber-500" />}
+              </Button>
             </div>
           </div>
           <div className="flex items-center gap-2">

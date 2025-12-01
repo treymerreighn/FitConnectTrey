@@ -7,10 +7,13 @@ import { Badge } from '../components/ui/badge';
 import { useToast } from '../hooks/use-toast';
 import { cn } from '../lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import { Loader2, PauseCircle, PlayCircle, Minus, Plus, PlusCircle, Search } from 'lucide-react';
+import { Loader2, PauseCircle, PlayCircle, Minus, Plus, PlusCircle, Search, TrendingUp, Crown } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import type { Exercise } from '@shared/schema';
 import { usePreferences } from '@/contexts/preferences-context';
+import { ExerciseStatsPremium } from '@/components/exercise-stats-premium';
+import { useAuth } from '@/hooks/useAuth';
+import { CURRENT_USER_ID } from '@/lib/constants';
 
 // Types for workout session based on unified schema
 interface WorkoutSet { reps: number; weight?: number; rest?: number; completed?: boolean; startedAt?: number; completedAt?: number; }
@@ -83,6 +86,7 @@ const WorkoutSession: React.FC = () => {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
   const { weightUnit } = usePreferences();
+  const { user } = useAuth();
   const initialSearch = extractSearch(location);
   const initialPlan = useMemo(() => parsePlanFromSearch(initialSearch), [initialSearch]);
   const [plan, setPlan] = useState<ActiveWorkoutPlan | null>(initialPlan);
@@ -99,6 +103,15 @@ const WorkoutSession: React.FC = () => {
   const [isPaused, setIsPaused] = useState(false);
   const [pauseStartedAt, setPauseStartedAt] = useState<number | null>(null);
   const [pauseAccumulated, setPauseAccumulated] = useState(0);
+  const [selectedExerciseForStats, setSelectedExerciseForStats] = useState<string | null>(null);
+
+  // Check if user has premium access
+  const isPremium = user?.isPremium || 
+                   user?.subscriptionTier === 'premium' || 
+                   user?.subscriptionTier === 'pro' ||
+                   localStorage.getItem('fitconnect-mock-premium') === 'true';
+  
+  const userId = user?.id || CURRENT_USER_ID;
 
   // Fetch exercises for adding to workout
   const { data: allExercises = [] } = useQuery<Exercise[]>({
@@ -175,6 +188,26 @@ const WorkoutSession: React.FC = () => {
       exercises[exerciseIdx] = ex;
       return { ...prev, exercises };
     });
+  };
+
+  // Auto-load weight for all sets in an exercise (premium feature)
+  const autoLoadWeightForExercise = (exerciseIdx: number, weight: number) => {
+    setPlan(prev => {
+      if (!prev) return prev;
+      const exercises = [...prev.exercises];
+      const ex = { ...exercises[exerciseIdx] };
+      const sets = ex.sets.map(s => ({ ...s, weight }));
+      ex.sets = sets;
+      exercises[exerciseIdx] = ex;
+      return { ...prev, exercises };
+    });
+    
+    toast({
+      title: "Weights Auto-Loaded! 💪",
+      description: `Set ${weight} ${weightUnit} for all ${plan?.exercises[exerciseIdx].name} sets`,
+    });
+    
+    setSelectedExerciseForStats(null); // Close the stats dialog
   };
 
   const startRest = (seconds: number) => {
@@ -400,7 +433,7 @@ const WorkoutSession: React.FC = () => {
               <Card key={exercise.id} className={cn('border shadow-sm', isCurrent && 'ring-2 ring-primary/30')}>
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-4">
-                    <div className="space-y-1">
+                    <div className="flex-1 space-y-1">
                       <CardTitle className="text-base font-semibold">{exercise.name}</CardTitle>
                       <div className="flex gap-2 flex-wrap">
                         {exercise.muscleGroup && <Badge variant="secondary" className="text-[10px]">{exercise.muscleGroup}</Badge>}
@@ -408,6 +441,16 @@ const WorkoutSession: React.FC = () => {
                         {exercise.difficulty && <Badge variant="outline" className="text-[10px]">{exercise.difficulty.toLowerCase()}</Badge>}
                       </div>
                     </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedExerciseForStats(exercise.name)}
+                      className="shrink-0 flex items-center gap-1"
+                    >
+                      <TrendingUp className="h-3 w-3" />
+                      <span className="hidden sm:inline">Stats</span>
+                      {isPremium && <Crown className="h-3 w-3 text-amber-500" />}
+                    </Button>
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0">
@@ -495,6 +538,33 @@ const WorkoutSession: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {/* Exercise Stats Dialog */}
+      {selectedExerciseForStats && (
+        <Dialog open={true} onOpenChange={() => setSelectedExerciseForStats(null)}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                {selectedExerciseForStats} - Exercise History
+                {isPremium && <Crown className="h-4 w-4 text-amber-500" />}
+              </DialogTitle>
+            </DialogHeader>
+            <ExerciseStatsPremium
+              exerciseName={selectedExerciseForStats}
+              userId={userId}
+              isPremium={isPremium}
+              onLoadWeight={(weight) => {
+                // Find the exercise index by name
+                const exerciseIdx = plan.exercises.findIndex(ex => ex.name === selectedExerciseForStats);
+                if (exerciseIdx !== -1) {
+                  autoLoadWeightForExercise(exerciseIdx, weight);
+                }
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Sticky Footer Summary */}
       <div className="sticky bottom-14 z-30 bg-white dark:bg-gray-900 backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-gray-900/70 border-t border-gray-200 dark:border-gray-800">

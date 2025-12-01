@@ -827,9 +827,17 @@ export default function Profile() {
                         </Badge>
                       )}
                     </div>
-                    <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm mb-1 truncate">
-                      @{currentUser.username}
-                    </p>
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm truncate">
+                        @{currentUser.username}
+                      </p>
+                      {(currentUser.isPremium || currentUser.subscriptionTier === 'premium' || currentUser.subscriptionTier === 'pro' || localStorage.getItem('fitconnect-mock-premium') === 'true') && (
+                        <Badge variant="secondary" className="bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900/30 dark:to-yellow-900/30 text-amber-800 dark:text-amber-300 text-xs border-amber-300 dark:border-amber-700 flex items-center gap-1">
+                          <Trophy className="h-3 w-3" />
+                          Premium
+                        </Badge>
+                      )}
+                    </div>
                     {currentUser.bio && (
                       <p className="text-sm text-gray-700 dark:text-gray-300 mb-2 line-clamp-2">
                         {currentUser.bio}

@@ -35,6 +35,7 @@ import SavedWorkouts from "./pages/saved-workouts";
 import SampleWorkout from "./pages/sample-workout.tsx";
 import MealsPage from "./pages/meals";
 import Settings from "./pages/settings";
+import PremiumDemo from "./pages/premium-demo";
 
 
 
@@ -113,6 +114,7 @@ function Router() {
           <Route path="/discover" component={SearchPage} />
           <Route path="/meals" component={MealsPage} />
           <Route path="/settings" component={Settings} />
+          <Route path="/premium-demo" component={PremiumDemo} />
         </>
       )}
       <Route component={NotFound} />

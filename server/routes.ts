@@ -250,6 +250,159 @@ router.get("/api/workouts/completed/:userId", async (req, res) => {
   }
 });
 
+// Seed sample workout data for demo (development only)
+router.post("/api/dev/seed-workout-history", async (req, res) => {
+  try {
+    console.log("🌱 Seeding workout history...");
+    const { userId } = req.body;
+    console.log("📋 User ID:", userId || "44595091");
+    
+    // Create sample workout posts with progressive overload
+    const sampleWorkouts = [
+      {
+        userId: userId || "44595091",
+        type: "workout",
+        caption: "Great chest day! 💪",
+        workoutData: {
+          workoutType: "Upper Body Push",
+          duration: 45,
+          calories: 350,
+          exercises: [
+            {
+              name: "Bench Press",
+              sets: [
+                { reps: 10, weight: 135 },
+                { reps: 8, weight: 155 },
+                { reps: 6, weight: 175 }
+              ]
+            },
+            {
+              name: "Dumbbell Shoulder Press",
+              sets: [
+                { reps: 10, weight: 50 },
+                { reps: 8, weight: 55 },
+                { reps: 8, weight: 55 }
+              ]
+            }
+          ]
+        },
+        createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // 7 days ago
+      },
+      {
+        userId: userId || "44595091",
+        type: "workout",
+        caption: "Leg day complete! 🦵",
+        workoutData: {
+          workoutType: "Lower Body",
+          duration: 50,
+          calories: 400,
+          exercises: [
+            {
+              name: "Squat",
+              sets: [
+                { reps: 10, weight: 185 },
+                { reps: 8, weight: 205 },
+                { reps: 6, weight: 225 }
+              ]
+            },
+            {
+              name: "Bulgarian Split Squat",
+              sets: [
+                { reps: 10, weight: 40 },
+                { reps: 10, weight: 45 },
+                { reps: 8, weight: 50 }
+              ]
+            }
+          ]
+        },
+        createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) // 5 days ago
+      },
+      {
+        userId: userId || "44595091",
+        type: "workout",
+        caption: "Back and biceps 💪",
+        workoutData: {
+          workoutType: "Upper Body Pull",
+          duration: 45,
+          calories: 330,
+          exercises: [
+            {
+              name: "Deadlift",
+              sets: [
+                { reps: 8, weight: 225 },
+                { reps: 6, weight: 255 },
+                { reps: 4, weight: 275 }
+              ]
+            },
+            {
+              name: "Bench Press",
+              sets: [
+                { reps: 10, weight: 145 },
+                { reps: 8, weight: 165 },
+                { reps: 6, weight: 185 }
+              ]
+            }
+          ]
+        },
+        createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) // 3 days ago
+      },
+      {
+        userId: userId || "44595091",
+        type: "workout",
+        caption: "Another solid chest session!",
+        workoutData: {
+          workoutType: "Push Day",
+          duration: 48,
+          calories: 360,
+          exercises: [
+            {
+              name: "Bench Press",
+              sets: [
+                { reps: 10, weight: 145 },
+                { reps: 8, weight: 165 },
+                { reps: 5, weight: 185 },
+                { reps: 3, weight: 195 }
+              ]
+            },
+            {
+              name: "Squat",
+              sets: [
+                { reps: 10, weight: 195 },
+                { reps: 8, weight: 215 },
+                { reps: 6, weight: 235 }
+              ]
+            }
+          ]
+        },
+        createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) // 1 day ago
+      }
+    ];
+
+    const createdPosts = [];
+    for (const workout of sampleWorkouts) {
+      console.log(`📝 Creating workout post: ${workout.caption}`);
+      const post = await storage.createPost({
+        userId: workout.userId,
+        type: workout.type as "workout" | "nutrition" | "progress",
+        caption: workout.caption,
+        images: [],
+        workoutData: workout.workoutData
+      });
+      createdPosts.push(post);
+    }
+
+    console.log(`✅ Created ${createdPosts.length} workout posts!`);
+    res.json({ 
+      message: "Sample workout history seeded successfully",
+      count: createdPosts.length,
+      posts: createdPosts 
+    });
+  } catch (error) {
+    console.error("❌ Error seeding workout history:", error);
+    res.status(500).json({ error: "Failed to seed workout history", details: String(error) });
+  }
+});
+
 router.post("/api/posts", async (req, res) => {
   try {
     console.log('📝 Creating post with data:', JSON.stringify(req.body, null, 2));
@@ -845,6 +998,53 @@ router.get("/api/users/:userId/exercises", async (req, res) => {
   } catch (error) {
     console.error("Error fetching user exercises:", error);
     res.status(500).json({ error: "Failed to fetch user exercises" });
+  }
+});
+
+// Get exercise history for a user (for weight tracking and 1RM calculations)
+router.get("/api/users/:userId/exercise-history/:exerciseName", async (req, res) => {
+  try {
+    const { userId, exerciseName } = req.params;
+    const { limit = "10" } = req.query;
+    
+    // Get all workout posts for this user
+    const posts = await storage.getPostsByUserId(userId);
+    
+    // Filter for workout posts and extract history for this exercise
+    const history: Array<{
+      date: string;
+      sets: Array<{ reps: number; weight?: number }>;
+      workoutName?: string;
+    }> = [];
+    
+    for (const post of posts) {
+      if (post.type === 'workout' && post.workoutData?.exercises) {
+        for (const exercise of post.workoutData.exercises) {
+          // Case-insensitive match
+          if (exercise.name?.toLowerCase() === exerciseName.toLowerCase()) {
+            history.push({
+              date: post.createdAt?.toISOString() || new Date().toISOString(),
+              sets: exercise.sets || [],
+              workoutName: post.workoutData.workoutType || 'Workout'
+            });
+            break; // Only count exercise once per workout
+          }
+        }
+      }
+    }
+    
+    // Sort by date (most recent first) and limit
+    history.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const limitedHistory = history.slice(0, Number(limit));
+    
+    res.json({
+      exerciseName,
+      history: limitedHistory,
+      totalWorkouts: history.length
+    });
+  } catch (error) {
+    console.error("Error fetching exercise history:", error);
+    res.status(500).json({ error: "Failed to fetch exercise history" });
   }
 });
 

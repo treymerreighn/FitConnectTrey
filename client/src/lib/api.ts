@@ -139,6 +139,15 @@ export const api = {
     return await apiRequest("GET", `/api/users/${userId}/exercises`);
   },
 
+  // Exercise history (for premium weight tracking and 1RM)
+  getExerciseHistory: async (userId: string, exerciseName: string, limit: number = 10): Promise<{
+    exerciseName: string;
+    history: Array<{ date: string; sets: Array<{ reps: number; weight?: number }>; workoutName?: string }>;
+    totalWorkouts: number;
+  }> => {
+    return await apiRequest("GET", `/api/users/${userId}/exercise-history/${encodeURIComponent(exerciseName)}?limit=${limit}`);
+  },
+
   // Exercise progress
   getExerciseProgress: async (exerciseId: string, userId?: string): Promise<{ date: string; weight?: number; reps: number; oneRepMax?: number }[]> => {
     const params = new URLSearchParams();

@@ -164,10 +164,10 @@ export default function Workouts() {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950">
-      <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="py-6 space-y-6">
         {/* Header */}
-        <div className="space-y-4">
+        <div className="space-y-4 max-w-6xl mx-auto px-4">
           <div className="flex items-center justify-between">
             <div className="flex-1"></div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-center flex-1">WORKOUTS</h1>
@@ -563,7 +563,7 @@ export default function Workouts() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="community" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
+          <TabsList className="grid w-full grid-cols-2 mb-4 max-w-6xl mx-auto px-4">
             <TabsTrigger value="exercises" className="py-2">
               <BookOpen className="h-5 w-5 mr-2" />
               Exercise Library
@@ -575,7 +575,7 @@ export default function Workouts() {
           </TabsList>
 
           {/* Exercise Library Tab */}
-          <TabsContent value="exercises" className="space-y-4">
+          <TabsContent value="exercises" className="space-y-4 max-w-6xl mx-auto px-4">
             {/* Search and Filter Controls */}
             <div className="flex flex-col lg:flex-row gap-3">
               <div className="flex-1">
@@ -794,68 +794,60 @@ export default function Workouts() {
           </TabsContent>
 
           {/* Community Workouts Tab */}
-          <TabsContent value="community" className="space-y-6">
+          <TabsContent value="community" className="space-y-6 px-4">
 
             {/* Trending Workouts */}
-            <Card className="border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-center gap-2">
-                  <TrendingUp className="h-6 w-6 text-blue-500" />
-                  Trending Workouts
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {trendingLoading ? (
-                  <div className="space-y-4">
-                    {[...Array(3)].map((_, i) => (
-                      <div key={i} className="space-y-2">
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-3/4" />
-                      </div>
-                    ))}
-                  </div>
-                ) : trendingWorkouts && trendingWorkouts.length > 0 ? (
-                  <div className="space-y-4">
-                    {trendingWorkouts.slice(0, 5).map((post: Post) => (
-                      <PostCard key={post.id} post={post} />
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-                    No trending workouts found for this period.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+            <div>
+              <h2 className="text-xl font-bold mb-4 flex items-center justify-center gap-2">
+                <TrendingUp className="h-6 w-6 text-blue-500" />
+                Trending Workouts
+              </h2>
+              {trendingLoading ? (
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="space-y-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                  ))}
+                </div>
+              ) : trendingWorkouts && trendingWorkouts.length > 0 ? (
+                <div className="space-y-4">
+                  {trendingWorkouts.slice(0, 5).map((post: Post) => (
+                    <PostCard key={post.id} post={post} />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                  No trending workouts found for this period.
+                </p>
+              )}
+            </div>
 
             {/* Recent Workouts */}
-            <Card className="border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
-              <CardHeader>
-                <CardTitle>Recent Workouts</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {postsLoading ? (
-                  <div className="space-y-4">
-                    {[...Array(5)].map((_, i) => (
-                      <div key={i} className="space-y-2">
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-3/4" />
-                      </div>
-                    ))}
-                  </div>
-                ) : workoutPosts.length > 0 ? (
-                  <div className="space-y-4">
-                    {workoutPosts.map((post: Post) => (
-                      <PostCard key={post.id} post={post} />
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-                    No workouts shared yet. Be the first to log a workout!
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+            <div>
+              <h2 className="text-xl font-bold mb-4">Recent Workouts</h2>
+              {postsLoading ? (
+                <div className="space-y-4">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="space-y-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                  ))}
+                </div>
+              ) : workoutPosts.length > 0 ? (
+                <div className="space-y-4">
+                  {workoutPosts.map((post: Post) => (
+                    <PostCard key={post.id} post={post} />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                  No workouts shared yet. Be the first to log a workout!
+                </p>
+              )}
+            </div>
           </TabsContent>
         </Tabs>
       </div>

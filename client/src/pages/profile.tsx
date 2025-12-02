@@ -26,6 +26,7 @@ import { useAuth } from "@/hooks/useAuth";
 // apiRequest is not used directly here; use the `api` wrapper instead
 import type { User as UserType, Post, ProgressEntry } from "@shared/schema";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { PostCard } from "@/components/ui/post-card";
 
 const editProfileSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -1023,57 +1024,9 @@ export default function Profile() {
                 </Button>
               </div>
             ) : (
-              <div className="space-y-0">
+              <div className="space-y-4 px-4 py-4">
                 {userPosts.map((post) => (
-                  <Card key={post.id} className="rounded-none border-0 border-b">
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-2 sm:gap-3">
-                        <Avatar className="w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0">
-                          <AvatarImage src={currentUser.avatar || ""} />
-                          <AvatarFallback className="bg-fit-green text-white text-xs sm:text-sm">
-                            {currentUser.name?.charAt(0).toUpperCase() || "U"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center flex-wrap gap-1 sm:gap-2 mb-1">
-                            <span className="text-sm sm:text-base font-medium text-gray-900 dark:text-white truncate">
-                              {currentUser.name || "User"}
-                            </span>
-                            <Badge variant="secondary" className="text-xs">
-                              {post.type}
-                            </Badge>
-                            <span className="text-sm text-gray-500">
-                              {format(new Date(post.createdAt), "MMM d")}
-                            </span>
-                          </div>
-                          <p className="text-sm sm:text-base text-gray-900 dark:text-gray-100 mb-2 sm:mb-3 line-clamp-3">
-                            {post.caption}
-                          </p>
-                          {post.images && post.images.length > 0 && (
-                            <div className="grid grid-cols-2 gap-2 mb-3">
-                              {post.images.slice(0, 2).map((image, index) => (
-                                <OptimizedImage
-                                  key={index}
-                                  src={image}
-                                  alt={post.caption || ""}
-                                  width={320}
-                                  height={128}
-                                  className="rounded-lg h-32 w-full object-cover"
-                                  placeholder="blur"
-                                />
-                              ))}
-                            </div>
-                          )}
-                          <div className="flex items-center space-x-4 text-sm text-gray-500">
-                            <button className="flex items-center space-x-1 hover:text-red-500">
-                              <Heart className="h-4 w-4" />
-                              <span>{post.likes}</span>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <PostCard key={post.id} post={post} />
                 ))}
               </div>
             )}

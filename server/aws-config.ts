@@ -65,6 +65,11 @@ export class AWSImageService {
   }
 
   static async setPublicReadPolicy(): Promise<void> {
+    if (!s3Client) {
+      console.error('S3 client not initialized');
+      return;
+    }
+
     const policy = {
       Version: "2012-10-17",
       Statement: [

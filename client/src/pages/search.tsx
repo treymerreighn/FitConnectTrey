@@ -175,8 +175,12 @@ export default function SearchPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white">Discover</h1>
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex-1"></div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white text-center flex-1">DISCOVER</h1>
+          <div className="flex-1"></div>
+        </div>
       </header>
 
       <Tabs defaultValue="users" className="px-4 py-4">
@@ -206,7 +210,7 @@ export default function SearchPage() {
             />
           </div>
 
-          <div className="px-4 py-6">
+          <div className="py-2">
         {/* Search Results */}
         {searchTerm && (
           <div className="mb-6">
@@ -238,8 +242,13 @@ export default function SearchPage() {
                                 <p className="text-sm text-gray-600 dark:text-gray-400">
                                   @{user.username}
                                 </p>
+                                {user.location && (
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                                    {user.location}
+                                  </p>
+                                )}
                                 {user.bio && (
-                                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
                                     {user.bio}
                                   </p>
                                 )}
@@ -303,8 +312,13 @@ export default function SearchPage() {
                                 <p className="text-sm text-gray-600 dark:text-gray-400">
                                   @{user.username}
                                 </p>
+                                {user.location && (
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                                    {user.location}
+                                  </p>
+                                )}
                                 {user.bio && (
-                                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
                                     {user.bio}
                                   </p>
                                 )}

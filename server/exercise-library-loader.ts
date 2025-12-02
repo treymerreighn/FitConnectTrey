@@ -1,8 +1,12 @@
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { Exercise } from '../shared/schema.ts';
-import { BASIC_EXERCISES } from './simple-exercise-builder';
-import { removeDuplicateExercises, logDuplicateRemovalStats } from './duplicate-remover';
+import { BASIC_EXERCISES } from './simple-exercise-builder.ts';
+import { removeDuplicateExercises, logDuplicateRemovalStats } from './duplicate-remover.ts';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Loads exercises from multiple sources and removes duplicates:

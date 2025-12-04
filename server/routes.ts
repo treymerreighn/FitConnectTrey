@@ -1711,6 +1711,47 @@ router.get("/api/community-meals", async (req, res) => {
   }
 });
 
+// Saved Meals (bookmarks)
+router.get("/api/saved-meals", async (req, res) => {
+  try {
+    const userId = (req.query as any).userId || (req as any).user?.claims?.sub || "user1";
+    console.log("[API] GET /api/saved-meals - userId:", userId);
+    const list = await storage.listSavedMeals(userId);
+    console.log("[API] Returning", list.length, "saved meals");
+    res.json(list);
+  } catch (error) {
+    console.error("[API] Error fetching saved meals:", error);
+    res.status(500).json({ error: "Failed to fetch saved meals" });
+  }
+});
+
+router.post("/api/saved-meals", async (req, res) => {
+  try {
+    console.log("[API] POST /api/saved-meals - Request body:", JSON.stringify(req.body, null, 2));
+    const payload = { ...req.body, userId: req.body.userId || (req as any).user?.claims?.sub || "user1" };
+    console.log("[API] Payload after userId resolution:", JSON.stringify(payload, null, 2));
+    
+    const saved = await storage.saveMeal(payload);
+    console.log("[API] Meal saved successfully:", saved.id);
+    res.status(201).json(saved);
+  } catch (error: any) {
+    console.error("[API] Error saving meal:", error);
+    res.status(500).json({ error: "Failed to save meal" });
+  }
+});
+
+router.delete("/api/saved-meals/:id", async (req, res) => {
+  try {
+    const userId = (req.query as any).userId || (req as any).user?.claims?.sub || "user1";
+    const ok = await storage.deleteSavedMeal(userId, req.params.id);
+    if (!ok) return res.status(404).json({ error: "Saved meal not found" });
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting saved meal:", error);
+    res.status(500).json({ error: "Failed to delete saved meal" });
+  }
+});
+
 // Progress Insights API - AI-powered photo analysis (premium feature)
 router.post('/api/progress-insights', async (req, res) => {
   try {

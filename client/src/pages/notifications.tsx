@@ -31,12 +31,13 @@ export default function Notifications() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16 px-4">
-      <header className="flex items-center space-x-3 mb-4">
-        <div className="w-10 h-10 bg-fit-green rounded-lg flex items-center justify-center">
-          <Bell className="w-5 h-5 text-white" />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 px-4">
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-4 -mx-4 mb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex-1"></div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white text-center flex-1">NOTIFICATIONS</h1>
+          <div className="flex-1"></div>
         </div>
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white">Notifications</h1>
       </header>
 
       <div className="space-y-4">

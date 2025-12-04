@@ -60,11 +60,29 @@ export function PostCard({ post }: PostCardProps) {
     enabled: !!post.workoutData,
     staleTime: 1000 * 60 * 5,
   });
+
+  // Check if this meal is already saved (for nutrition posts)
+  const { data: savedMeals = [] } = useQuery<any[]>({
+    queryKey: [`/api/saved-meals`, CURRENT_USER_ID],
+    queryFn: async () => {
+      const response = await fetch(`/api/saved-meals?userId=${CURRENT_USER_ID}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: post.type === "nutrition",
+    staleTime: 1000 * 60 * 5,
+  });
   
   // Check if current post is saved
   const savedWorkout = savedWorkouts.find((sw: any) => sw.templateId === post.id);
   const isWorkoutSaved = !!savedWorkout;
   console.log("[Client] Post", post.id, "- isWorkoutSaved:", isWorkoutSaved, "savedWorkouts count:", savedWorkouts.length);
+
+  // Check if current nutrition post is saved as a meal
+  const savedMeal = savedMeals.find((sm: any) => sm.mealId === post.id);
+  const isMealSaved = !!savedMeal;
 
   const [commentText, setCommentText] = useState("");
 
@@ -250,6 +268,52 @@ export function PostCard({ post }: PostCardProps) {
     }
   };
 
+  // Handle saving/unsaving a nutrition post as a meal
+  const handleSaveMeal = async () => {
+    if (post.type !== "nutrition" || !post.nutritionData) {
+      return;
+    }
+    try {
+      if (isMealSaved && savedMeal) {
+        // Unsave the meal
+        await apiRequest("DELETE", `/api/saved-meals/${savedMeal.id}?userId=${CURRENT_USER_ID}`);
+        queryClient.invalidateQueries({ queryKey: ["/api/saved-meals", CURRENT_USER_ID] });
+        toast({
+          title: "Meal Removed",
+          description: "Removed from your Saved Meals",
+        });
+      } else {
+        // Save the meal
+        const payload = {
+          userId: CURRENT_USER_ID,
+          mealId: post.id,
+          dataSnapshot: {
+            userId: post.userId,
+            caption: post.caption,
+            imageUrl: post.images?.[0],
+            ingredients: post.nutritionData.ingredients || [],
+            calories: post.nutritionData.calories,
+            protein: post.nutritionData.protein,
+            carbs: post.nutritionData.carbs,
+            fat: post.nutritionData.fat,
+            mealType: post.nutritionData.mealType,
+            author: user?.username,
+            createdAt: post.createdAt,
+          }
+        };
+        await apiRequest("POST", "/api/saved-meals", payload);
+        queryClient.invalidateQueries({ queryKey: ["/api/saved-meals", CURRENT_USER_ID] });
+        toast({
+          title: "Meal Saved! 🍽️",
+          description: "Check it in your Saved Meals collection",
+        });
+      }
+    } catch (e: any) {
+      console.error("[Client] Save/unsave meal error:", e);
+      toast({ title: "Operation failed", description: e?.message || "Couldn't complete action", variant: "destructive" });
+    }
+  };
+
   // Handle sharing a workout
   const handleShareWorkout = async () => {
     const shareUrl = `${window.location.origin}/post/${post.id}`;
@@ -419,10 +483,18 @@ export function PostCard({ post }: PostCardProps) {
           <Button
             variant="ghost"
             size="sm"
-            className={`p-0 h-auto ${isWorkoutSaved ? 'text-blue-600' : 'text-gray-600'} hover:text-blue-600`}
-            onClick={handleSaveWorkout}
+            className={`p-0 h-auto ${
+              (post.type === "workout" && isWorkoutSaved) || (post.type === "nutrition" && isMealSaved)
+                ? 'text-blue-600' 
+                : 'text-gray-600'
+            } hover:text-blue-600`}
+            onClick={post.type === "nutrition" ? handleSaveMeal : handleSaveWorkout}
           >
-            <Bookmark className={`h-5 w-5 ${isWorkoutSaved ? 'fill-current' : ''}`} />
+            <Bookmark className={`h-5 w-5 ${
+              (post.type === "workout" && isWorkoutSaved) || (post.type === "nutrition" && isMealSaved)
+                ? 'fill-current' 
+                : ''
+            }`} />
           </Button>
         </div>
 
@@ -436,15 +508,6 @@ export function PostCard({ post }: PostCardProps) {
             >
               <Play className="h-4 w-4 mr-2" />
               Start This Workout
-            </Button>
-            <Button
-              onClick={handleSaveWorkout}
-              variant="outline"
-              className={isWorkoutSaved ? "border-blue-600 bg-blue-600 text-white hover:bg-blue-700" : "border-blue-600 text-blue-600 hover:bg-blue-600/10"}
-              size="sm"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {isWorkoutSaved ? 'Saved' : 'Save'}
             </Button>
           </div>
         )}
@@ -525,21 +588,52 @@ export function PostCard({ post }: PostCardProps) {
               
               {post.nutritionData && (
                 <>
-                  <div>
-                    <span className="text-gray-600 dark:text-gray-400">Calories:</span>
-                    <span className="font-medium ml-1">{post.nutritionData.calories}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600 dark:text-gray-400">Protein:</span>
-                    <span className="font-medium ml-1">{post.nutritionData.protein}g</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600 dark:text-gray-400">Carbs:</span>
-                    <span className="font-medium ml-1">{post.nutritionData.carbs}g</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600 dark:text-gray-400">Fat:</span>
-                    <span className="font-medium ml-1">{post.nutritionData.fat}g</span>
+                  {/* Ingredients */}
+                  {post.nutritionData.ingredients && post.nutritionData.ingredients.length > 0 && (
+                    <div className="col-span-2 mb-2">
+                      <h5 className="font-medium text-gray-900 dark:text-white text-sm mb-2">
+                        Ingredients:
+                      </h5>
+                      <div className="flex flex-wrap gap-1">
+                        {post.nutritionData.ingredients.slice(0, 5).map((ingredient: string, idx: number) => (
+                          <Badge key={idx} variant="secondary" className="text-xs">
+                            {ingredient}
+                          </Badge>
+                        ))}
+                        {post.nutritionData.ingredients.length > 5 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{post.nutritionData.ingredients.length - 5} more
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {/* Nutrition Info */}
+                  <div className="col-span-2 grid grid-cols-2 md:grid-cols-4 gap-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    {post.nutritionData.calories !== undefined && (
+                      <div className="text-center">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Calories</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">{post.nutritionData.calories}</p>
+                      </div>
+                    )}
+                    {post.nutritionData.protein !== undefined && (
+                      <div className="text-center">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Protein</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">{post.nutritionData.protein}g</p>
+                      </div>
+                    )}
+                    {post.nutritionData.carbs !== undefined && (
+                      <div className="text-center">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Carbs</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">{post.nutritionData.carbs}g</p>
+                      </div>
+                    )}
+                    {post.nutritionData.fat !== undefined && (
+                      <div className="text-center">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Fat</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">{post.nutritionData.fat}g</p>
+                      </div>
+                    )}
                   </div>
                 </>
               )}

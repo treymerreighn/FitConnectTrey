@@ -3,7 +3,7 @@ import { db } from "./db.ts";
 import { users, posts, comments, connections, progressEntries, exercises, notifications, conversations, messages } from "../shared/db-schema.ts";
 import type { IStorage, Notification, Message, Conversation } from "./storage.ts";
 import type { WorkoutTemplate, InsertWorkoutTemplate, SavedWorkout, InsertSavedWorkout } from "../shared/workout-types.ts";
-import type { User, Post, Comment, Connection, ProgressEntry, Exercise, Recipe, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, WorkoutSession, InsertWorkoutSession, ExerciseProgress, InsertExerciseProgress, CommunityMeal, ProgressInsight, InsertProgressInsight, Story, InsertStory } from "../shared/schema.ts";
+import type { User, Post, Comment, Connection, ProgressEntry, Exercise, Recipe, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, WorkoutSession, InsertWorkoutSession, ExerciseProgress, InsertExerciseProgress, CommunityMeal, ProgressInsight, InsertProgressInsight, Story, InsertStory, SavedMeal, InsertSavedMeal } from "../shared/schema.ts";
 
 export class PgStorage implements IStorage {
   constructor() {
@@ -20,6 +20,7 @@ export class PgStorage implements IStorage {
   private progressInsights: Map<string, ProgressInsight> = new Map();
   private workoutTemplates: Map<string, WorkoutTemplate> = new Map(); // in-memory until table added
   private savedWorkouts: Map<string, SavedWorkout[]> = new Map(); // in-memory bookmark persistence
+  private savedMeals: Map<string, SavedMeal[]> = new Map(); // in-memory saved meals persistence
   private stories: Map<string, Story> = new Map(); // in-memory until table added
 
   private async seedData() {
@@ -701,6 +702,43 @@ export class PgStorage implements IStorage {
     const changed = newList.length !== list.length;
     console.log(`[PgStorage] Delete workout ${savedWorkoutId} for user ${userId}: ${changed ? 'success' : 'not found'}`);
     if (changed) this.savedWorkouts.set(userId, newList);
+    return changed;
+  }
+
+  // Saved meals CRUD (in-memory)
+  async saveMeal(data: InsertSavedMeal): Promise<SavedMeal> {
+    const list = this.savedMeals.get(data.userId) || [];
+    
+    // Check if already saved to prevent duplicates
+    const existing = list.find(sm => sm.mealId === data.mealId);
+    if (existing) {
+      console.log(`[PgStorage] Meal ${data.mealId} already saved for user ${data.userId}`);
+      return existing;
+    }
+    
+    const saved: SavedMeal = {
+      id: crypto.randomUUID(),
+      createdAt: new Date(),
+      ...data,
+    } as SavedMeal;
+    list.unshift(saved);
+    this.savedMeals.set(data.userId, list);
+    console.log(`[PgStorage] Saved meal ${saved.id} for user ${data.userId}. Total saved: ${list.length}`);
+    return saved;
+  }
+
+  async listSavedMeals(userId: string): Promise<SavedMeal[]> {
+    const list = this.savedMeals.get(userId) || [];
+    console.log(`[PgStorage] Listing saved meals for user ${userId}: ${list.length} found`);
+    return list;
+  }
+
+  async deleteSavedMeal(userId: string, savedMealId: string): Promise<boolean> {
+    const list = this.savedMeals.get(userId) || [];
+    const newList = list.filter(sm => sm.id !== savedMealId);
+    const changed = newList.length !== list.length;
+    console.log(`[PgStorage] Delete meal ${savedMealId} for user ${userId}: ${changed ? 'success' : 'not found'}`);
+    if (changed) this.savedMeals.set(userId, newList);
     return changed;
   }
 

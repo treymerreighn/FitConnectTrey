@@ -149,6 +149,8 @@ export const postSchema = z.object({
     protein: z.number(),
     carbs: z.number(),
     fat: z.number(),
+    fiber: z.number().optional(),
+    ingredients: z.array(z.string()).optional(),
   }).optional(),
   progressData: z.object({
     progressType: z.string(),
@@ -325,6 +327,20 @@ export type Story = z.infer<typeof storySchema>;
 
 export const insertStorySchema = storySchema.omit({ id: true, createdAt: true, views: true, expiresAt: true });
 export type InsertStory = z.infer<typeof insertStorySchema>;
+
+// Saved Meal schema - for user bookmarking community meals
+export const savedMealSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  mealId: z.string(), // references CommunityMeal.id
+  dataSnapshot: z.any().optional(), // frozen copy of meal data for historical reference
+  createdAt: z.date().default(() => new Date()),
+});
+
+export type SavedMeal = z.infer<typeof savedMealSchema>;
+
+export const insertSavedMealSchema = savedMealSchema.omit({ id: true, createdAt: true });
+export type InsertSavedMeal = z.infer<typeof insertSavedMealSchema>;
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertPost = z.infer<typeof insertPostSchema>;

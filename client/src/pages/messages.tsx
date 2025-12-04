@@ -283,12 +283,13 @@ export default function Messages() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-4 pb-20 px-4">
-        <header className="flex items-center space-x-3 mb-4 mt-16">
-          <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'hsl(217.2, 91.2%, 59.8%)' }}>
-            <MessageCircle className="w-5 h-5 text-white" />
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
+        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-4 mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex-1"></div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white text-center flex-1">MESSAGES</h1>
+            <div className="flex-1"></div>
           </div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Messages</h1>
         </header>
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
@@ -397,22 +398,22 @@ export default function Messages() {
 
   // Conversation list view
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-4 pb-20 px-4">
-      <header className="flex items-center justify-between mb-4 mt-16">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'hsl(217.2, 91.2%, 59.8%)' }}>
-            <MessageCircle className="w-5 h-5 text-white" />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-4 mb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex-1"></div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white text-center flex-1">MESSAGES</h1>
+          <div className="flex-1 flex justify-end">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowSearch(!showSearch)}
+              className="text-gray-700 dark:text-gray-300"
+            >
+              {showSearch ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
+            </Button>
           </div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Messages</h1>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setShowSearch(!showSearch)}
-          className="text-gray-700 dark:text-gray-300"
-        >
-          {showSearch ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
-        </Button>
       </header>
 
       {error && (

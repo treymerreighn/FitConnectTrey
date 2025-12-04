@@ -185,4 +185,17 @@ export const api = {
   deleteStory: async (id: string): Promise<{ success: boolean }> => {
     return await apiRequest("DELETE", `/api/stories/${id}`);
   },
+
+  // Saved Meals
+  getSavedMeals: async (userId: string): Promise<any[]> => {
+    return await apiRequest("GET", `/api/saved-meals?userId=${userId}`);
+  },
+
+  saveMeal: async (data: { userId: string; mealId: string; dataSnapshot?: any }): Promise<any> => {
+    return await apiRequest("POST", "/api/saved-meals", data);
+  },
+
+  deleteSavedMeal: async (id: string, userId: string): Promise<{ success: boolean }> => {
+    return await apiRequest("DELETE", `/api/saved-meals/${id}?userId=${userId}`);
+  },
 };

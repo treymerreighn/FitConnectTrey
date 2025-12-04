@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Heart, MessageCircle, Dumbbell, Plus } from "lucide-react";
+import { useState, useRef, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Heart, MessageCircle, Dumbbell, Plus, RefreshCw } from "lucide-react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import TopHeader from "@/components/TopHeader";
@@ -14,8 +14,16 @@ import type { Post, User } from "@shared/schema";
 export default function Feed() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
   
-  const { data: posts = [], isLoading: postsLoading, error: postsError } = useQuery<Post[]>({
+  // Pull-to-refresh state
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const touchStartY = useRef(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const PULL_THRESHOLD = 80;
+  
+  const { data: posts = [], isLoading: postsLoading, error: postsError, refetch: refetchPosts } = useQuery<Post[]>({
     queryKey: ["/api/posts"],
     enabled: true,
     refetchOnMount: 'always',
@@ -51,6 +59,41 @@ export default function Feed() {
   };
 
   const activeUsers = getActiveUsers();
+
+  // Pull-to-refresh handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (containerRef.current && containerRef.current.scrollTop === 0) {
+      touchStartY.current = e.touches[0].clientY;
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (isRefreshing) return;
+    if (containerRef.current && containerRef.current.scrollTop === 0) {
+      const currentY = e.touches[0].clientY;
+      const distance = currentY - touchStartY.current;
+      if (distance > 0) {
+        setPullDistance(Math.min(distance * 0.5, PULL_THRESHOLD * 1.5));
+      }
+    }
+  }, [isRefreshing]);
+
+  const handleTouchEnd = useCallback(async () => {
+    if (pullDistance >= PULL_THRESHOLD && !isRefreshing) {
+      setIsRefreshing(true);
+      setPullDistance(PULL_THRESHOLD);
+      
+      // Refetch all data
+      await Promise.all([
+        refetchPosts(),
+        queryClient.invalidateQueries({ queryKey: ["/api/users"] }),
+        queryClient.invalidateQueries({ queryKey: ["/api/stories"] }),
+      ]);
+      
+      setIsRefreshing(false);
+    }
+    setPullDistance(0);
+  }, [pullDistance, isRefreshing, refetchPosts, queryClient]);
 
   if (postsLoading) {
     return (
@@ -93,11 +136,39 @@ export default function Feed() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div 
+      ref={containerRef}
+      className="min-h-screen bg-gray-50 dark:bg-gray-900 overflow-auto"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       <TopHeader showSearch={true} />
 
+      {/* Pull to Refresh Indicator */}
+      {pullDistance > 0 && (
+        <div 
+          className="flex justify-center items-center overflow-hidden transition-all duration-200 fixed left-0 right-0 z-30"
+          style={{ 
+            height: `${pullDistance}px`,
+            top: '64px',
+            opacity: pullDistance / PULL_THRESHOLD
+          }}
+        >
+          <div className={`flex items-center gap-2 text-gray-500 dark:text-gray-400 ${isRefreshing ? 'animate-pulse' : ''}`}>
+            <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} style={{ 
+              transform: `rotate(${(pullDistance / PULL_THRESHOLD) * 180}deg)`,
+              transition: isRefreshing ? 'none' : 'transform 0.1s'
+            }} />
+            <span className="text-sm font-medium">
+              {isRefreshing ? 'Refreshing...' : pullDistance >= PULL_THRESHOLD ? 'Release to refresh' : 'Pull to refresh'}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
-      <main className="pt-16 pb-20">
+      <main className="pt-16 pb-20" style={{ transform: pullDistance > 0 ? `translateY(${pullDistance}px)` : 'none' }}>
         {/* Stories Row */}
         <Stories users={users} />
 

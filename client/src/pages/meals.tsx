@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Utensils, Share2, Plus } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Utensils, Plus, Bookmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,9 @@ import ShareMealModal from "@/components/share-meal-modal";
 import TopHeader from "@/components/TopHeader";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { CURRENT_USER_ID } from "@/lib/constants";
 import type { User } from "@shared/schema";
 
 interface CommunityMeal {
@@ -31,6 +34,8 @@ interface CommunityMeal {
 export default function MealsPage() {
   const [location, setLocation] = useLocation();
   const [isShareMealModalOpen, setIsShareMealModalOpen] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Check URL parameter to auto-open modal
   useEffect(() => {
@@ -49,6 +54,60 @@ export default function MealsPage() {
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ["/api/users"],
   });
+
+  // Fetch saved meals to check if a meal is already saved
+  const { data: savedMeals = [] } = useQuery<any[]>({
+    queryKey: ["/api/saved-meals", CURRENT_USER_ID],
+    queryFn: async () => {
+      const response = await fetch(`/api/saved-meals?userId=${CURRENT_USER_ID}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to fetch saved meals');
+      return response.json();
+    },
+  });
+
+  const saveMealMutation = useMutation({
+    mutationFn: async (meal: CommunityMeal) => {
+      return apiRequest("POST", "/api/saved-meals", {
+        userId: CURRENT_USER_ID,
+        mealId: meal.id,
+        dataSnapshot: meal,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/saved-meals", CURRENT_USER_ID] });
+      toast({ title: "Meal Saved!", description: "Check it in your Saved Meals collection" });
+    },
+    onError: () => {
+      toast({ title: "Failed to save", description: "Please try again", variant: "destructive" });
+    },
+  });
+
+  const unsaveMealMutation = useMutation({
+    mutationFn: async (savedMealId: string) => {
+      return apiRequest("DELETE", `/api/saved-meals/${savedMealId}?userId=${CURRENT_USER_ID}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/saved-meals", CURRENT_USER_ID] });
+      toast({ title: "Meal Removed", description: "Removed from your Saved Meals" });
+    },
+    onError: () => {
+      toast({ title: "Failed to remove", description: "Please try again", variant: "destructive" });
+    },
+  });
+
+  const isMealSaved = (mealId: string) => savedMeals.some((sm: any) => sm.mealId === mealId);
+  const getSavedMealId = (mealId: string) => savedMeals.find((sm: any) => sm.mealId === mealId)?.id;
+
+  const handleToggleSaveMeal = (meal: CommunityMeal) => {
+    if (isMealSaved(meal.id)) {
+      const savedMealId = getSavedMealId(meal.id);
+      if (savedMealId) unsaveMealMutation.mutate(savedMealId);
+    } else {
+      saveMealMutation.mutate(meal);
+    }
+  };
 
   const getUserById = (id: string) => users.find(user => user.id === id);
 
@@ -88,8 +147,17 @@ export default function MealsPage() {
         <div className="space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between px-4">
-            <div className="flex-1"></div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white text-center flex-1 whitespace-nowrap">COMMUNITY MEALS</h1>
+            <div className="flex-1 flex justify-start">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setLocation("/saved-meals")}
+              >
+                <Bookmark className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Saved</span>
+              </Button>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white text-center flex-1 whitespace-nowrap">MEALS</h1>
             <div className="flex-1 flex justify-end">
               <Button 
                 className="bg-fit-green hover:bg-fit-green/90" 
@@ -172,20 +240,30 @@ export default function MealsPage() {
                       
                       <div className="p-4 space-y-4">
                         {/* User Info */}
-                        <div className="flex items-center space-x-3">
-                          <UserAvatar 
-                            src={user?.avatar}
-                            name={user?.name || "Unknown User"}
-                            size="sm"
-                          />
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-white">
-                              {user?.name || "Unknown User"}
-                            </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                              @{user?.username || "unknown"}
-                            </p>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <UserAvatar 
+                              src={user?.avatar}
+                              name={user?.name || "Unknown User"}
+                              size="sm"
+                            />
+                            <div>
+                              <p className="font-medium text-gray-900 dark:text-white">
+                                {user?.name || "Unknown User"}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                @{user?.username || "unknown"}
+                              </p>
+                            </div>
                           </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleToggleSaveMeal(meal)}
+                            className={isMealSaved(meal.id) ? "text-fit-green" : "text-gray-500"}
+                          >
+                            <Bookmark className={`h-5 w-5 ${isMealSaved(meal.id) ? "fill-current" : ""}`} />
+                          </Button>
                         </div>
 
                         {/* Caption */}

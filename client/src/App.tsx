@@ -32,6 +32,7 @@ import Notifications from "./pages/notifications";
 import Messages from "./pages/messages";
 import WorkoutHistory from "./pages/workout-history";
 import SavedWorkouts from "./pages/saved-workouts";
+import SavedMeals from "./pages/saved-meals";
 import SampleWorkout from "./pages/sample-workout.tsx";
 import MealsPage from "./pages/meals";
 import Settings from "./pages/settings";
@@ -100,6 +101,7 @@ function Router() {
           <Route path="/build-workout" component={BuildWorkout} />
           <Route path="/workout-history" component={WorkoutHistory} />
           <Route path="/saved-workouts" component={SavedWorkouts} />
+          <Route path="/saved-meals" component={SavedMeals} />
           <Route path="/sample-workout" component={SampleWorkout} />
 
           <Route path="/progress" component={Progress} />

@@ -19,6 +19,11 @@ export function Stories({ users }: StoriesProps) {
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [caption, setCaption] = useState("");
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
+  
+  // Touch gesture state for swipe-down
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchOffset, setTouchOffset] = useState<number>(0);
+  const [isDragging, setIsDragging] = useState(false);
 
   const { data: stories = [], isLoading, error } = useQuery<Story[]>({
     queryKey: ["/api/stories"],
@@ -145,6 +150,36 @@ export function Stories({ users }: StoriesProps) {
     } else {
       handleNextStory();
     }
+  };
+
+  // Touch gesture handlers for swipe-down to exit
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.touches[0].clientY);
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStart === null) return;
+    
+    const currentY = e.touches[0].clientY;
+    const offset = currentY - touchStart;
+    
+    // Only allow downward swipe (positive offset)
+    if (offset > 0) {
+      setTouchOffset(offset);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (touchOffset > 150) {
+      // Swipe threshold exceeded, close the story
+      setSelectedStory(null);
+    }
+    
+    // Reset gesture state
+    setTouchStart(null);
+    setTouchOffset(0);
+    setIsDragging(false);
   };
 
   // Group stories by user
@@ -298,7 +333,18 @@ export function Stories({ users }: StoriesProps) {
             className="!max-w-none w-screen h-screen p-0 bg-black m-0 rounded-none border-0 !translate-x-0 !translate-y-0 !left-0 !top-0 flex focus:outline-none focus-visible:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0 [&>button]:!absolute [&>button]:!right-4 [&>button]:!top-4 [&>button]:z-[60] [&>button]:!text-white [&>button]:!opacity-100 [&>button]:!bg-transparent [&>button]:hover:!opacity-100 [&>button]:focus:!ring-0 [&>button]:focus:!ring-offset-0 [&>button]:focus-visible:!ring-0 [&>button]:!rounded-full [&>button]:!p-1"
             style={{ outline: 'none', boxShadow: 'none' }}
           >
-            <div className="relative w-full h-full cursor-pointer outline-none focus:outline-none" onClick={handleStoryScreenClick}>
+            <div 
+              className="relative w-full h-full cursor-pointer outline-none focus:outline-none transition-transform" 
+              onClick={handleStoryScreenClick}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              style={{
+                transform: isDragging ? `translateY(${touchOffset}px)` : 'translateY(0)',
+                opacity: isDragging ? Math.max(0.5, 1 - touchOffset / 300) : 1,
+                transition: isDragging ? 'none' : 'transform 0.3s ease-out, opacity 0.3s ease-out'
+              }}
+            >
               <img src={selectedStory.image} alt="Story" className="w-full h-full object-cover pointer-events-none" />
               
               {/* Story header */}

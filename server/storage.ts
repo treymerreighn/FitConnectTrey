@@ -1,4 +1,4 @@
-import type { User, Post, Comment, Connection, ProgressEntry, Exercise, WorkoutSession, ExerciseProgress, Recipe, CommunityMeal, ProgressInsight, Story, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, InsertWorkoutSession, InsertExerciseProgress, InsertProgressInsight, InsertStory } from "../shared/schema.ts";
+import type { User, Post, Comment, Connection, ProgressEntry, Exercise, WorkoutSession, ExerciseProgress, Recipe, CommunityMeal, ProgressInsight, Story, SavedMeal, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, InsertWorkoutSession, InsertExerciseProgress, InsertProgressInsight, InsertStory, InsertSavedMeal } from "../shared/schema.ts";
 import type { WorkoutTemplate, InsertWorkoutTemplate, SavedWorkout, InsertSavedWorkout } from "../shared/workout-types.ts";
 // Lightweight messaging/notification types used by server storage
 export type Notification = {
@@ -153,6 +153,11 @@ export interface IStorage {
   updateCommunityMeal(id: string, updates: Partial<CommunityMeal>): Promise<CommunityMeal>;
   deleteCommunityMeal(id: string): Promise<boolean>;
 
+  // Saved meals (user bookmarks a community meal)
+  saveMeal(data: InsertSavedMeal): Promise<SavedMeal>;
+  listSavedMeals(userId: string): Promise<SavedMeal[]>;
+  deleteSavedMeal(userId: string, savedMealId: string): Promise<boolean>;
+
   // Progress insights operations - AI photo analysis (premium feature)  
   createProgressInsight(insight: InsertProgressInsight): Promise<ProgressInsight>;
   getProgressInsightsByUserId(userId: string): Promise<ProgressInsight[]>;
@@ -186,6 +191,7 @@ export class MemStorage implements IStorage {
   private stories: Map<string, Story> = new Map();
   private workoutTemplates: Map<string, WorkoutTemplate> = new Map();
   private savedWorkouts: Map<string, SavedWorkout[]> = new Map();
+  private savedMeals: Map<string, SavedMeal[]> = new Map();
 
   constructor() {
     this.seedData();
@@ -1080,6 +1086,43 @@ export class MemStorage implements IStorage {
     const changed = newList.length !== list.length;
     console.log(`[MemStorage] Delete workout ${savedWorkoutId} for user ${userId}: ${changed ? 'success' : 'not found'}`);
     if (changed) this.savedWorkouts.set(userId, newList);
+    return changed;
+  }
+
+  // Saved meals
+  async saveMeal(data: InsertSavedMeal): Promise<SavedMeal> {
+    const list = this.savedMeals.get(data.userId) || [];
+    
+    // Check if already saved to prevent duplicates
+    const existing = list.find(sm => sm.mealId === data.mealId);
+    if (existing) {
+      console.log(`[MemStorage] Meal ${data.mealId} already saved for user ${data.userId}`);
+      return existing;
+    }
+    
+    const saved: SavedMeal = {
+      id: nanoid(),
+      createdAt: new Date(),
+      ...data,
+    } as SavedMeal;
+    list.unshift(saved);
+    this.savedMeals.set(data.userId, list);
+    console.log(`[MemStorage] Saved meal ${saved.id} for user ${data.userId}. Total saved: ${list.length}`);
+    return saved;
+  }
+
+  async listSavedMeals(userId: string): Promise<SavedMeal[]> {
+    const list = this.savedMeals.get(userId) || [];
+    console.log(`[MemStorage] Listing saved meals for user ${userId}: ${list.length} found`);
+    return list;
+  }
+
+  async deleteSavedMeal(userId: string, savedMealId: string): Promise<boolean> {
+    const list = this.savedMeals.get(userId) || [];
+    const newList = list.filter(sm => sm.id !== savedMealId);
+    const changed = newList.length !== list.length;
+    console.log(`[MemStorage] Delete meal ${savedMealId} for user ${userId}: ${changed ? 'success' : 'not found'}`);
+    if (changed) this.savedMeals.set(userId, newList);
     return changed;
   }
 

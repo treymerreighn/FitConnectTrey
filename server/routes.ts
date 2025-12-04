@@ -1007,8 +1007,11 @@ router.get("/api/users/:userId/exercise-history/:exerciseName", async (req, res)
     const { userId, exerciseName } = req.params;
     const { limit = "10" } = req.query;
     
+    console.log(`[Exercise History] Looking for "${exerciseName}" for user ${userId}`);
+    
     // Get all workout posts for this user
     const posts = await storage.getPostsByUserId(userId);
+    console.log(`[Exercise History] Found ${posts.length} posts for user`);
     
     // Filter for workout posts and extract history for this exercise
     const history: Array<{
@@ -1020,8 +1023,10 @@ router.get("/api/users/:userId/exercise-history/:exerciseName", async (req, res)
     for (const post of posts) {
       if (post.type === 'workout' && post.workoutData?.exercises) {
         for (const exercise of post.workoutData.exercises) {
-          // Case-insensitive match
-          if (exercise.name?.toLowerCase() === exerciseName.toLowerCase()) {
+          // Case-insensitive match - check both 'name' and 'exerciseName' fields
+          const exName = exercise.name || exercise.exerciseName;
+          if (exName?.toLowerCase() === exerciseName.toLowerCase()) {
+            console.log(`[Exercise History] Found match in post ${post.id}: ${exName}`);
             history.push({
               date: post.createdAt?.toISOString() || new Date().toISOString(),
               sets: exercise.sets || [],
@@ -1032,6 +1037,8 @@ router.get("/api/users/:userId/exercise-history/:exerciseName", async (req, res)
         }
       }
     }
+    
+    console.log(`[Exercise History] Total history entries: ${history.length}`);
     
     // Sort by date (most recent first) and limit
     history.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());

@@ -179,12 +179,22 @@ const WorkoutSession: React.FC = () => {
   }, [plan, ticker, pauseAccumulated, isPaused, pauseStartedAt]);
 
   const handleSetChange = (exerciseIdx: number, setIdx: number, field: keyof WorkoutSet, value: number) => {
+    console.log('handleSetChange called:', { exerciseIdx, setIdx, field, value });
     setPlan(prev => {
       if (!prev) return prev;
       const exercises = [...prev.exercises];
       const ex = { ...exercises[exerciseIdx] };
-      const sets = ex.sets.map((s, i) => i === setIdx ? { ...s, [field]: value } : s);
-      ex.sets = sets;
+      
+      // If changing weight or reps on first set, apply to all sets
+      if ((field === 'weight' || field === 'reps') && setIdx === 0) {
+        console.log('Auto-filling first set to all sets');
+        const sets = ex.sets.map(s => ({ ...s, [field]: value }));
+        ex.sets = sets;
+      } else {
+        const sets = ex.sets.map((s, i) => i === setIdx ? { ...s, [field]: value } : s);
+        ex.sets = sets;
+      }
+      
       exercises[exerciseIdx] = ex;
       return { ...prev, exercises };
     });
@@ -240,7 +250,7 @@ const WorkoutSession: React.FC = () => {
       calories: Math.round(stats.volume / 100) + 50,
       exercises: plan.exercises.map(ex => ({
         id: ex.id,
-        exerciseName: ex.name,
+        name: ex.name,  // Use 'name' to match the exercise history API
         sets: ex.sets.map(s => ({ reps: s.reps, weight: s.weight || 0 }))
       }))
     };
@@ -475,19 +485,22 @@ const WorkoutSession: React.FC = () => {
                               <td className="py-2 pr-2">
                                 <Input
                                   type="number"
-                                  value={set.reps}
+                                  value={set.reps || ''}
                                   min={0}
+                                  placeholder="reps"
                                   className="h-8 text-xs"
-                                  onChange={e => handleSetChange(exIdx, setIdx, 'reps', Number(e.target.value))}
+                                  onFocus={e => e.target.select()}
+                                  onChange={e => handleSetChange(exIdx, setIdx, 'reps', e.target.value === '' ? 0 : Number(e.target.value))}
                                 />
                               </td>
                               <td className="py-2 pr-2">
                                 <Input
                                   type="number"
-                                  value={set.weight ?? ''}
+                                  value={set.weight || ''}
                                   placeholder="kg"
                                   className="h-8 text-xs"
-                                  onChange={e => handleSetChange(exIdx, setIdx, 'weight', Number(e.target.value))}
+                                  onFocus={e => e.target.select()}
+                                  onChange={e => handleSetChange(exIdx, setIdx, 'weight', e.target.value === '' ? 0 : Number(e.target.value))}
                                 />
                               </td>
                               <td className="py-2 pr-2">
@@ -541,10 +554,10 @@ const WorkoutSession: React.FC = () => {
 
       {/* Exercise Stats Dialog */}
       {selectedExerciseForStats && (
-        <Dialog open={true} onOpenChange={() => setSelectedExerciseForStats(null)}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <Dialog open={!!selectedExerciseForStats} onOpenChange={(open) => !open && setSelectedExerciseForStats(null)}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto !bg-white dark:!bg-gray-800">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
+              <DialogTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
                 <TrendingUp className="h-5 w-5" />
                 {selectedExerciseForStats} - Exercise History
                 {isPremium && <Crown className="h-4 w-4 text-amber-500" />}

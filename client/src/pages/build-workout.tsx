@@ -403,27 +403,29 @@ export default function BuildWorkout() {
 
       {/* Exercise Stats Dialog */}
       {selectedExerciseForStats && (
-        <Dialog open={true} onOpenChange={() => setSelectedExerciseForStats(null)}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <Dialog open={!!selectedExerciseForStats} onOpenChange={(open) => !open && setSelectedExerciseForStats(null)}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700" style={{ backgroundColor: 'var(--background, white)' }}>
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
+              <DialogTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
                 <TrendingUp className="h-5 w-5" />
                 {selectedExerciseForStats} - Exercise History
                 {isPremium && <Crown className="h-4 w-4 text-amber-500" />}
               </DialogTitle>
             </DialogHeader>
-            <ExerciseStatsPremium
-              exerciseName={selectedExerciseForStats}
-              userId={userId}
-              isPremium={isPremium}
-              onLoadWeight={(weight) => {
-                // Find the exercise by name
-                const exercise = exercises.find(ex => ex.name === selectedExerciseForStats);
-                if (exercise) {
-                  autoLoadWeightForExercise(exercise.id, weight);
-                }
-              }}
-            />
+            <div className="bg-white dark:bg-gray-800 p-2 rounded">
+              <ExerciseStatsPremium
+                exerciseName={selectedExerciseForStats}
+                userId={userId}
+                isPremium={isPremium}
+                onLoadWeight={(weight) => {
+                  // Find the exercise by name
+                  const exercise = exercises.find(ex => ex.name === selectedExerciseForStats);
+                  if (exercise) {
+                    autoLoadWeightForExercise(exercise.id, weight);
+                  }
+                }}
+              />
+            </div>
           </DialogContent>
         </Dialog>
       )}
@@ -494,29 +496,43 @@ function ExerciseCard({
         {ex.expanded && (
           <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-950/40">
             {/* Header Row */}
-            <div className="grid grid-cols-12 bg-slate-50 dark:bg-slate-900/60 px-4 py-3 text-sm font-medium text-slate-600 dark:text-slate-200">
-              <div className="col-span-2">Set</div>
+            <div className="grid grid-cols-10 sm:grid-cols-12 bg-slate-50 dark:bg-slate-900/60 px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-200 gap-1 sm:gap-0">
+              <div className="col-span-1 sm:col-span-2">#</div>
               <div className="col-span-3">Reps</div>
-              <div className="col-span-3">Weight (lb)</div>
-              <div className="col-span-3">Rest (sec)</div>
+              <div className="col-span-3">Wt</div>
+              <div className="col-span-2 sm:col-span-3">Rest</div>
               <div className="col-span-1" />
             </div>
 
             {/* Rows */}
             {ex.sets.map((s, i) => (
-              <div key={s.id} className="grid grid-cols-12 items-center px-4 py-3 border-t text-base">
-                <div className="col-span-2 text-slate-600 dark:text-slate-300">{i + 1}</div>
-                <div className="col-span-3 flex items-center gap-2">
-                  <StepInput value={s.reps} onChange={(v) => updateSet(s.id, { reps: v })} min={1} max={50} />
+              <div key={s.id} className="grid grid-cols-10 sm:grid-cols-12 items-center px-2 sm:px-4 py-2 sm:py-3 border-t text-base gap-1 sm:gap-0">
+                <div className="col-span-1 sm:col-span-2 text-slate-600 dark:text-slate-300 text-sm sm:text-base">{i + 1}</div>
+                <div className="col-span-3">
+                  <StepInput value={s.reps} onChange={(v) => {
+                    if (i === 0) {
+                      // First set: update all sets
+                      onChange((e) => ({ ...e, sets: e.sets.map(set => ({ ...set, reps: v })) }));
+                    } else {
+                      updateSet(s.id, { reps: v });
+                    }
+                  }} min={1} max={50} />
                 </div>
-                <div className="col-span-3 flex items-center gap-2">
-                  <StepInput value={s.weight || 0} onChange={(v) => updateSet(s.id, { weight: v })} min={0} max={2000} />
+                <div className="col-span-3">
+                  <StepInput value={s.weight || 0} onChange={(v) => {
+                    if (i === 0) {
+                      // First set: update all sets
+                      onChange((e) => ({ ...e, sets: e.sets.map(set => ({ ...set, weight: v })) }));
+                    } else {
+                      updateSet(s.id, { weight: v });
+                    }
+                  }} min={0} max={2000} />
                 </div>
-                <div className="col-span-3 flex items-center gap-2">
+                <div className="col-span-2 sm:col-span-3">
                   <StepInput value={s.restTime || 90} onChange={(v) => updateSet(s.id, { restTime: v })} min={15} max={600} step={5} />
                 </div>
                 <div className="col-span-1 flex justify-end">
-                  <Button variant="ghost" size="icon" onClick={() => removeSet(s.id)} className="text-rose-600 hover:text-rose-700"><Trash2 className="h-5 w-5"/></Button>
+                  <Button variant="ghost" size="icon" onClick={() => removeSet(s.id)} className="text-rose-600 hover:text-rose-700 h-8 w-8 sm:h-10 sm:w-10"><Trash2 className="h-4 w-4 sm:h-5 sm:w-5"/></Button>
                 </div>
               </div>
             ))}
@@ -539,10 +555,40 @@ function ExerciseCard({
 
 function StepInput({ value, onChange, min = 0, max = 999, step = 1 }: { value: number; onChange: (v: number) => void; min?: number; max?: number; step?: number; }) {
   return (
-    <div className="flex items-center gap-2">
-      <Button type="button" variant="outline" size="icon" className="h-9 w-9" onClick={() => onChange(Math.max(min, value - step))}>–</Button>
-      <Input type="number" className="h-11 w-24 text-center text-base" value={value} onChange={(e) => onChange(Number(e.target.value))} min={min} max={max} step={step} />
-      <Button type="button" variant="outline" size="icon" className="h-9 w-9" onClick={() => onChange(Math.min(max, value + step))}>+</Button>
+    <div className="flex items-center gap-1 w-full">
+      {/* Hide buttons on mobile for more space */}
+      <Button 
+        type="button" 
+        variant="outline" 
+        size="icon" 
+        className="h-8 w-8 shrink-0 hidden sm:flex" 
+        onClick={() => onChange(Math.max(min, value - step))}
+      >
+        –
+      </Button>
+      <input 
+        type="text"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        className="h-10 w-full text-center text-lg font-bold border-2 border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-black dark:text-white" 
+        value={value || ''} 
+        placeholder="0"
+        style={{ fontSize: '16px', WebkitTextFillColor: 'currentColor', opacity: 1 }}
+        onFocus={(e) => e.target.select()} 
+        onChange={(e) => {
+          const newValue = e.target.value === '' ? 0 : Number(e.target.value);
+          onChange(newValue);
+        }}
+      />
+      <Button 
+        type="button" 
+        variant="outline" 
+        size="icon" 
+        className="h-8 w-8 shrink-0 hidden sm:flex" 
+        onClick={() => onChange(Math.min(max, value + step))}
+      >
+        +
+      </Button>
     </div>
   );
 }

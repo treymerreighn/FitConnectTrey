@@ -31,9 +31,9 @@ export function ExerciseStatsPremium({
 
   if (isLoading) {
     return (
-      <Card className="border-gray-200 dark:border-gray-800">
+      <Card className="border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800">
         <CardContent className="p-4">
-          <div className="flex items-center gap-2 text-sm text-gray-500">
+          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
             Loading exercise history...
           </div>
@@ -110,10 +110,10 @@ export function ExerciseStatsPremium({
 
   // Free version - just shows basic history
   const freeContent = (
-    <Card className="border-gray-200 dark:border-gray-800">
+    <Card className="border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm flex items-center gap-2">
+          <CardTitle className="text-sm flex items-center gap-2 text-gray-900 dark:text-white">
             <Calendar className="h-4 w-4" />
             Exercise History
           </CardTitle>
@@ -159,7 +159,7 @@ export function ExerciseStatsPremium({
         )}
 
         {history.length === 0 && (
-          <div className="text-center py-4 text-sm text-gray-500">
+          <div className="text-center py-4 text-sm text-gray-500 dark:text-gray-400">
             <p>No previous workouts found.</p>
           </div>
         )}
@@ -172,7 +172,7 @@ export function ExerciseStatsPremium({
     <Card className="border-2 border-amber-200 dark:border-amber-800 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm flex items-center gap-2">
+          <CardTitle className="text-sm flex items-center gap-2 text-gray-900 dark:text-white">
             <Sparkles className="h-4 w-4 text-amber-600" />
             Exercise Stats
           </CardTitle>
@@ -268,7 +268,7 @@ export function ExerciseStatsPremium({
 
         {/* Empty State */}
         {history.length === 0 && (
-          <div className="text-center py-4 text-sm text-gray-500">
+          <div className="text-center py-4 text-sm text-gray-500 dark:text-gray-400">
             <p>No previous workouts found for this exercise.</p>
             <p className="text-xs mt-1">Complete a workout to see stats!</p>
           </div>

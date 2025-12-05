@@ -258,124 +258,126 @@ export default function Progress() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
-      <div className="py-4 sm:py-6">
-        {/* Header */}
-        <div className="space-y-4 mb-6 px-4">
-          <div className="flex items-center justify-between">
-            <div className="flex-1"></div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white text-center flex-1">PROGRESS</h1>
-            <div className="flex-1 flex justify-end">
-              <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-fit-green hover:bg-fit-green/90" size="sm">
-                    <Plus className="h-4 w-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Add Entry</span>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Add Progress Entry</DialogTitle>
-              </DialogHeader>
-              
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div>
-                  <Label htmlFor="date">Date</Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    {...form.register("date")}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="weight">Weight (lbs)</Label>
-                  <Input
-                    id="weight"
-                    type="number"
-                    step="0.1"
-                    placeholder="Enter your current weight"
-                    autoFocus
-                    {...form.register("weight", { valueAsNumber: true })}
-                  />
-                </div>
-
-                {/* Photos */}
-                <div>
-                  <Label>Progress Photos - Optional</Label>
-                  <p className="text-xs text-gray-500 mb-2">Add photos to track your visual progress with AI analysis</p>
-                  <div className="mt-2">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handlePhotoUpload}
-                      className="hidden"
-                      id="photo-upload"
-                    />
-                    <label
-                      htmlFor="photo-upload"
-                      className="flex items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
-                    >
-                      <div className="text-center">
-                        <Camera className="w-6 h-6 text-gray-400 mx-auto mb-1" />
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Add photos (optional)
-                        </p>
-                      </div>
-                    </label>
-                    
-                    {selectedPhotos.length > 0 && (
-                      <div className="mt-2 grid grid-cols-3 gap-2">
-                        {selectedPhotos.map((photo, index) => (
-                          <img
-                            key={index}
-                            src={photo}
-                            alt={`Progress ${index + 1}`}
-                            className="w-full h-20 object-cover rounded"
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="notes">Notes - Optional</Label>
-                  <Textarea
-                    id="notes"
-                    placeholder="How are you feeling? Any observations?"
-                    {...form.register("notes")}
-                  />
-                </div>
-
-                {/* Privacy Toggle */}
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="privacy"
-                    checked={form.watch("isPrivate")}
-                    onCheckedChange={(checked) => form.setValue("isPrivate", checked)}
-                  />
-                  <Label htmlFor="privacy" className="flex items-center space-x-2">
-                    {form.watch("isPrivate") ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    <span>{form.watch("isPrivate") ? "Private" : "Shareable"}</span>
-                  </Label>
-                </div>
-
-                <Button 
-                  type="submit" 
-                  className="w-full bg-fit-green hover:bg-fit-green/90"
-                  disabled={createProgressMutation.isPending}
-                >
-                  {createProgressMutation.isPending ? "Saving..." : "Save Entry"}
+      {/* Header - extends to top of screen */}
+      <div className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 pt-[env(safe-area-inset-top)]">
+        <div className="flex items-center justify-between px-4 py-4">
+          <div className="flex-1"></div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white text-center flex-1">PROGRESS</h1>
+          <div className="flex-1 flex justify-end">
+            <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-fit-green hover:bg-fit-green/90" size="sm">
+                  <Plus className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Add Entry</span>
                 </Button>
-              </form>
-            </DialogContent>
-              </Dialog>
-            </div>
+              </DialogTrigger>
+              <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Add Progress Entry</DialogTitle>
+                </DialogHeader>
+              
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <div>
+                    <Label htmlFor="date">Date</Label>
+                    <Input
+                      id="date"
+                      type="date"
+                      {...form.register("date")}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="weight">Weight (lbs)</Label>
+                    <Input
+                      id="weight"
+                      type="number"
+                      step="0.1"
+                      placeholder="Enter your current weight"
+                      autoFocus
+                      {...form.register("weight", { valueAsNumber: true })}
+                    />
+                  </div>
+
+                  {/* Photos */}
+                  <div>
+                    <Label>Progress Photos - Optional</Label>
+                    <p className="text-xs text-gray-500 mb-2">Add photos to track your visual progress with AI analysis</p>
+                    <div className="mt-2">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                        id="photo-upload"
+                      />
+                      <label
+                        htmlFor="photo-upload"
+                        className="flex items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+                      >
+                        <div className="text-center">
+                          <Camera className="w-6 h-6 text-gray-400 mx-auto mb-1" />
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Add photos (optional)
+                          </p>
+                        </div>
+                      </label>
+                    
+                      {selectedPhotos.length > 0 && (
+                        <div className="mt-2 grid grid-cols-3 gap-2">
+                          {selectedPhotos.map((photo, index) => (
+                            <img
+                              key={index}
+                              src={photo}
+                              alt={`Progress ${index + 1}`}
+                              className="w-full h-20 object-cover rounded"
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="notes">Notes - Optional</Label>
+                    <Textarea
+                      id="notes"
+                      placeholder="How are you feeling? Any observations?"
+                      {...form.register("notes")}
+                    />
+                  </div>
+
+                  {/* Privacy Toggle */}
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="privacy"
+                      checked={form.watch("isPrivate")}
+                      onCheckedChange={(checked) => form.setValue("isPrivate", checked)}
+                    />
+                    <Label htmlFor="privacy" className="flex items-center space-x-2">
+                      {form.watch("isPrivate") ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      <span>{form.watch("isPrivate") ? "Private" : "Shareable"}</span>
+                    </Label>
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-fit-green hover:bg-fit-green/90"
+                    disabled={createProgressMutation.isPending}
+                  >
+                    {createProgressMutation.isPending ? "Saving..." : "Save Entry"}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
-          
-          {/* Action Buttons Row */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 px-4">
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="py-4 sm:py-6 space-y-4">
+        {/* Action Buttons Row */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 px-4">
             <Button 
               variant="outline" 
               size="sm"
@@ -404,7 +406,6 @@ export default function Progress() {
               </Button>
             </Link>
           </div>
-        </div>
 
         {/* Premium Feature Dialog */}
         <PremiumFeatureDialog 

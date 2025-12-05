@@ -284,8 +284,8 @@ export default function Messages() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
-        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-4 mb-4">
-          <div className="flex items-center justify-between">
+        <header className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 pt-[env(safe-area-inset-top)]">
+          <div className="flex items-center justify-between px-4 py-4">
             <div className="flex-1"></div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white text-center flex-1">MESSAGES</h1>
             <div className="flex-1"></div>
@@ -309,30 +309,32 @@ export default function Messages() {
 
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
-        {/* Header with back button */}
-        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setSelectedConversation(null)}
-            className="text-gray-700 dark:text-gray-300"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 12H5M12 19l-7-7 7-7"/>
-            </svg>
-          </Button>
-          <img 
-            src={otherUser?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(getDisplayName(otherUser))}`} 
-            alt={getDisplayName(otherUser)} 
-            className="w-10 h-10 rounded-full bg-gray-200" 
-          />
-          <div className="flex-1 min-w-0">
-            <div className="font-semibold text-gray-900 dark:text-white">{getDisplayName(otherUser)}</div>
-            {lastMessage && (
-              <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                {lastMessage.senderId === currentUserId ? 'You: ' : ''}{String(lastMessage.content || '').substring(0, 50)}
-              </div>
-            )}
+        {/* Header with back button - extends to top of screen */}
+        <header className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 pt-[env(safe-area-inset-top)]">
+          <div className="flex items-center gap-3 px-4 py-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSelectedConversation(null)}
+              className="text-gray-700 dark:text-gray-300"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+              </svg>
+            </Button>
+            <img 
+              src={otherUser?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(getDisplayName(otherUser))}`} 
+              alt={getDisplayName(otherUser)} 
+              className="w-10 h-10 rounded-full bg-gray-200" 
+            />
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-gray-900 dark:text-white">{getDisplayName(otherUser)}</div>
+              {lastMessage && (
+                <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  {lastMessage.senderId === currentUserId ? 'You: ' : ''}{String(lastMessage.content || '').substring(0, 50)}
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
@@ -399,8 +401,8 @@ export default function Messages() {
   // Conversation list view
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
-      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-4 mb-4">
-        <div className="flex items-center justify-between">
+      <header className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 pt-[env(safe-area-inset-top)]">
+        <div className="flex items-center justify-between px-4 py-4">
           <div className="flex-1"></div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white text-center flex-1">MESSAGES</h1>
           <div className="flex-1 flex justify-end">

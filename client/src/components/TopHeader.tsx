@@ -14,7 +14,7 @@ export default function TopHeader({ notificationsCount = 0, messagesCount = 0, c
   const [, setLocation] = useLocation();
 
   return (
-    <header className={`fixed top-0 w-full bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-50 ${className}`}>
+    <header className={`fixed top-0 w-full bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-50 pt-[env(safe-area-inset-top)] ${className}`}>
       <div className="flex items-center justify-between px-4 py-4">
         {showSearch && (
           <div className="absolute left-4">

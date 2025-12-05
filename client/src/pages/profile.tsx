@@ -21,6 +21,7 @@ import { CURRENT_USER_ID } from "@/lib/constants";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { uploadImage } from "@/lib/imageUpload";
+import { ImageCropper } from "@/components/image-cropper";
 import { Link } from "@/components/ui/link";
 import { useAuth } from "@/hooks/useAuth";
 // apiRequest is not used directly here; use the `api` wrapper instead
@@ -329,6 +330,8 @@ export default function Profile() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("posts");
   const [openFollowList, setOpenFollowList] = useState<"followers" | "following" | null>(null);
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const { user: authUser } = useAuth();
   const authUserId = (authUser as UserType | undefined)?.id;
   const canonicalViewerId = authUserId || CURRENT_USER_ID;
@@ -611,7 +614,27 @@ export default function Profile() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Create a URL for the selected image and open the cropper
+    const imageUrl = URL.createObjectURL(file);
+    setImageToCrop(imageUrl);
+    setCropperOpen(true);
+    
+    // Reset the input so the same file can be selected again if needed
+    event.target.value = "";
+  };
+
+  const handleCroppedImage = async (croppedBlob: Blob) => {
+    setCropperOpen(false);
+    
+    // Clean up the object URL
+    if (imageToCrop) {
+      URL.revokeObjectURL(imageToCrop);
+      setImageToCrop(null);
+    }
+
     try {
+      // Convert blob to File for upload
+      const file = new File([croppedBlob], "profile-picture.jpg", { type: "image/jpeg" });
       const result = await uploadImage(file);
       if (result.success) {
         await updateUserMutation.mutateAsync({ 
@@ -629,6 +652,14 @@ export default function Profile() {
         description: "Failed to upload profile picture.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleCropperClose = () => {
+    setCropperOpen(false);
+    if (imageToCrop) {
+      URL.revokeObjectURL(imageToCrop);
+      setImageToCrop(null);
     }
   };
 
@@ -740,6 +771,18 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-16">
+      {/* Image Cropper Modal */}
+      {imageToCrop && (
+        <ImageCropper
+          open={cropperOpen}
+          onClose={handleCropperClose}
+          imageSrc={imageToCrop}
+          onCropComplete={handleCroppedImage}
+          aspectRatio={1}
+          circularCrop={true}
+        />
+      )}
+
       <Dialog open={Boolean(openFollowList)} onOpenChange={(value) => { if (!value) setOpenFollowList(null); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>

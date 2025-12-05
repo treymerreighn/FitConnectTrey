@@ -143,32 +143,35 @@ export default function MealsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <main className="pt-4 pb-20">
-        <div className="space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between px-4">
-            <div className="flex-1 flex justify-start">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setLocation("/saved-meals")}
-              >
-                <Bookmark className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Saved</span>
-              </Button>
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white text-center flex-1 whitespace-nowrap">MEALS</h1>
-            <div className="flex-1 flex justify-end">
-              <Button 
-                className="bg-fit-green hover:bg-fit-green/90" 
-                size="sm"
-                onClick={handleShareMeal}
-              >
-                <Plus className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Add Meal</span>
-              </Button>
-            </div>
+      {/* Header - extends to top of screen */}
+      <div className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 pt-[env(safe-area-inset-top)]">
+        <div className="flex items-center justify-between px-4 py-4">
+          <div className="flex-1 flex justify-start">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setLocation("/saved-meals")}
+            >
+              <Bookmark className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Saved</span>
+            </Button>
           </div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white text-center flex-1 whitespace-nowrap">MEALS</h1>
+          <div className="flex-1 flex justify-end">
+            <Button 
+              className="bg-fit-green hover:bg-fit-green/90" 
+              size="sm"
+              onClick={handleShareMeal}
+            >
+              <Plus className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Add Meal</span>
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <main className="pb-20">
+        <div className="space-y-6 pt-4">
 
           {/* Loading State */}
           {isLoading && (

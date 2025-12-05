@@ -165,9 +165,9 @@ export default function Workouts() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="py-6 space-y-6">
-        {/* Header */}
-        <div className="space-y-4 max-w-6xl mx-auto px-4">
+      {/* Header - extends to top of screen */}
+      <div className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 pt-[env(safe-area-inset-top)]">
+        <div className="space-y-4 max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex-1"></div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-center flex-1">WORKOUTS</h1>
@@ -560,7 +560,10 @@ export default function Workouts() {
             </Dialog>
           </div>
         </div>
+      </div>
 
+      {/* Main Content */}
+      <div className="py-6 space-y-6 pb-20">
         {/* Main Content Tabs */}
         <Tabs defaultValue="community" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-4 max-w-6xl mx-auto px-4">

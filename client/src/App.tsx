@@ -8,6 +8,7 @@ import { useLocation } from "wouter";
 import { Link } from "@/components/ui/link";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { PreferencesProvider } from "@/contexts/preferences-context";
+import { useEffect } from "react";
 
 import { useAuth } from "@/hooks/useAuth";
 import Feed from "./pages/feed";
@@ -39,6 +40,17 @@ import Settings from "./pages/settings";
 import PremiumDemo from "./pages/premium-demo";
 import AdminReports from "./pages/admin-reports";
 
+// Scroll to top when route changes
+function ScrollToTop() {
+  const [location] = useLocation();
+  
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location]);
+  
+  return null;
+}
+
 
 
 function BottomNavigation() {
@@ -56,6 +68,14 @@ function BottomNavigation() {
     { path: "/profile", icon: User, label: "Profile" },
   ];
 
+  const handleNavClick = (path: string, e: React.MouseEvent) => {
+    // If already on home page and clicking home, scroll to top
+    if (path === "/" && location === "/") {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   return (
     <nav className="fixed bottom-0 w-full bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-40 h-16">
       <div className="flex items-center justify-around h-full">
@@ -65,12 +85,15 @@ function BottomNavigation() {
             <Link key={path} href={path} asChild>
               <Button
                 variant="ghost"
-                className={`flex items-center justify-center p-0 h-full [&_svg]:!size-auto ${
+                className={`flex items-center justify-center p-0 h-full [&_svg]:!size-auto !bg-transparent hover:!bg-transparent focus:!bg-transparent active:!bg-transparent focus-visible:!bg-transparent ${
                   isActive
                     ? "text-fit-green"
                     : "text-gray-600 dark:text-gray-300 hover:text-fit-green"
                 }`}
                 aria-label={label}
+                onClick={(e) => handleNavClick(path, e)}
+                onMouseDown={(e) => e.preventDefault()}
+                onTouchStart={(e) => e.currentTarget.blur()}
               >
                 <Icon className="w-[56px] h-[56px]" strokeWidth={1.5} />
               </Button>
@@ -132,6 +155,7 @@ export default function App() {
       <PreferencesProvider>
         <QueryClientProvider client={queryClient}>
           <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+            <ScrollToTop />
             <Router />
             <BottomNavigation />
             <Toaster />

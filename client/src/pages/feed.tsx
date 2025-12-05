@@ -20,6 +20,7 @@ export default function Feed() {
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const touchStartY = useRef(0);
+  const isPulling = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const PULL_THRESHOLD = 80;
   
@@ -61,25 +62,46 @@ export default function Feed() {
   const activeUsers = getActiveUsers();
 
   // Pull-to-refresh handlers
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (containerRef.current && containerRef.current.scrollTop === 0) {
-      touchStartY.current = e.touches[0].clientY;
-    }
+  const getScrollTop = useCallback(() => {
+    // Check multiple scroll sources - window, document, and container
+    const windowScroll = window.scrollY || window.pageYOffset;
+    const docScroll = document.documentElement?.scrollTop || 0;
+    const bodyScroll = document.body?.scrollTop || 0;
+    const containerScroll = containerRef.current?.scrollTop || 0;
+    return Math.max(windowScroll, docScroll, bodyScroll, containerScroll);
   }, []);
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (isRefreshing) return;
-    if (containerRef.current && containerRef.current.scrollTop === 0) {
-      const currentY = e.touches[0].clientY;
-      const distance = currentY - touchStartY.current;
-      if (distance > 0) {
-        setPullDistance(Math.min(distance * 0.5, PULL_THRESHOLD * 1.5));
-      }
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    // Only allow pull-to-refresh if we're at the very top
+    const scrollTop = getScrollTop();
+    if (scrollTop <= 0) {
+      touchStartY.current = e.touches[0].clientY;
+      isPulling.current = true;
+    } else {
+      isPulling.current = false;
     }
-  }, [isRefreshing]);
+  }, [getScrollTop]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (isRefreshing || !isPulling.current) return;
+    // Double-check we're still at the top - if user scrolled down, cancel pull
+    const scrollTop = getScrollTop();
+    if (scrollTop > 0) {
+      isPulling.current = false;
+      setPullDistance(0);
+      return;
+    }
+    const currentY = e.touches[0].clientY;
+    const distance = currentY - touchStartY.current;
+    if (distance > 0) {
+      setPullDistance(Math.min(distance * 0.5, PULL_THRESHOLD * 1.5));
+    } else {
+      setPullDistance(0);
+    }
+  }, [isRefreshing, getScrollTop]);
 
   const handleTouchEnd = useCallback(async () => {
-    if (pullDistance >= PULL_THRESHOLD && !isRefreshing) {
+    if (pullDistance >= PULL_THRESHOLD && !isRefreshing && isPulling.current) {
       setIsRefreshing(true);
       setPullDistance(PULL_THRESHOLD);
       
@@ -93,6 +115,7 @@ export default function Feed() {
       setIsRefreshing(false);
     }
     setPullDistance(0);
+    isPulling.current = false;
   }, [pullDistance, isRefreshing, refetchPosts, queryClient]);
 
   if (postsLoading) {

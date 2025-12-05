@@ -7,7 +7,7 @@ import { Badge } from '../components/ui/badge';
 import { useToast } from '../hooks/use-toast';
 import { cn } from '../lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import { Loader2, PauseCircle, PlayCircle, Minus, Plus, PlusCircle, Search, TrendingUp, Crown } from 'lucide-react';
+import { Loader2, PauseCircle, PlayCircle, Minus, Plus, PlusCircle, Search, TrendingUp, Crown, Check, Timer, Dumbbell, Flame, Trash2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import type { Exercise } from '@shared/schema';
 import { usePreferences } from '@/contexts/preferences-context';
@@ -82,6 +82,62 @@ const parsePlanFromSearch = (search: string): ActiveWorkoutPlan | null => {
   return null;
 };
 
+// Swipeable row component for delete gesture
+const SwipeableSetRow: React.FC<{
+  children: React.ReactNode;
+  onDelete: () => void;
+  canDelete: boolean;
+  className?: string;
+}> = ({ children, onDelete, canDelete, className }) => {
+  const [translateX, setTranslateX] = useState(0);
+  const [startX, setStartX] = useState<number | null>(null);
+  const [showDelete, setShowDelete] = useState(false);
+  const deleteThreshold = -80;
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setStartX(e.touches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (startX === null || !canDelete) return;
+    const currentX = e.touches[0].clientX;
+    const diff = currentX - startX;
+    if (diff < 0) {
+      setTranslateX(Math.max(diff, -100));
+      setShowDelete(diff < deleteThreshold);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (translateX < deleteThreshold && canDelete) {
+      onDelete();
+    }
+    setTranslateX(0);
+    setStartX(null);
+    setShowDelete(false);
+  };
+
+  return (
+    <tr
+      className={cn(className, 'relative')}
+      style={{ 
+        transform: `translateX(${translateX}px)`,
+        transition: startX === null ? 'transform 0.2s ease-out' : 'none'
+      }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {children}
+      {showDelete && (
+        <td className="absolute right-0 top-0 bottom-0 w-20 bg-red-500 flex items-center justify-center" style={{ transform: `translateX(${-translateX}px)` }}>
+          <Trash2 className="h-5 w-5 text-white" />
+        </td>
+      )}
+    </tr>
+  );
+};
+
 const WorkoutSession: React.FC = () => {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
@@ -96,6 +152,7 @@ const WorkoutSession: React.FC = () => {
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState<number>(0);
   const [currentSetIndex, setCurrentSetIndex] = useState<number>(0);
   const [showFinishDialog, setShowFinishDialog] = useState(false);
+  const [showExitDialog, setShowExitDialog] = useState(false);
   const [showAddExerciseDialog, setShowAddExerciseDialog] = useState(false);
   const [exerciseSearchQuery, setExerciseSearchQuery] = useState('');
   const [saving, setSaving] = useState(false);
@@ -142,13 +199,42 @@ const WorkoutSession: React.FC = () => {
     }
   }, [location]);
 
+  // Play chime sound
+  const playChime = () => {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(880, audioContext.currentTime); // A5 note
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1.0);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 1.0);
+    } catch (e) {
+      console.log('Could not play chime');
+    }
+  };
+
   // Tick down active rest timer
   useEffect(() => {
     if (isPaused) return;
     let interval: any;
     if (activeRest !== null && activeRest > 0) {
       interval = setInterval(() => {
-        setActiveRest(prev => (prev !== null ? Math.max(prev - 1, 0) : null));
+        setActiveRest(prev => {
+          if (prev !== null && prev <= 1) {
+            playChime();
+            return null; // Auto-hide when timer reaches 0
+          }
+          return prev !== null ? prev - 1 : null;
+        });
       }, 1000);
     }
     return () => clearInterval(interval);
@@ -300,6 +386,36 @@ const WorkoutSession: React.FC = () => {
     });
   };
 
+  const addSet = (exerciseIdx: number) => {
+    setPlan(prev => {
+      if (!prev) return prev;
+      const exercises = [...prev.exercises];
+      const ex = { ...exercises[exerciseIdx] };
+      const lastSet = ex.sets[ex.sets.length - 1];
+      const newSet: WorkoutSet = {
+        reps: lastSet?.reps || 10,
+        weight: lastSet?.weight || 0,
+        rest: lastSet?.rest || 60,
+        completed: false
+      };
+      ex.sets = [...ex.sets, newSet];
+      exercises[exerciseIdx] = ex;
+      return { ...prev, exercises };
+    });
+  };
+
+  const removeSet = (exerciseIdx: number, setIdx: number) => {
+    setPlan(prev => {
+      if (!prev) return prev;
+      const exercises = [...prev.exercises];
+      const ex = { ...exercises[exerciseIdx] };
+      if (ex.sets.length <= 1) return prev; // Keep at least one set
+      ex.sets = ex.sets.filter((_, i) => i !== setIdx);
+      exercises[exerciseIdx] = ex;
+      return { ...prev, exercises };
+    });
+  };
+
   const addExerciseToWorkout = (exercise: Exercise) => {
     const newExercise: WorkoutExercise = {
       id: exercise.id,
@@ -324,10 +440,21 @@ const WorkoutSession: React.FC = () => {
     
     setShowAddExerciseDialog(false);
     setExerciseSearchQuery('');
-    toast({
-      title: 'Exercise added',
-      description: `${exercise.name} has been added to your workout.`
+  };
+
+  const removeExercise = (exerciseIdx: number) => {
+    setPlan(prev => {
+      if (!prev) return prev;
+      const newExercises = prev.exercises.filter((_, idx) => idx !== exerciseIdx);
+      return {
+        ...prev,
+        exercises: newExercises
+      };
     });
+    // Adjust current exercise index if needed
+    if (exerciseIdx <= currentExerciseIndex && currentExerciseIndex > 0) {
+      setCurrentExerciseIndex(prev => prev - 1);
+    }
   };
 
   const filteredExercises = useMemo(() => {
@@ -378,45 +505,61 @@ const WorkoutSession: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
       {/* Header */}
-      <div className="sticky top-0 z-20 border-b bg-white dark:bg-gray-900 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-gray-900/60">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex flex-wrap gap-4 items-center justify-between">
-          <div className="flex flex-col">
-            <h1 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">{plan.name || 'Workout Session'}</h1>
-            <p className="text-xs text-muted-foreground">Logging your sets in real time</p>
-            {isPaused && <span className="text-[11px] uppercase tracking-wide text-amber-600 dark:text-amber-400 font-semibold">Paused</span>}
-          </div>
-          <div className="flex items-center gap-6 text-sm">
-            <div className="flex flex-col items-center">
-              <span className="font-medium text-gray-900 dark:text-gray-100">Time</span>
-              <Badge variant="secondary" className="text-xs font-mono">{formatTime(workoutElapsed)}</Badge>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="font-medium text-gray-900 dark:text-gray-100">Sets</span>
-              <Badge variant="outline" className="text-xs">{stats.completedSets}/{stats.totalSets}</Badge>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="font-medium text-gray-900 dark:text-gray-100">Volume</span>
-              <Badge variant="outline" className="text-xs">{stats.volume} {weightUnit}</Badge>
-            </div>
-              <Button variant={isPaused ? 'default' : 'outline'} size="sm" onClick={togglePause} className="flex items-center gap-1">
-                {isPaused ? <PlayCircle className="h-4 w-4" /> : <PauseCircle className="h-4 w-4" />}
-                {isPaused ? 'Resume' : 'Pause'}
+      <div className="sticky top-0 z-20 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+        <div className="max-w-6xl mx-auto px-3 py-3">
+          {/* Top row: Title and action buttons */}
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <h1 className="text-lg font-semibold tracking-tight text-gray-900 dark:text-white truncate">{plan.name || 'Workout'}</h1>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button variant="outline" size="icon" onClick={() => setShowExitDialog(true)} className="h-8 w-8 bg-slate-800 hover:bg-slate-700 border-slate-700 text-white">
+                <Trash2 className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="sm" onClick={() => setShowFinishDialog(true)} disabled={stats.completedSets === 0}>Finish</Button>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={togglePause} 
+                className={cn(
+                  "h-8 w-8",
+                  isPaused 
+                    ? "bg-green-500 hover:bg-green-600 border-green-500 text-white" 
+                    : "bg-slate-800 hover:bg-slate-700 border-slate-700 text-white"
+                )}
+              >
+                {isPaused ? <PlayCircle className="h-4 w-4" /> : <PauseCircle className="h-4 w-4" />}
+              </Button>
+              <Button size="sm" onClick={() => setShowFinishDialog(true)} disabled={stats.completedSets === 0} className="h-8">
+                Record & Post
+              </Button>
+            </div>
+          </div>
+          {/* Bottom row: Stats pills - centered with volume in middle */}
+          <div className="flex items-center justify-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 rounded-full px-3 py-1.5">
+              <Timer className="h-4 w-4 text-blue-500" />
+              <span className="font-mono text-sm font-semibold text-slate-700 dark:text-slate-200">{formatTime(workoutElapsed)}</span>
+            </div>
+            <div className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 to-green-500 rounded-full px-3 py-1.5 shadow-sm">
+              <Dumbbell className="h-4 w-4 text-white" />
+              <span className="text-sm font-bold text-white">{stats.volume.toLocaleString()} {weightUnit}</span>
+            </div>
+            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 rounded-full px-3 py-1.5">
+              <Flame className="h-4 w-4 text-orange-500" />
+              <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{stats.completedSets}<span className="text-slate-400">/{stats.totalSets}</span> sets</span>
+            </div>
           </div>
         </div>
       </div>
       {isPaused && (
         <div className="bg-amber-100 dark:bg-amber-900/30 border-y border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-center text-sm py-2">
-          Workout paused — resume to continue timing and rest countdowns.
+          Paused — tap resume to continue
         </div>
       )}
 
       {/* Rest Timer Banner */}
       {activeRest !== null && (
-        <div className="sticky top-[64px] z-10 bg-amber-50 dark:bg-amber-900/20 border-y border-amber-200 dark:border-amber-800">
+        <div className="sticky top-[100px] z-10 bg-amber-50 dark:bg-amber-900/20 border-y border-amber-200 dark:border-amber-800">
           <div className="max-w-6xl mx-auto px-4 py-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-amber-800 dark:text-amber-300">Rest</span>
@@ -440,7 +583,7 @@ const WorkoutSession: React.FC = () => {
           {plan.exercises.map((exercise, exIdx) => {
             const isCurrent = exIdx === currentExerciseIndex;
             return (
-              <Card key={exercise.id} className={cn('border shadow-sm', isCurrent && 'ring-2 ring-primary/30')}>
+              <Card key={exercise.id} className={cn('border border-slate-200 dark:border-slate-700 shadow-md bg-white dark:bg-slate-900', isCurrent && 'ring-2 ring-primary/50')}>
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 space-y-1">
@@ -451,37 +594,52 @@ const WorkoutSession: React.FC = () => {
                         {exercise.difficulty && <Badge variant="outline" className="text-[10px]">{exercise.difficulty.toLowerCase()}</Badge>}
                       </div>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedExerciseForStats(exercise.name)}
-                      className="shrink-0 flex items-center gap-1"
-                    >
-                      <TrendingUp className="h-3 w-3" />
-                      <span className="hidden sm:inline">Stats</span>
-                      {isPremium && <Crown className="h-3 w-3 text-amber-500" />}
-                    </Button>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedExerciseForStats(exercise.name)}
+                        className="flex items-center gap-1"
+                      >
+                        <TrendingUp className="h-3 w-3" />
+                        <span className="hidden sm:inline">Stats</span>
+                        {isPremium && <Crown className="h-3 w-3 text-amber-500" />}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => removeExercise(exIdx)}
+                        className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="overflow-x-auto">
+                <CardContent className="pt-0 px-0 pb-0">
+                  <div className="overflow-x-auto pb-2">
                     <table className="w-full border-collapse text-sm">
                       <thead>
                         <tr className="text-xs text-muted-foreground">
-                          <th className="font-medium text-left py-2 pr-2">Set</th>
+                          <th className="font-medium text-left py-2 pl-4 pr-2">Set</th>
                           <th className="font-medium text-left py-2 pr-2 w-24">Reps</th>
                           <th className="font-medium text-left py-2 pr-2 w-28">Weight ({weightUnit})</th>
                           <th className="font-medium text-left py-2 pr-2 w-20">Rest</th>
-                          <th className="font-medium text-left py-2 pr-2 w-24">Status</th>
-                          <th className="py-2" />
+                          <th className="font-medium text-center py-2 pr-4 w-12"></th>
                         </tr>
                       </thead>
                       <tbody>
                         {exercise.sets.map((set, setIdx) => {
                           const isActiveRow = isCurrent && setIdx === currentSetIndex;
+                          const canDelete = exercise.sets.length > 1;
                           return (
-                            <tr key={setIdx} className={cn('group border-t text-xs', set.completed ? 'bg-green-50/60 dark:bg-green-900/20' : isActiveRow ? 'bg-primary/5' : 'hover:bg-muted/50')}>
-                              <td className="py-2 pr-2 font-mono w-10">{setIdx + 1}</td>
+                            <SwipeableSetRow
+                              key={setIdx}
+                              onDelete={() => removeSet(exIdx, setIdx)}
+                              canDelete={canDelete}
+                              className={cn('group border-t text-xs', set.completed ? 'bg-green-100 dark:bg-green-900/40' : isActiveRow ? 'bg-primary/5' : 'hover:bg-muted/50')}
+                            >
+                              <td className="py-2 pl-4 pr-2 font-mono w-10">{setIdx + 1}</td>
                               <td className="py-2 pr-2">
                                 <Input
                                   type="number"
@@ -497,7 +655,7 @@ const WorkoutSession: React.FC = () => {
                                 <Input
                                   type="number"
                                   value={set.weight || ''}
-                                  placeholder="kg"
+                                  placeholder={weightUnit}
                                   className="h-8 text-xs"
                                   onFocus={e => e.target.select()}
                                   onChange={e => handleSetChange(exIdx, setIdx, 'weight', e.target.value === '' ? 0 : Number(e.target.value))}
@@ -512,29 +670,39 @@ const WorkoutSession: React.FC = () => {
                                   onChange={e => handleSetChange(exIdx, setIdx, 'rest', Number(e.target.value))}
                                 />
                               </td>
-                              <td className="py-2 pr-2">
-                                {set.completed ? (
-                                  <Badge className="bg-green-600 hover:bg-green-600 text-white">Done</Badge>
-                                ) : (
-                                  <Badge variant="outline" className={cn('text-muted-foreground', isActiveRow && 'border-primary/50')}>Pending</Badge>
-                                )}
+                              <td className="py-2 pr-4 text-center">
+                                <button
+                                  onClick={() => set.completed ? undoSet(exIdx, setIdx) : completeSet(exIdx, setIdx)}
+                                  disabled={!set.completed && (!set.reps || isPaused)}
+                                  className={cn(
+                                    'w-6 h-6 min-w-6 min-h-6 rounded-full border flex items-center justify-center transition-all duration-200',
+                                    set.completed
+                                      ? 'bg-green-500 border-green-500 text-white'
+                                      : 'border-slate-300 dark:border-slate-600 bg-transparent hover:border-green-400 dark:hover:border-green-500',
+                                    !set.completed && (!set.reps || isPaused) && 'opacity-50 cursor-not-allowed'
+                                  )}
+                                >
+                                  {set.completed && <Check className="w-4 h-4" />}
+                                </button>
                               </td>
-                              <td className="py-2 pr-2 text-right">
-                                {set.completed ? (
-                                  <Button size="sm" variant="ghost" onClick={() => undoSet(exIdx, setIdx)}>Undo</Button>
-                                ) : (
-                                  <Button size="sm" onClick={() => completeSet(exIdx, setIdx)} disabled={!set.reps || isPaused}>Complete</Button>
-                                )}
-                              </td>
-                            </tr>
+                            </SwipeableSetRow>
                           )
                         })}
                       </tbody>
                     </table>
                   </div>
                   {exercise.notes && (
-                    <p className="mt-3 text-xs text-muted-foreground leading-relaxed">{exercise.notes}</p>
+                    <p className="mt-3 mb-2 px-4 text-xs text-muted-foreground leading-relaxed">{exercise.notes}</p>
                   )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => addSet(exIdx)}
+                    className="w-full text-xs text-muted-foreground hover:text-foreground rounded-t-none"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add Set
+                  </Button>
                 </CardContent>
               </Card>
             )
@@ -579,22 +747,6 @@ const WorkoutSession: React.FC = () => {
         </Dialog>
       )}
 
-      {/* Sticky Footer Summary */}
-      <div className="sticky bottom-14 z-30 bg-white dark:bg-gray-900 backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-gray-900/70 border-t border-gray-200 dark:border-gray-800">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between text-sm">
-          <div className="flex gap-4">
-            <span className="text-muted-foreground">Elapsed: <span className="font-medium text-foreground">{formatTime(workoutElapsed)}</span></span>
-            <span className="text-muted-foreground">Sets: <span className="font-medium text-foreground">{stats.completedSets}/{stats.totalSets}</span></span>
-            <span className="text-muted-foreground">Volume: <span className="font-medium text-foreground">{stats.volume} {weightUnit}</span></span>
-          </div>
-            <div className="flex gap-2 flex-wrap">
-              <Button size="sm" variant="outline" onClick={() => setLocation('/workouts')}>Exit</Button>
-              <Button size="sm" variant="secondary" onClick={postWorkoutNow}>Post Workout</Button>
-              <Button size="sm" onClick={() => setShowFinishDialog(true)}>Record & Post</Button>
-            </div>
-        </div>
-      </div>
-
       <Dialog open={showFinishDialog} onOpenChange={setShowFinishDialog}>
         <DialogContent>
           <DialogHeader>
@@ -605,6 +757,22 @@ const WorkoutSession: React.FC = () => {
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowFinishDialog(false)}>Cancel</Button>
               <Button onClick={finishWorkout} disabled={saving}>{saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Record & Continue</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Exit Confirmation Dialog */}
+      <Dialog open={showExitDialog} onOpenChange={setShowExitDialog}>
+        <DialogContent className="max-w-sm rounded-2xl [&>button]:right-2 [&>button]:top-2">
+          <DialogHeader>
+            <DialogTitle>Discard Workout?</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 text-sm">
+            <p>Are you sure you want to exit? Your workout progress will be lost.</p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowExitDialog(false)}>Cancel</Button>
+              <Button variant="destructive" onClick={() => setLocation('/workouts')}>Discard & Exit</Button>
             </div>
           </div>
         </DialogContent>

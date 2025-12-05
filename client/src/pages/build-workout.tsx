@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/contexts/theme-context";
+import { usePreferences } from "@/contexts/preferences-context";
 import { api } from "@/lib/api";
 import { ExerciseStatsPremium } from "@/components/exercise-stats-premium";
 import { CURRENT_USER_ID } from "@/lib/constants";
@@ -69,6 +70,7 @@ export default function BuildWorkout() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
+  const { weightUnit } = usePreferences();
 
   // Check if user has premium access
   const isPremium = user?.isPremium || 
@@ -273,13 +275,13 @@ export default function BuildWorkout() {
       </div>
 
       {/* Content */}
-      <div className="mx-auto max-w-4xl px-5 pt-6 pb-60 md:pb-56">
+      <div className="mx-auto max-w-4xl px-2 sm:px-5 pt-6 pb-60 md:pb-56">
         {/* Workout meta */}
-        <Card className="border-slate-200 shadow-sm bg-white dark:bg-slate-900 dark:border-slate-800">
-          <CardHeader className="pb-3">
+        <Card className="border-slate-200 shadow-sm bg-white dark:bg-slate-900 dark:border-slate-800 mx-0">
+          <CardHeader className="pb-3 px-3 sm:px-6">
             <CardTitle className="text-lg">Plan Details</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-3">
+          <CardContent className="grid gap-4 md:grid-cols-3 px-3 sm:px-6">
             <div className="space-y-2 md:col-span-1">
               <Label htmlFor="name">Workout name</Label>
               <Input id="name" value={workoutName} onChange={(e) => setWorkoutName(e.target.value)} placeholder="e.g., Push Day - Hypertrophy" className="h-11 text-base" />
@@ -299,7 +301,7 @@ export default function BuildWorkout() {
               <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
                 <Badge variant="secondary" className="h-7 rounded-full px-3 dark:bg-slate-800 dark:text-slate-100">Sets: {totals.totalSets}</Badge>
                 <Badge variant="secondary" className="h-7 rounded-full px-3 flex items-center gap-1 dark:bg-slate-800 dark:text-slate-100"><Timer className="h-4 w-4" />~{totals.estMinutes} min</Badge>
-                <Badge variant="secondary" className="h-7 rounded-full px-3 dark:bg-slate-800 dark:text-slate-100">Volume: {Intl.NumberFormat().format(totals.volume)} lb</Badge>
+                <Badge variant="secondary" className="h-7 rounded-full px-3 dark:bg-slate-800 dark:text-slate-100">Volume: {Intl.NumberFormat().format(totals.volume)} {weightUnit}</Badge>
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
                 <span className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Intensity</span>
@@ -335,6 +337,7 @@ export default function BuildWorkout() {
                 onChange={(updater) => updateExercise(ex.id, updater)}
                 onShowStats={() => setSelectedExerciseForStats(ex.name)}
                 isPremium={isPremium}
+                weightUnit={weightUnit}
               />
             </motion.div>
           ))}
@@ -360,7 +363,7 @@ export default function BuildWorkout() {
             <Separator orientation="vertical" className="hidden md:block" />
             <span>Sets: <b>{totals.totalSets}</b></span>
             <span>Time: <b>~{totals.estMinutes} min</b></span>
-            <span>Volume: <b>{Intl.NumberFormat().format(totals.volume)} lb</b></span>
+            <span>Volume: <b>{Intl.NumberFormat().format(totals.volume)} {weightUnit}</b></span>
             <span className="ml-auto text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 hidden md:inline">
               {intensity === "easy" && "Easy Day"}
               {intensity === "moderate" && "Moderate"}
@@ -441,7 +444,8 @@ function ExerciseCard({
   onRemove, 
   onChange,
   onShowStats,
-  isPremium 
+  isPremium,
+  weightUnit
 }: { 
   index: number; 
   ex: ExerciseRow; 
@@ -449,6 +453,7 @@ function ExerciseCard({
   onChange: (updater: (e: ExerciseRow) => ExerciseRow) => void;
   onShowStats: () => void;
   isPremium: boolean;
+  weightUnit: 'lbs' | 'kg';
 }) {
   const volume = ex.sets.reduce((v, s) => v + (s.weight || 0) * (s.reps || 0), 0);
 
@@ -463,14 +468,14 @@ function ExerciseCard({
   }
 
   return (
-  <Card className="border-slate-200 shadow-sm bg-white dark:bg-slate-900 dark:border-slate-800">
-      <CardHeader className="pb-2">
+  <Card className="border-slate-200 shadow-sm bg-white dark:bg-slate-900 dark:border-slate-800 mx-0">
+      <CardHeader className="pb-2 px-3 sm:px-6">
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="text-sm text-slate-500 dark:text-slate-400">Exercise {index}</div>
             <CardTitle className="text-2xl tracking-tight">{ex.name}</CardTitle>
             <div className="mt-2 flex flex-wrap gap-2">
-              <Badge variant="outline" className="dark:border-slate-700 dark:text-slate-200">Volume: {Intl.NumberFormat().format(volume)} lb</Badge>
+              <Badge variant="outline" className="dark:border-slate-700 dark:text-slate-200">Volume: {Intl.NumberFormat().format(volume)} {weightUnit}</Badge>
               <Badge variant="outline" className="dark:border-slate-700 dark:text-slate-200">Sets: {ex.sets.length}</Badge>
               <Button 
                 variant="outline" 
@@ -492,15 +497,15 @@ function ExerciseCard({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="pt-0 px-3 sm:px-6">
         {ex.expanded && (
           <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-950/40">
             {/* Header Row */}
             <div className="grid grid-cols-10 sm:grid-cols-12 bg-slate-50 dark:bg-slate-900/60 px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-200 gap-1 sm:gap-0">
               <div className="col-span-1 sm:col-span-2">#</div>
               <div className="col-span-3">Reps</div>
-              <div className="col-span-3">Wt</div>
-              <div className="col-span-2 sm:col-span-3">Rest</div>
+              <div className="col-span-3">Weight ({weightUnit})</div>
+              <div className="col-span-2 sm:col-span-3">Rest (sec)</div>
               <div className="col-span-1" />
             </div>
 

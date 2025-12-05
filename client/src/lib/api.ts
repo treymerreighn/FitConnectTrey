@@ -19,6 +19,9 @@ export const api = {
   deletePost: async (id: string): Promise<{ success: boolean }> => {
     return await apiRequest("DELETE", `/api/posts/${id}`);
   },
+  updatePost: async (id: string, updates: Partial<Post>): Promise<Post> => {
+    return await apiRequest("PUT", `/api/posts/${id}`, updates);
+  },
   getTrendingWorkouts: async (hours?: number): Promise<Post[]> => {
     return await apiRequest("GET", `/api/workouts/trending${hours ? `?hours=${hours}` : ""}`);
   },

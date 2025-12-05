@@ -8,6 +8,7 @@ export const users = pgTable("users", {
   bio: text("bio"),
   avatar: text("avatar"),
   isVerified: boolean("is_verified").default(false),
+  isAdmin: boolean("is_admin").default(false),
   accountType: text("account_type").notNull().default("user"),
   fitnessGoals: text("fitness_goals").array().default([]),
   followers: text("followers").array().default([]),
@@ -135,5 +136,14 @@ export const messages = pgTable("messages", {
   senderId: text("sender_id").notNull().references(() => users.id),
   content: text("content").notNull(),
   read: boolean("read").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const reports = pgTable("reports", {
+  id: text("id").primaryKey(),
+  postId: text("post_id").notNull().references(() => posts.id),
+  reporterId: text("reporter_id").notNull().references(() => users.id),
+  reason: text("reason").notNull(),
+  status: text("status").notNull().default("pending"), // pending, reviewed, dismissed
   createdAt: timestamp("created_at").defaultNow(),
 });

@@ -8,6 +8,7 @@ const CURRENT_USER = {
   firstName: "Stein",
   lastName: "Braden",
   profileImageUrl: undefined,
+  isAdmin: true, // Dev user is admin for testing admin features
 };
 
 export async function setupSimpleAuth(app: Express) {

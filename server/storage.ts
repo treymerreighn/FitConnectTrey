@@ -1,4 +1,4 @@
-import type { User, Post, Comment, Connection, ProgressEntry, Exercise, WorkoutSession, ExerciseProgress, Recipe, CommunityMeal, ProgressInsight, Story, SavedMeal, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, InsertWorkoutSession, InsertExerciseProgress, InsertProgressInsight, InsertStory, InsertSavedMeal } from "../shared/schema.ts";
+import type { User, Post, Comment, Connection, ProgressEntry, Exercise, WorkoutSession, ExerciseProgress, Recipe, CommunityMeal, ProgressInsight, Story, SavedMeal, Report, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, InsertWorkoutSession, InsertExerciseProgress, InsertProgressInsight, InsertStory, InsertSavedMeal, InsertReport } from "../shared/schema.ts";
 import type { WorkoutTemplate, InsertWorkoutTemplate, SavedWorkout, InsertSavedWorkout } from "../shared/workout-types.ts";
 // Lightweight messaging/notification types used by server storage
 export type Notification = {
@@ -39,7 +39,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | null>;
   updateUser(id: string, updates: Partial<User>): Promise<User>;
   getAllUsers(): Promise<User[]>;
-  upsertUser(user: { id: string; email: string | null | undefined; firstName: string | null | undefined; lastName: string | null | undefined; profileImageUrl: string | null | undefined; }): Promise<User>;
+  upsertUser(user: { id: string; email: string | null | undefined; firstName: string | null | undefined; lastName: string | null | undefined; profileImageUrl: string | null | undefined; isAdmin?: boolean; }): Promise<User>;
   
   // Posts
   createPost(post: InsertPost): Promise<Post>;
@@ -171,6 +171,13 @@ export interface IStorage {
   viewStory(storyId: string, userId: string): Promise<Story | null>; // Mark story as viewed
   deleteStory(id: string): Promise<boolean>;
   cleanupExpiredStories(): Promise<number>; // Remove expired stories, returns count
+
+  // Reports operations - for flagged posts
+  createReport(report: { postId: string; reporterId: string; reason: string }): Promise<Report>;
+  getAllReports(): Promise<Report[]>;
+  getReportById(id: string): Promise<Report | null>;
+  updateReportStatus(id: string, status: "pending" | "reviewed" | "dismissed"): Promise<Report>;
+  deleteReport(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -192,6 +199,7 @@ export class MemStorage implements IStorage {
   private workoutTemplates: Map<string, WorkoutTemplate> = new Map();
   private savedWorkouts: Map<string, SavedWorkout[]> = new Map();
   private savedMeals: Map<string, SavedMeal[]> = new Map();
+  private reports: Map<string, Report> = new Map();
 
   constructor() {
     this.seedData();
@@ -390,6 +398,7 @@ export class MemStorage implements IStorage {
         followers: ["user2", "user3"],
         following: ["user2", "user4"],
         isVerified: true,
+        isAdmin: true, // Admin user for moderation
         professionalType: "trainer",
         certifications: ["NASM-CPT", "ACSM-CPT"],
         specialties: ["Strength Training", "Weight Loss", "Functional Movement"],
@@ -415,6 +424,7 @@ export class MemStorage implements IStorage {
         followers: ["user1", "user3", "user4"],
         following: ["user1", "user3"],
         isVerified: true,
+        isAdmin: false,
         professionalType: "nutritionist",
         certifications: ["RD", "CSCS"],
         specialties: ["Meal Planning", "Sports Nutrition", "Weight Management"],
@@ -440,6 +450,7 @@ export class MemStorage implements IStorage {
         followers: ["user1", "user2"],
         following: ["user1", "user2", "user4"],
         isVerified: false,
+        isAdmin: false,
         certifications: [],
         specialties: [],
         clients: [],
@@ -462,6 +473,7 @@ export class MemStorage implements IStorage {
         followers: ["user2", "user3"],
         following: ["user1", "user2"],
         isVerified: false,
+        isAdmin: false,
         certifications: [],
         specialties: [],
         clients: [],
@@ -621,7 +633,7 @@ export class MemStorage implements IStorage {
     return Array.from(this.users.values());
   }
 
-  async upsertUser(userData: { id: string; email: string | undefined; firstName: string | undefined; lastName: string | undefined; profileImageUrl: string | undefined; }): Promise<User> {
+  async upsertUser(userData: { id: string; email: string | undefined; firstName: string | undefined; lastName: string | undefined; profileImageUrl: string | undefined; isAdmin?: boolean; }): Promise<User> {
     const existingUser = this.users.get(userData.id);
     
     if (existingUser) {
@@ -635,6 +647,7 @@ export class MemStorage implements IStorage {
         avatar: userData.profileImageUrl || existingUser.avatar,
         height: (userData as any).height ?? existingUser.height,
         weight: (userData as any).weight ?? existingUser.weight,
+        isAdmin: userData.isAdmin ?? existingUser.isAdmin,
       };
       this.users.set(userData.id, updatedUser);
       return updatedUser;
@@ -652,6 +665,7 @@ export class MemStorage implements IStorage {
         height: (userData as any).height,
         weight: (userData as any).weight,
         isVerified: false,
+        isAdmin: userData.isAdmin ?? false,
         isPremium: true, // Enable premium access for AI insights testing
         subscriptionTier: "premium",
         followers: [],
@@ -1513,6 +1527,42 @@ export class MemStorage implements IStorage {
     }
     
     return count;
+  }
+
+  // Reports operations
+  async createReport(report: { postId: string; reporterId: string; reason: string }): Promise<Report> {
+    const newReport: Report = {
+      id: nanoid(),
+      postId: report.postId,
+      reporterId: report.reporterId,
+      reason: report.reason,
+      status: "pending",
+      createdAt: new Date(),
+    };
+    this.reports.set(newReport.id, newReport);
+    return newReport;
+  }
+
+  async getAllReports(): Promise<Report[]> {
+    return Array.from(this.reports.values()).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }
+
+  async getReportById(id: string): Promise<Report | null> {
+    return this.reports.get(id) || null;
+  }
+
+  async updateReportStatus(id: string, status: "pending" | "reviewed" | "dismissed"): Promise<Report> {
+    const report = this.reports.get(id);
+    if (!report) throw new Error("Report not found");
+    const updated = { ...report, status };
+    this.reports.set(id, updated);
+    return updated;
+  }
+
+  async deleteReport(id: string): Promise<boolean> {
+    return this.reports.delete(id);
   }
 }
 

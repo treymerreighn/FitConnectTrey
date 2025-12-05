@@ -27,6 +27,8 @@ export const userSchema = z.object({
   isPremium: z.boolean().default(false),
   subscriptionTier: z.enum(["free", "premium", "pro"]).default("free"),
   subscriptionExpiresAt: z.date().optional(),
+  // Admin flag
+  isAdmin: z.boolean().default(false),
   // Optional physical attributes
   height: z.number().optional(), // in inches
   weight: z.number().optional(), // in pounds (current weight)
@@ -248,6 +250,18 @@ export const exerciseSchema = z.object({
 
 export type Exercise = z.infer<typeof exerciseSchema>;
 
+// Report schema for flagged posts
+export const reportSchema = z.object({
+  id: z.string(),
+  postId: z.string(),
+  reporterId: z.string(),
+  reason: z.string(),
+  status: z.enum(["pending", "reviewed", "dismissed"]).default("pending"),
+  createdAt: z.date().default(() => new Date()),
+});
+
+export type Report = z.infer<typeof reportSchema>;
+
 // Insert schemas
 export const insertUserSchema = userSchema.omit({ id: true, createdAt: true });
 export const insertPostSchema = postSchema.omit({ id: true, createdAt: true, likes: true, comments: true });
@@ -255,6 +269,7 @@ export const insertCommentSchema = commentSchema.omit({ id: true, createdAt: tru
 export const insertConnectionSchema = connectionSchema.omit({ id: true, createdAt: true });
 export const insertProgressEntrySchema = progressEntrySchema.omit({ id: true, createdAt: true });
 export const insertExerciseSchema = exerciseSchema.omit({ id: true, createdAt: true });
+export const insertReportSchema = reportSchema.omit({ id: true, createdAt: true, status: true });
 
 // Workout session tracking schema
 export const workoutSessionSchema = z.object({
@@ -350,3 +365,4 @@ export type InsertProgressEntry = z.infer<typeof insertProgressEntrySchema>;
 export type InsertExercise = z.infer<typeof insertExerciseSchema>;
 export type InsertWorkoutSession = z.infer<typeof insertWorkoutSessionSchema>;
 export type InsertExerciseProgress = z.infer<typeof insertExerciseProgressSchema>;
+export type InsertReport = z.infer<typeof insertReportSchema>;

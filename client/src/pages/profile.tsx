@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { User, Settings, Camera, Edit3, MapPin, Calendar, Trophy, Users, Heart, MessageCircle, Share2, MoreHorizontal, Plus, Dumbbell, TrendingUp, Target, Weight, Clock, Flame, BarChart3, X, Activity, Brain, Lock } from "lucide-react";
+import { User, Settings, Camera, Edit3, MapPin, Calendar, Trophy, Users, Heart, MessageCircle, Share2, MoreHorizontal, Plus, Dumbbell, TrendingUp, Target, Weight, Clock, Flame, BarChart3, X, Activity, Brain, Lock, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OptimizedImage } from "@/components/OptimizedImage";
@@ -874,6 +874,16 @@ export default function Profile() {
                         <Button variant="outline" size="sm" className="p-2" onClick={() => setLocation('/settings')}>
                           <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
+                        {currentUser?.isAdmin && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="p-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950" 
+                            onClick={() => setLocation('/admin/reports')}
+                          >
+                            <Flag className="h-3 w-3 sm:h-4 sm:w-4" />
+                          </Button>
+                        )}
                       </>
                     ) : (
                       // Show follow/following button for other users

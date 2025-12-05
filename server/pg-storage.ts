@@ -3,7 +3,7 @@ import { db } from "./db.ts";
 import { users, posts, comments, connections, progressEntries, exercises, notifications, conversations, messages } from "../shared/db-schema.ts";
 import type { IStorage, Notification, Message, Conversation } from "./storage.ts";
 import type { WorkoutTemplate, InsertWorkoutTemplate, SavedWorkout, InsertSavedWorkout } from "../shared/workout-types.ts";
-import type { User, Post, Comment, Connection, ProgressEntry, Exercise, Recipe, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, WorkoutSession, InsertWorkoutSession, ExerciseProgress, InsertExerciseProgress, CommunityMeal, ProgressInsight, InsertProgressInsight, Story, InsertStory, SavedMeal, InsertSavedMeal } from "../shared/schema.ts";
+import type { User, Post, Comment, Connection, ProgressEntry, Exercise, Recipe, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, WorkoutSession, InsertWorkoutSession, ExerciseProgress, InsertExerciseProgress, CommunityMeal, ProgressInsight, InsertProgressInsight, Story, InsertStory, SavedMeal, InsertSavedMeal, Report } from "../shared/schema.ts";
 
 export class PgStorage implements IStorage {
   constructor() {
@@ -22,6 +22,7 @@ export class PgStorage implements IStorage {
   private savedWorkouts: Map<string, SavedWorkout[]> = new Map(); // in-memory bookmark persistence
   private savedMeals: Map<string, SavedMeal[]> = new Map(); // in-memory saved meals persistence
   private stories: Map<string, Story> = new Map(); // in-memory until table added
+  private reports: Map<string, Report> = new Map(); // in-memory reports for moderation
 
   private async seedData() {
     // Skip seeding if database is not available
@@ -42,6 +43,7 @@ export class PgStorage implements IStorage {
         bio: "💪 Fitness enthusiast | 🏃‍♂️ Marathon runner | 🥗 Clean eating advocate",
         avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
         isVerified: false,
+        isAdmin: true, // Admin user for moderation
         accountType: "user",
         fitnessGoals: ["weight_loss", "muscle_gain"],
         followers: ["user2", "user3"],
@@ -231,7 +233,7 @@ export class PgStorage implements IStorage {
     return await db.select().from(users);
   }
 
-  async upsertUser(userData: { id: string; email: string | null | undefined; firstName: string | null | undefined; lastName: string | null | undefined; profileImageUrl: string | null | undefined; }): Promise<User> {
+  async upsertUser(userData: { id: string; email: string | null | undefined; firstName: string | null | undefined; lastName: string | null | undefined; profileImageUrl: string | null | undefined; isAdmin?: boolean; }): Promise<User> {
     const fullName = [userData.firstName, userData.lastName].filter(Boolean).join(' ') || 'User';
     const username = userData.email?.split('@')[0] || `user_${userData.id}`;
     
@@ -247,6 +249,7 @@ export class PgStorage implements IStorage {
         weight: (userData as any).weight,
         bio: 'New to FitConnect! 💪',
         isVerified: false,
+        isAdmin: userData.isAdmin ?? false,
         accountType: 'user',
         fitnessGoals: [],
         followers: [],
@@ -260,6 +263,7 @@ export class PgStorage implements IStorage {
           avatar: userData.profileImageUrl,
           height: (userData as any).height,
           weight: (userData as any).weight,
+          isAdmin: userData.isAdmin,
         },
       })
       .returning();
@@ -1144,5 +1148,42 @@ export class PgStorage implements IStorage {
     }
     
     return count;
+  }
+
+  // Reports operations
+  async createReport(report: { postId: string; reporterId: string; reason: string }): Promise<Report> {
+    const { nanoid } = await import("nanoid");
+    const newReport: Report = {
+      id: nanoid(),
+      postId: report.postId,
+      reporterId: report.reporterId,
+      reason: report.reason,
+      status: "pending",
+      createdAt: new Date(),
+    };
+    this.reports.set(newReport.id, newReport);
+    return newReport;
+  }
+
+  async getAllReports(): Promise<Report[]> {
+    return Array.from(this.reports.values()).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }
+
+  async getReportById(id: string): Promise<Report | null> {
+    return this.reports.get(id) || null;
+  }
+
+  async updateReportStatus(id: string, status: "pending" | "reviewed" | "dismissed"): Promise<Report> {
+    const report = this.reports.get(id);
+    if (!report) throw new Error("Report not found");
+    const updated = { ...report, status };
+    this.reports.set(id, updated);
+    return updated;
+  }
+
+  async deleteReport(id: string): Promise<boolean> {
+    return this.reports.delete(id);
   }
 }

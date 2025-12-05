@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Heart, MessageCircle, Share2, Bookmark, MoreHorizontal, Play, Save, Copy } from "lucide-react";
+import { Heart, MessageCircle, ExternalLink, Bookmark, MoreHorizontal, Play, Save, Copy, Pencil, Trash2, Flag } from "lucide-react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,9 @@ import { apiRequest } from "@/lib/queryClient";
 import { CURRENT_USER_ID } from "@/lib/constants";
 import { useToast } from "@/hooks/use-toast";
 import { projectWorkoutForUser } from "@/lib/workoutProjection";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import type { Post, User, Comment } from "@shared/schema";
 
 interface PostCardProps {
@@ -84,7 +87,85 @@ export function PostCard({ post }: PostCardProps) {
   const savedMeal = savedMeals.find((sm: any) => sm.mealId === post.id);
   const isMealSaved = !!savedMeal;
 
+  // Check if this is the current user's own post
+  const isOwnPost = post.userId === CURRENT_USER_ID;
+
   const [commentText, setCommentText] = useState("");
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showReportDialog, setShowReportDialog] = useState(false);
+  const [editCaption, setEditCaption] = useState(post.caption || "");
+  const [reportReason, setReportReason] = useState("");
+
+  // Delete post mutation
+  const deletePostMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("DELETE", `/api/posts/${post.id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+      toast({
+        title: "Post deleted",
+        description: "Your post has been deleted.",
+      });
+      setShowDeleteDialog(false);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete post. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Edit post mutation
+  const editPostMutation = useMutation({
+    mutationFn: async (caption: string) => {
+      return apiRequest("PUT", `/api/posts/${post.id}`, { caption });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+      toast({
+        title: "Post updated",
+        description: "Your post has been updated.",
+      });
+      setShowEditDialog(false);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update post. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Report post mutation
+  const reportPostMutation = useMutation({
+    mutationFn: async (reason: string) => {
+      return apiRequest("POST", `/api/reports`, { 
+        postId: post.id, 
+        reporterId: CURRENT_USER_ID, 
+        reason 
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Report submitted",
+        description: "Thank you for reporting. We'll review this post.",
+      });
+      setShowReportDialog(false);
+      setReportReason("");
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to submit report. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const createCommentMutation = useMutation({
     mutationFn: async (content: string) => {
@@ -407,9 +488,51 @@ export function PostCard({ post }: PostCardProps) {
               </div>
             </Link>
           </div>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-            <MoreHorizontal className="h-4 w-4 text-gray-400" />
-          </Button>
+          {isOwnPost ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <MoreHorizontal className="h-4 w-4 text-gray-400" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => {
+                  setEditCaption(post.caption || "");
+                  setShowEditDialog(true);
+                }}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Edit Post
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setShowDeleteDialog(true)}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Post
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <MoreHorizontal className="h-4 w-4 text-gray-400" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" sideOffset={0}>
+                <DropdownMenuItem 
+                  onClick={() => {
+                    setReportReason("");
+                    setShowReportDialog(true);
+                  }}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  <Flag className="h-4 w-4 mr-2" />
+                  Report Post
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
         
         <div className="space-y-2">
@@ -474,10 +597,10 @@ export function PostCard({ post }: PostCardProps) {
             <Button
               variant="ghost"
               size="sm"
-              className="p-0 h-auto text-gray-600 hover:text-gray-800"
+              className="p-0 h-auto text-gray-600 hover:text-gray-800 -ml-2"
               onClick={handleShareWorkout}
             >
-              <Share2 className="h-5 w-5" />
+              <ExternalLink className="h-5 w-5" />
             </Button>
           </div>
           <Button
@@ -714,6 +837,100 @@ export function PostCard({ post }: PostCardProps) {
           </div>
         )}
       </CardContent>
+
+      {/* Edit Post Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Post</DialogTitle>
+            <DialogDescription>
+              Update your post caption below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Textarea
+              value={editCaption}
+              onChange={(e) => setEditCaption(e.target.value)}
+              placeholder="What's on your mind?"
+              rows={4}
+              className="w-full"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => editPostMutation.mutate(editCaption)}
+              disabled={editPostMutation.isPending}
+            >
+              {editPostMutation.isPending ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Post</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this post? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={() => deletePostMutation.mutate()}
+              disabled={deletePostMutation.isPending}
+            >
+              {deletePostMutation.isPending ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Report Post Dialog */}
+      <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Report Post</DialogTitle>
+            <DialogDescription>
+              Please tell us why you're reporting this post.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-3">
+            <div className="grid grid-cols-1 gap-2">
+              {["Spam or misleading", "Harassment or bullying", "Inappropriate content", "False information", "Other"].map((reason) => (
+                <Button
+                  key={reason}
+                  variant={reportReason === reason ? "default" : "outline"}
+                  className="justify-start"
+                  onClick={() => setReportReason(reason)}
+                >
+                  {reason}
+                </Button>
+              ))}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowReportDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={() => reportPostMutation.mutate(reportReason)}
+              disabled={!reportReason || reportPostMutation.isPending}
+            >
+              {reportPostMutation.isPending ? "Submitting..." : "Submit Report"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

@@ -37,6 +37,7 @@ import SampleWorkout from "./pages/sample-workout.tsx";
 import MealsPage from "./pages/meals";
 import Settings from "./pages/settings";
 import PremiumDemo from "./pages/premium-demo";
+import AdminReports from "./pages/admin-reports";
 
 
 
@@ -117,6 +118,7 @@ function Router() {
           <Route path="/meals" component={MealsPage} />
           <Route path="/settings" component={Settings} />
           <Route path="/premium-demo" component={PremiumDemo} />
+          <Route path="/admin/reports" component={AdminReports} />
         </>
       )}
       <Route component={NotFound} />

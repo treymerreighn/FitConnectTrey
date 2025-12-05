@@ -443,6 +443,70 @@ router.delete("/api/posts/:id", async (req, res) => {
   }
 });
 
+router.put("/api/posts/:id", async (req, res) => {
+  try {
+    const updates = req.body;
+    const updatedPost = await storage.updatePost(req.params.id, updates);
+    res.json(updatedPost);
+  } catch (error) {
+    console.error("Failed to update post:", error);
+    res.status(500).json({ error: "Failed to update post" });
+  }
+});
+
+// Reports - for flagged posts
+router.post("/api/reports", async (req, res) => {
+  try {
+    const { postId, reporterId, reason } = req.body;
+    if (!postId || !reporterId || !reason) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+    const report = await storage.createReport({ postId, reporterId, reason });
+    res.status(201).json(report);
+  } catch (error) {
+    console.error("Failed to create report:", error);
+    res.status(500).json({ error: "Failed to create report" });
+  }
+});
+
+router.get("/api/reports", async (req, res) => {
+  try {
+    // Check if user is admin (in production, verify this server-side)
+    const reports = await storage.getAllReports();
+    res.json(reports);
+  } catch (error) {
+    console.error("Failed to fetch reports:", error);
+    res.status(500).json({ error: "Failed to fetch reports" });
+  }
+});
+
+router.put("/api/reports/:id", async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!["pending", "reviewed", "dismissed"].includes(status)) {
+      return res.status(400).json({ error: "Invalid status" });
+    }
+    const report = await storage.updateReportStatus(req.params.id, status);
+    res.json(report);
+  } catch (error) {
+    console.error("Failed to update report:", error);
+    res.status(500).json({ error: "Failed to update report" });
+  }
+});
+
+router.delete("/api/reports/:id", async (req, res) => {
+  try {
+    const success = await storage.deleteReport(req.params.id);
+    if (!success) {
+      return res.status(404).json({ error: "Report not found" });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Failed to delete report:", error);
+    res.status(500).json({ error: "Failed to delete report" });
+  }
+});
+
 // Trending workouts
 router.get("/api/workouts/trending", async (req, res) => {
   try {

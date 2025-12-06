@@ -283,8 +283,8 @@ export default function Messages() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
-        <header className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 pt-[env(safe-area-inset-top)]">
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 pb-20">
+        <header className="sticky top-0 z-40 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 pt-[env(safe-area-inset-top)]">
           <div className="flex items-center justify-between px-4 py-4">
             <div className="flex-1"></div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white text-center flex-1">MESSAGES</h1>
@@ -308,9 +308,9 @@ export default function Messages() {
     const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
 
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col">
         {/* Header with back button - extends to top of screen */}
-        <header className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 pt-[env(safe-area-inset-top)]">
+        <header className="sticky top-0 z-40 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 pt-[env(safe-area-inset-top)]">
           <div className="flex items-center gap-3 px-4 py-3">
             <Button
               variant="ghost"
@@ -365,11 +365,11 @@ export default function Messages() {
                 <div key={m.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[75%] rounded-2xl px-4 py-2 ${
                     isMe 
-                      ? 'bg-blue-600 text-white' 
-                      : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700'
+                      ? 'bg-red-600 text-white' 
+                      : 'bg-white dark:bg-zinc-800 text-gray-900 dark:text-white border border-gray-200 dark:border-zinc-700'
                   }`}>
                     <div className="break-words">{content}</div>
-                    <div className={`text-xs mt-1 ${isMe ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'}`}>
+                    <div className={`text-xs mt-1 ${isMe ? 'text-red-100' : 'text-gray-500 dark:text-gray-400'}`}>
                       {timestamp}
                     </div>
                   </div>
@@ -380,7 +380,7 @@ export default function Messages() {
         </div>
 
         {/* Input area - fixed at bottom */}
-        <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4 pb-24">
+        <div className="bg-white dark:bg-zinc-900 border-t border-gray-200 dark:border-zinc-800 p-4 pb-24">
           <div className="flex items-center space-x-2">
             <Input 
               value={newMsg} 
@@ -400,8 +400,8 @@ export default function Messages() {
 
   // Conversation list view
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
-      <header className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 pt-[env(safe-area-inset-top)]">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 pb-20">
+      <header className="sticky top-0 z-40 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 pt-[env(safe-area-inset-top)]">
         <div className="flex items-center justify-between px-4 py-4">
           <div className="flex-1"></div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white text-center flex-1">MESSAGES</h1>
@@ -426,7 +426,7 @@ export default function Messages() {
 
       {/* Search popup */}
       {showSearch && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4">
+        <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 mb-4">
           <Input
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -444,7 +444,7 @@ export default function Messages() {
               filteredUsers.map(u => (
                 <button
                   key={u.id}
-                  className="w-full flex items-center gap-3 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 px-3 py-2 rounded-lg text-left transition-colors"
+                  className="w-full flex items-center gap-3 bg-zinc-50 dark:bg-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-600 px-3 py-2 rounded-lg text-left transition-colors"
                   onClick={() => startConversationWith(u.id)}
                   disabled={creating}
                 >

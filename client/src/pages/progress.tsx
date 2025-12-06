@@ -236,18 +236,18 @@ export default function Progress() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 pb-20">
         <div className="px-4 py-6">
           <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3" />
+            <div className="h-8 bg-zinc-200 dark:bg-zinc-800 rounded w-1/3" />
             <div className="grid grid-cols-2 gap-4">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-24 bg-gray-200 dark:bg-gray-700 rounded" />
+                <div key={i} className="h-24 bg-zinc-200 dark:bg-zinc-800 rounded" />
               ))}
             </div>
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-64 bg-gray-200 dark:bg-gray-700 rounded" />
+                <div key={i} className="h-64 bg-zinc-200 dark:bg-zinc-800 rounded" />
               ))}
             </div>
           </div>
@@ -257,16 +257,16 @@ export default function Progress() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 pb-20">
       {/* Header - extends to top of screen */}
-      <div className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 pt-[env(safe-area-inset-top)]">
+      <div className="sticky top-0 z-40 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 pt-[env(safe-area-inset-top)]">
         <div className="flex items-center justify-between px-4 py-4">
           <div className="flex-1"></div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white text-center flex-1">PROGRESS</h1>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white text-center flex-1">PROGRESS</h1>
           <div className="flex-1 flex justify-end">
             <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-fit-green hover:bg-fit-green/90" size="sm">
+                <Button className="bg-red-600 hover:bg-red-700 text-white" size="sm">
                   <Plus className="h-4 w-4 sm:mr-2" />
                   <span className="hidden sm:inline">Add Entry</span>
                 </Button>

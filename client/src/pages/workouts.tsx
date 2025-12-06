@@ -164,20 +164,20 @@ export default function Workouts() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       {/* Header - extends to top of screen */}
-      <div className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 pt-[env(safe-area-inset-top)]">
+      <div className="sticky top-0 z-40 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 pt-[env(safe-area-inset-top)]">
         <div className="space-y-4 max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex-1"></div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-center flex-1">WORKOUTS</h1>
+            <h1 className="text-2xl font-bold text-zinc-900 dark:text-white text-center flex-1">WORKOUTS</h1>
             <div className="flex-1"></div>
           </div>
           <div className="flex items-center justify-center gap-2">
-            <Button onClick={() => setLocation("/saved-workouts")} variant="outline" size="sm">
+            <Button onClick={() => setLocation("/saved-workouts")} variant="outline" size="sm" className="border-zinc-300 dark:border-zinc-700">
               <Bookmark className="h-4 w-4 mr-2" /> Saved
             </Button>
-            <Button onClick={() => setLocation("/build-workout")} size="sm">
+            <Button onClick={() => setLocation("/build-workout")} size="sm" className="bg-red-600 hover:bg-red-700 text-white">
               <Target className="h-4 w-4 mr-2" /> Build
             </Button>
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>

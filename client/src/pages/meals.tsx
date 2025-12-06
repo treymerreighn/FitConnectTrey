@@ -142,24 +142,25 @@ export default function MealsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       {/* Header - extends to top of screen */}
-      <div className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 pt-[env(safe-area-inset-top)]">
+      <div className="sticky top-0 z-40 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 pt-[env(safe-area-inset-top)]">
         <div className="flex items-center justify-between px-4 py-4">
           <div className="flex-1 flex justify-start">
             <Button 
               variant="outline" 
               size="sm"
               onClick={() => setLocation("/saved-meals")}
+              className="border-zinc-300 dark:border-zinc-700"
             >
               <Bookmark className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Saved</span>
             </Button>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white text-center flex-1 whitespace-nowrap">MEALS</h1>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white text-center flex-1 whitespace-nowrap">MEALS</h1>
           <div className="flex-1 flex justify-end">
             <Button 
-              className="bg-fit-green hover:bg-fit-green/90" 
+              className="bg-red-600 hover:bg-red-700 text-white" 
               size="sm"
               onClick={handleShareMeal}
             >

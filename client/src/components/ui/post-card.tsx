@@ -257,19 +257,19 @@ export function PostCard({ post }: PostCardProps) {
   // If user data is missing, show loading state instead of hiding post
   if (!user) {
     return (
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
         <CardHeader className="pb-3">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gray-300 rounded-full animate-pulse" />
+            <div className="w-10 h-10 bg-gray-300 dark:bg-zinc-700 rounded-full animate-pulse" />
             <div className="flex-1">
-              <div className="w-24 h-4 bg-gray-300 rounded animate-pulse mb-1" />
-              <div className="w-16 h-3 bg-gray-300 rounded animate-pulse" />
+              <div className="w-24 h-4 bg-gray-300 dark:bg-zinc-700 rounded animate-pulse mb-1" />
+              <div className="w-16 h-3 bg-gray-300 dark:bg-zinc-700 rounded animate-pulse" />
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="w-full h-4 bg-gray-300 rounded animate-pulse mb-2" />
-          <div className="w-3/4 h-4 bg-gray-300 rounded animate-pulse" />
+          <div className="w-full h-4 bg-gray-300 dark:bg-zinc-700 rounded animate-pulse mb-2" />
+          <div className="w-3/4 h-4 bg-gray-300 dark:bg-zinc-700 rounded animate-pulse" />
         </CardContent>
       </Card>
     );
@@ -637,7 +637,7 @@ export function PostCard({ post }: PostCardProps) {
         
   {/* Post Details */}
         {(post.workoutData || post.nutritionData || post.progressData) && (
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 mt-3">
+          <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-3 mt-3">
             <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2 text-sm">
               {post.type === "workout" && "Workout Details"}
               {post.type === "nutrition" && "Nutrition Facts"}
@@ -650,7 +650,7 @@ export function PostCard({ post }: PostCardProps) {
                 <h5 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Exercises:</h5>
                 <div className="space-y-1">
                   {post.workoutData.exercises.slice(0, 5).map((exercise: any, idx: number) => (
-                    <div key={idx} className="flex justify-between items-center text-xs bg-white dark:bg-gray-900 rounded px-2 py-1">
+                    <div key={idx} className="flex justify-between items-center text-xs bg-white dark:bg-zinc-900 rounded px-2 py-1">
                       <span className="font-medium">{exercise.name || exercise.exerciseName}</span>
                       {exercise.sets && (
                         <span className="text-gray-500">
@@ -732,7 +732,7 @@ export function PostCard({ post }: PostCardProps) {
                     </div>
                   )}
                   {/* Nutrition Info */}
-                  <div className="col-span-2 grid grid-cols-2 md:grid-cols-4 gap-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div className="col-span-2 grid grid-cols-2 md:grid-cols-4 gap-4 p-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
                     {post.nutritionData.calories !== undefined && (
                       <div className="text-center">
                         <p className="text-xs text-gray-500 dark:text-gray-400">Calories</p>
@@ -802,7 +802,7 @@ export function PostCard({ post }: PostCardProps) {
                     value={commentText}
                     onChange={(e) => setCommentText(e.target.value)}
                     placeholder="Write a comment..."
-                    className="w-full bg-gray-100 dark:bg-gray-800 rounded p-2 text-sm"
+                    className="w-full bg-zinc-100 dark:bg-zinc-800 rounded p-2 text-sm"
                     rows={2}
                   />
                   <div className="flex justify-end mt-2">
@@ -826,7 +826,7 @@ export function PostCard({ post }: PostCardProps) {
                   <div className="text-sm text-gray-500">No comments yet.</div>
                 ) : (
                   comments.map((c: any) => (
-                    <div key={c.id} className="p-2 bg-gray-50 dark:bg-gray-900 rounded">
+                    <div key={c.id} className="p-2 bg-zinc-100 dark:bg-zinc-900 rounded">
                       <div className="text-xs text-gray-500">{c.userId} • {new Date(c.createdAt).toLocaleString()}</div>
                       <div className="mt-1 text-sm">{c.content}</div>
                     </div>

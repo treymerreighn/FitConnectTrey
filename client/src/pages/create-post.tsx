@@ -294,10 +294,10 @@ export default function CreatePost() {
     : (caption ? 60 : 20);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 pb-20">
       <div className="max-w-4xl mx-auto p-4 space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+        <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-lg p-4 shadow-sm">
           <Button
             variant="ghost"
             onClick={() => setLocation("/")}
@@ -316,7 +316,7 @@ export default function CreatePost() {
           <Button 
             onClick={handleSubmit}
             disabled={createPostMutation.isPending}
-            className="bg-fit-green hover:bg-fit-green/90 text-white"
+            className="bg-red-600 hover:bg-red-700 text-white"
           >
             <Save className="h-4 w-4 mr-2" />
             {createPostMutation.isPending ? "Posting..." : "Post"}
@@ -492,7 +492,7 @@ export default function CreatePost() {
                     <p className="text-sm">Browse the exercise library to get started</p>
                     <Button 
                       onClick={addExercise} 
-                      className="mt-4 bg-fit-green hover:bg-fit-green/90"
+                      className="mt-4 bg-red-600 hover:bg-red-700"
                     >
                       <Book className="h-4 w-4 mr-2" />
                       Browse Exercise Library
@@ -500,7 +500,7 @@ export default function CreatePost() {
                   </div>
                 ) : (
                   exercises.map((exercise, exerciseIndex) => (
-                    <div key={exerciseIndex} className="bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div key={exerciseIndex} className="bg-zinc-50 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700">
                       {/* Exercise Header */}
                       <div className="p-4">
                         <div className="flex items-center justify-between">

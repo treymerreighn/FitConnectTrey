@@ -25,8 +25,8 @@ export default function Settings() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-20">
-      <header className="fixed top-0 w-full bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-50">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 pb-20">
+      <header className="fixed top-0 w-full bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 z-50">
         <div className="flex items-center px-4 py-4">
           <Button variant="ghost" size="sm" onClick={() => setLocation('/profile')} className="p-2">
             <ArrowLeft className="h-5 w-5" />
@@ -38,30 +38,30 @@ export default function Settings() {
       
       <div className="max-w-2xl mx-auto p-4 pt-20 space-y-6">
         {/* Mock Premium Toggle - For Testing Only */}
-        <Card className="border-amber-200 dark:border-amber-800 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-950/30">
+        <Card className="border-red-200 dark:border-red-900 bg-gradient-to-r from-red-50 to-zinc-50 dark:from-red-950/30 dark:to-zinc-950/30">
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Crown className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-              <CardTitle className="text-amber-900 dark:text-amber-100">Mock Premium Mode</CardTitle>
-              <Zap className="h-4 w-4 text-amber-500" />
+              <Crown className="h-5 w-5 text-red-600 dark:text-red-400" />
+              <CardTitle className="text-red-900 dark:text-red-100">Mock Premium Mode</CardTitle>
+              <Zap className="h-4 w-4 text-red-500" />
             </div>
-            <CardDescription className="text-amber-800 dark:text-amber-300">
+            <CardDescription className="text-red-800 dark:text-red-300">
               Testing mode - enables premium features without subscription
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between p-4 rounded-lg border border-amber-300 dark:border-amber-700 bg-white/60 dark:bg-gray-900/40">
+            <div className="flex items-center justify-between p-4 rounded-lg border border-red-300 dark:border-red-800 bg-white/60 dark:bg-zinc-900/40">
               <div>
-                <div className="font-medium text-amber-900 dark:text-amber-100">Enable Premium Features</div>
-                <div className="text-sm text-amber-700 dark:text-amber-400">Exercise stats, 1RM calculations, auto-load weights</div>
+                <div className="font-medium text-red-900 dark:text-red-100">Enable Premium Features</div>
+                <div className="text-sm text-red-700 dark:text-red-400">Exercise stats, 1RM calculations, auto-load weights</div>
               </div>
               <Switch
                 checked={mockPremium}
                 onCheckedChange={handlePremiumToggle}
               />
             </div>
-            <div className="mt-3 p-3 bg-amber-100 dark:bg-amber-900/30 rounded-lg border border-amber-300 dark:border-amber-700">
-              <p className="text-xs text-amber-900 dark:text-amber-200">
+            <div className="mt-3 p-3 bg-red-100 dark:bg-red-900/30 rounded-lg border border-red-300 dark:border-red-800">
+              <p className="text-xs text-red-900 dark:text-red-200">
                 <strong>⚠️ Development Only:</strong> This toggle simulates premium subscription. 
                 Page will reload when toggled to update all components.
               </p>

@@ -15,9 +15,19 @@ export default {
       },
       boxShadow: {
         'md-soft': '0 8px 24px rgba(2,6,23,0.24)',
-        'fab': '0 6px 18px rgba(2,6,23,0.36)'
+        'fab': '0 6px 18px rgba(220,38,38,0.4)',
+        'kratos': '0 8px 32px rgba(220,38,38,0.3)',
       },
       colors: {
+        // KRATOS Theme Colors
+        kratos: {
+          red: "hsl(0, 72%, 51%)",
+          crimson: "hsl(348, 83%, 47%)",
+          blood: "hsl(0, 100%, 35%)",
+          black: "hsl(0, 0%, 5%)",
+          dark: "hsl(0, 0%, 12%)",
+          gold: "hsl(45, 93%, 47%)",
+        },
         background: "var(--background)",
         foreground: "var(--foreground)",
         card: {

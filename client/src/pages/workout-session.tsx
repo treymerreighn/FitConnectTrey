@@ -505,15 +505,15 @@ const WorkoutSession: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
+    <div className="min-h-screen bg-zinc-100 dark:bg-zinc-950">
       {/* Header */}
-      <div className="sticky top-0 z-20 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+      <div className="sticky top-0 z-20 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
         <div className="max-w-6xl mx-auto px-3 py-3">
           {/* Top row: Title and action buttons */}
           <div className="flex items-center justify-between gap-3 mb-2">
-            <h1 className="text-lg font-semibold tracking-tight text-gray-900 dark:text-white truncate">{plan.name || 'Workout'}</h1>
+            <h1 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-white truncate">{plan.name || 'Workout'}</h1>
             <div className="flex items-center gap-2 shrink-0">
-              <Button variant="outline" size="icon" onClick={() => setShowExitDialog(true)} className="h-8 w-8 bg-slate-800 hover:bg-slate-700 border-slate-700 text-white">
+              <Button variant="outline" size="icon" onClick={() => setShowExitDialog(true)} className="h-8 w-8 bg-zinc-800 hover:bg-zinc-700 border-zinc-700 text-white">
                 <Trash2 className="h-4 w-4" />
               </Button>
               <Button 
@@ -524,29 +524,29 @@ const WorkoutSession: React.FC = () => {
                   "h-8 w-8",
                   isPaused 
                     ? "bg-green-500 hover:bg-green-600 border-green-500 text-white" 
-                    : "bg-slate-800 hover:bg-slate-700 border-slate-700 text-white"
+                    : "bg-zinc-800 hover:bg-zinc-700 border-zinc-700 text-white"
                 )}
               >
                 {isPaused ? <PlayCircle className="h-4 w-4" /> : <PauseCircle className="h-4 w-4" />}
               </Button>
-              <Button size="sm" onClick={() => setShowFinishDialog(true)} disabled={stats.completedSets === 0} className="h-8">
+              <Button size="sm" onClick={() => setShowFinishDialog(true)} disabled={stats.completedSets === 0} className="h-8 bg-red-600 hover:bg-red-700 text-white">
                 Record & Post
               </Button>
             </div>
           </div>
           {/* Bottom row: Stats pills - centered with volume in middle */}
           <div className="flex items-center justify-center gap-2 flex-wrap">
-            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 rounded-full px-3 py-1.5">
-              <Timer className="h-4 w-4 text-blue-500" />
-              <span className="font-mono text-sm font-semibold text-slate-700 dark:text-slate-200">{formatTime(workoutElapsed)}</span>
+            <div className="flex items-center gap-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full px-3 py-1.5">
+              <Timer className="h-4 w-4 text-red-500" />
+              <span className="font-mono text-sm font-semibold text-zinc-700 dark:text-zinc-200">{formatTime(workoutElapsed)}</span>
             </div>
-            <div className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 to-green-500 rounded-full px-3 py-1.5 shadow-sm">
+            <div className="flex items-center gap-1.5 bg-gradient-to-r from-red-600 to-red-700 rounded-full px-3 py-1.5 shadow-sm shadow-red-600/30">
               <Dumbbell className="h-4 w-4 text-white" />
               <span className="text-sm font-bold text-white">{stats.volume.toLocaleString()} {weightUnit}</span>
             </div>
-            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 rounded-full px-3 py-1.5">
+            <div className="flex items-center gap-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full px-3 py-1.5">
               <Flame className="h-4 w-4 text-orange-500" />
-              <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{stats.completedSets}<span className="text-slate-400">/{stats.totalSets}</span> sets</span>
+              <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">{stats.completedSets}<span className="text-zinc-400">/{stats.totalSets}</span> sets</span>
             </div>
           </div>
         </div>
@@ -583,15 +583,15 @@ const WorkoutSession: React.FC = () => {
           {plan.exercises.map((exercise, exIdx) => {
             const isCurrent = exIdx === currentExerciseIndex;
             return (
-              <Card key={exercise.id} className={cn('border border-slate-200 dark:border-slate-700 shadow-md bg-white dark:bg-slate-900', isCurrent && 'ring-2 ring-primary/50')}>
+              <Card key={exercise.id} className={cn('border border-zinc-200 dark:border-zinc-700 shadow-md bg-white dark:bg-zinc-900', isCurrent && 'ring-2 ring-red-500/50')}>
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 space-y-1">
-                      <CardTitle className="text-base font-semibold">{exercise.name}</CardTitle>
+                      <CardTitle className="text-base font-semibold text-zinc-900 dark:text-white">{exercise.name}</CardTitle>
                       <div className="flex gap-2 flex-wrap">
-                        {exercise.muscleGroup && <Badge variant="secondary" className="text-[10px]">{exercise.muscleGroup}</Badge>}
-                        {exercise.equipment && <Badge variant="outline" className="text-[10px]">{exercise.equipment}</Badge>}
-                        {exercise.difficulty && <Badge variant="outline" className="text-[10px]">{exercise.difficulty.toLowerCase()}</Badge>}
+                        {exercise.muscleGroup && <Badge variant="secondary" className="text-[10px] bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300">{exercise.muscleGroup}</Badge>}
+                        {exercise.equipment && <Badge variant="outline" className="text-[10px] border-zinc-300 dark:border-zinc-600">{exercise.equipment}</Badge>}
+                        {exercise.difficulty && <Badge variant="outline" className="text-[10px] border-zinc-300 dark:border-zinc-600">{exercise.difficulty.toLowerCase()}</Badge>}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
@@ -599,7 +599,7 @@ const WorkoutSession: React.FC = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => setSelectedExerciseForStats(exercise.name)}
-                        className="flex items-center gap-1"
+                        className="flex items-center gap-1 border-zinc-300 dark:border-zinc-600 hover:border-red-500 hover:text-red-600"
                       >
                         <TrendingUp className="h-3 w-3" />
                         <span className="hidden sm:inline">Stats</span>
@@ -609,7 +609,7 @@ const WorkoutSession: React.FC = () => {
                         variant="outline"
                         size="icon"
                         onClick={() => removeExercise(exIdx)}
-                        className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 border-zinc-300 dark:border-zinc-600"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -620,7 +620,7 @@ const WorkoutSession: React.FC = () => {
                   <div className="overflow-x-auto pb-2">
                     <table className="w-full border-collapse text-sm">
                       <thead>
-                        <tr className="text-xs text-muted-foreground">
+                        <tr className="text-xs text-zinc-500 dark:text-zinc-400">
                           <th className="font-medium text-left py-2 pl-4 pr-2">Set</th>
                           <th className="font-medium text-left py-2 pr-2 w-24">Reps</th>
                           <th className="font-medium text-left py-2 pr-2 w-28">Weight ({weightUnit})</th>
@@ -637,16 +637,16 @@ const WorkoutSession: React.FC = () => {
                               key={setIdx}
                               onDelete={() => removeSet(exIdx, setIdx)}
                               canDelete={canDelete}
-                              className={cn('group border-t text-xs', set.completed ? 'bg-green-100 dark:bg-green-900/40' : isActiveRow ? 'bg-primary/5' : 'hover:bg-muted/50')}
+                              className={cn('group border-t border-zinc-200 dark:border-zinc-800 text-xs', set.completed ? 'bg-green-100 dark:bg-green-900/40' : isActiveRow ? 'bg-red-50 dark:bg-red-950/20' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50')}
                             >
-                              <td className="py-2 pl-4 pr-2 font-mono w-10">{setIdx + 1}</td>
+                              <td className="py-2 pl-4 pr-2 font-mono w-10 text-red-500 dark:text-red-400 font-bold">{setIdx + 1}</td>
                               <td className="py-2 pr-2">
                                 <Input
                                   type="number"
                                   value={set.reps || ''}
                                   min={0}
                                   placeholder="reps"
-                                  className="h-8 text-xs"
+                                  className="h-8 text-xs border-zinc-300 dark:border-zinc-600 focus:border-red-500"
                                   onFocus={e => e.target.select()}
                                   onChange={e => handleSetChange(exIdx, setIdx, 'reps', e.target.value === '' ? 0 : Number(e.target.value))}
                                 />
@@ -656,7 +656,7 @@ const WorkoutSession: React.FC = () => {
                                   type="number"
                                   value={set.weight || ''}
                                   placeholder={weightUnit}
-                                  className="h-8 text-xs"
+                                  className="h-8 text-xs border-zinc-300 dark:border-zinc-600 focus:border-red-500"
                                   onFocus={e => e.target.select()}
                                   onChange={e => handleSetChange(exIdx, setIdx, 'weight', e.target.value === '' ? 0 : Number(e.target.value))}
                                 />
@@ -666,7 +666,7 @@ const WorkoutSession: React.FC = () => {
                                   type="number"
                                   value={set.rest ?? ''}
                                   placeholder="sec"
-                                  className="h-8 text-xs"
+                                  className="h-8 text-xs border-zinc-300 dark:border-zinc-600 focus:border-red-500"
                                   onChange={e => handleSetChange(exIdx, setIdx, 'rest', Number(e.target.value))}
                                 />
                               </td>
@@ -678,7 +678,7 @@ const WorkoutSession: React.FC = () => {
                                     'w-6 h-6 min-w-6 min-h-6 rounded-full border flex items-center justify-center transition-all duration-200',
                                     set.completed
                                       ? 'bg-green-500 border-green-500 text-white'
-                                      : 'border-slate-300 dark:border-slate-600 bg-transparent hover:border-green-400 dark:hover:border-green-500',
+                                      : 'border-zinc-300 dark:border-zinc-600 bg-transparent hover:border-red-400 dark:hover:border-red-500',
                                     !set.completed && (!set.reps || isPaused) && 'opacity-50 cursor-not-allowed'
                                   )}
                                 >
@@ -692,13 +692,13 @@ const WorkoutSession: React.FC = () => {
                     </table>
                   </div>
                   {exercise.notes && (
-                    <p className="mt-3 mb-2 px-4 text-xs text-muted-foreground leading-relaxed">{exercise.notes}</p>
+                    <p className="mt-3 mb-2 px-4 text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">{exercise.notes}</p>
                   )}
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => addSet(exIdx)}
-                    className="w-full text-xs text-muted-foreground hover:text-foreground rounded-t-none"
+                    className="w-full text-xs text-zinc-500 hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400 rounded-t-none"
                   >
                     <Plus className="h-3 w-3 mr-1" />
                     Add Set
@@ -711,7 +711,7 @@ const WorkoutSession: React.FC = () => {
           {/* Add Exercise Button */}
           <Button 
             variant="outline" 
-            className="w-full flex items-center gap-2 border-dashed" 
+            className="w-full flex items-center gap-2 border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-600 dark:text-zinc-400 hover:border-red-500 hover:text-red-600 dark:hover:text-red-400" 
             onClick={() => setShowAddExerciseDialog(true)}
           >
             <PlusCircle className="h-4 w-4" />
@@ -723,26 +723,28 @@ const WorkoutSession: React.FC = () => {
       {/* Exercise Stats Dialog */}
       {selectedExerciseForStats && (
         <Dialog open={!!selectedExerciseForStats} onOpenChange={(open) => !open && setSelectedExerciseForStats(null)}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto !bg-white dark:!bg-gray-800">
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto !bg-white dark:!bg-zinc-900 border-2 border-gray-300 dark:border-zinc-700 rounded-xl shadow-2xl">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
-                <TrendingUp className="h-5 w-5" />
+                <TrendingUp className="h-5 w-5 text-red-500" />
                 {selectedExerciseForStats} - Exercise History
                 {isPremium && <Crown className="h-4 w-4 text-amber-500" />}
               </DialogTitle>
             </DialogHeader>
-            <ExerciseStatsPremium
-              exerciseName={selectedExerciseForStats}
-              userId={userId}
-              isPremium={isPremium}
-              onLoadWeight={(weight) => {
-                // Find the exercise index by name
-                const exerciseIdx = plan.exercises.findIndex(ex => ex.name === selectedExerciseForStats);
-                if (exerciseIdx !== -1) {
-                  autoLoadWeightForExercise(exerciseIdx, weight);
-                }
-              }}
-            />
+            <div className="bg-gray-50 dark:bg-zinc-800 p-3 rounded-lg">
+              <ExerciseStatsPremium
+                exerciseName={selectedExerciseForStats}
+                userId={userId}
+                isPremium={isPremium}
+                onLoadWeight={(weight) => {
+                  // Find the exercise index by name
+                  const exerciseIdx = plan.exercises.findIndex(ex => ex.name === selectedExerciseForStats);
+                  if (exerciseIdx !== -1) {
+                    autoLoadWeightForExercise(exerciseIdx, weight);
+                  }
+                }}
+              />
+            </div>
           </DialogContent>
         </Dialog>
       )}

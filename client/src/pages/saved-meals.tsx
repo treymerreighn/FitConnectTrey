@@ -65,9 +65,9 @@ export default function SavedMeals() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       {/* Header */}
-      <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 z-10">
+      <div className="sticky top-0 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 p-4 z-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Button
@@ -91,18 +91,18 @@ export default function SavedMeals() {
       {/* Saved Meals List */}
       <div className="p-4 space-y-4 pb-20">
         {isLoading ? (
-          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+          <Card className="bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700">
             <CardContent className="p-12 text-center text-gray-500 dark:text-gray-400">Loading...</CardContent>
           </Card>
         ) : savedMeals.length === 0 ? (
-          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+          <Card className="bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700">
             <CardContent className="p-12 text-center">
               <Utensils className="h-16 w-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">No Saved Meals</h3>
               <p className="text-gray-500 dark:text-gray-400 mb-6">
                 Start saving meals from the community feed to build your collection
               </p>
-              <Button onClick={() => setLocation("/meals")} className="bg-fit-green hover:bg-fit-green/90">
+              <Button onClick={() => setLocation("/meals")} className="bg-red-600 hover:bg-red-700">
                 Explore Community Meals
               </Button>
             </CardContent>
@@ -116,7 +116,7 @@ export default function SavedMeals() {
             const hasMacros = mealData.calories || mealData.protein || mealData.carbs || mealData.fat;
             
             return (
-              <Card key={savedMeal.id} className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 overflow-hidden">
+              <Card key={savedMeal.id} className="bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 overflow-hidden">
                 <CardContent className="p-0">
                   {/* Meal Image */}
                   {mealData.imageUrl && (

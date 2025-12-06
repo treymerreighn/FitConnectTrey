@@ -35,7 +35,7 @@ export function Stories({ users }: StoriesProps) {
   // Early return if error
   if (error) {
     console.error('❌ [Stories] Error loading stories:', error);
-    return <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 py-6 px-4">
+    return <div className="bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 py-6 px-4">
       <p className="text-sm text-red-500">Error loading stories</p>
     </div>;
   }
@@ -205,7 +205,7 @@ export function Stories({ users }: StoriesProps) {
 
   return (
     <>
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      <div className="bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
         <div className="px-4 py-1">
           <div className="flex items-center space-x-4 overflow-x-auto scrollbar-hide">
             {/* Current user's add story button */}
@@ -214,8 +214,8 @@ export function Stories({ users }: StoriesProps) {
                 onClick={() => fileInputRef.current?.click()}
                 className="relative inline-block"
               >
-                <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-gray-300 to-gray-400 dark:from-gray-600 dark:to-gray-700 p-0.5 shadow-md">
-                  <div className="w-full h-full rounded-full bg-white dark:bg-gray-800 p-0.5 flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-gray-300 to-gray-400 dark:from-zinc-600 dark:to-zinc-700 p-0.5 shadow-md">
+                  <div className="w-full h-full rounded-full bg-white dark:bg-zinc-900 p-0.5 flex items-center justify-center">
                     <UserAvatar
                       src={users.find(u => u.id === CURRENT_USER_ID)?.avatar || ""}
                       name={users.find(u => u.id === CURRENT_USER_ID)?.name || ""}
@@ -224,7 +224,7 @@ export function Stories({ users }: StoriesProps) {
                     />
                   </div>
                 </div>
-                <div className="absolute bottom-3 right-0 bg-fit-green rounded-full p-0.5 border-2 border-white dark:border-gray-800 shadow-sm">
+                <div className="absolute bottom-3 right-0 bg-red-600 rounded-full p-0.5 border-2 border-white dark:border-zinc-900 shadow-sm">
                   <Plus className="w-2.5 h-2.5 text-white" />
                 </div>
                 <p className="text-xs text-gray-600 dark:text-gray-300 mt-2 max-w-[64px] truncate">
@@ -254,10 +254,10 @@ export function Stories({ users }: StoriesProps) {
                 return (
                   <div key={userId} className="flex-shrink-0 text-center pt-1">
                     <button onClick={() => handleStoryClick(userStories[0])} className="relative">
-                      <div className={`w-16 h-16 rounded-full bg-gradient-to-tr from-fit-green to-fit-blue shadow-md ${
-                        unviewed ? 'ring-2 ring-fit-blue ring-offset-0 dark:ring-offset-0 p-[3px]' : 'p-0.5'
+                      <div className={`w-16 h-16 rounded-full bg-gradient-to-tr from-red-500 to-red-600 shadow-md ${
+                        unviewed ? 'ring-2 ring-red-500 ring-offset-0 dark:ring-offset-0 p-[3px]' : 'p-0.5'
                       }`}>
-                        <div className="w-full h-full rounded-full bg-white dark:bg-gray-800 p-0.5">
+                        <div className="w-full h-full rounded-full bg-white dark:bg-zinc-900 p-0.5">
                           <UserAvatar
                             src={user.avatar}
                             name={user.name}
@@ -312,13 +312,13 @@ export function Stories({ users }: StoriesProps) {
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
               placeholder="Add a caption..."
-              className="w-full px-4 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700"
+              className="w-full px-4 py-2 border rounded-lg dark:bg-zinc-800 dark:border-zinc-700"
             />
 
             <button
               onClick={handleCreateStory}
               disabled={!selectedImage || createStoryMutation.isPending}
-              className="w-full py-2 bg-fit-green text-white rounded-lg hover:bg-fit-green/90 disabled:opacity-50"
+              className="w-full py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
             >
               {createStoryMutation.isPending ? "Posting..." : "Post Story"}
             </button>

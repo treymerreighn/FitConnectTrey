@@ -57,13 +57,13 @@ export default function RecipesPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 p-4">
         <div className="max-w-7xl mx-auto">
           <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+            <div className="h-8 bg-zinc-200 dark:bg-zinc-800 rounded w-1/3"></div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {Array(6).fill(0).map((_, i) => (
-                <div key={i} className="h-64 bg-gray-200 rounded-lg"></div>
+                <div key={i} className="h-64 bg-zinc-200 dark:bg-zinc-800 rounded-lg"></div>
               ))}
             </div>
           </div>
@@ -73,7 +73,7 @@ export default function RecipesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       <div className="max-w-7xl mx-auto p-4 space-y-6">
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
@@ -98,7 +98,7 @@ export default function RecipesPage() {
 
           <TabsContent value="ai-recipes" className="space-y-6">
             {/* Search and Filters */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+            <div className="bg-white dark:bg-zinc-800 rounded-lg p-6 shadow-sm">
               <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <div className="md:col-span-2">
                   <div className="relative">

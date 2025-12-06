@@ -161,7 +161,7 @@ export default function Feed() {
   return (
     <div 
       ref={containerRef}
-      className="min-h-screen bg-gray-50 dark:bg-gray-900 overflow-auto"
+      className="min-h-screen bg-zinc-50 dark:bg-zinc-950 overflow-auto"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -178,7 +178,7 @@ export default function Feed() {
             opacity: pullDistance / PULL_THRESHOLD
           }}
         >
-          <div className={`flex items-center gap-2 text-gray-500 dark:text-gray-400 ${isRefreshing ? 'animate-pulse' : ''}`}>
+          <div className={`flex items-center gap-2 text-zinc-500 dark:text-zinc-400 ${isRefreshing ? 'animate-pulse' : ''}`}>
             <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} style={{ 
               transform: `rotate(${(pullDistance / PULL_THRESHOLD) * 180}deg)`,
               transition: isRefreshing ? 'none' : 'transform 0.1s'
@@ -199,7 +199,7 @@ export default function Feed() {
         <div className="space-y-4 py-4">
           {posts.length === 0 ? (
             <div className="text-center py-8 px-4">
-              <p className="text-gray-500 dark:text-gray-400">No posts yet. Be the first to share your fitness journey!</p>
+              <p className="text-zinc-500 dark:text-zinc-400">No posts yet. Be the first to share your fitness journey!</p>
             </div>
           ) : (
             posts.map((post) => (
@@ -212,7 +212,7 @@ export default function Feed() {
       {/* Floating Action Button */}
       <div className="fixed bottom-24 right-4 z-40">
         <Button 
-          className="w-16 h-16 bg-gradient-to-r from-fit-green to-emerald-500 hover:from-fit-green/90 hover:to-emerald-500/90 text-white rounded-full shadow-xl hover:shadow-2xl transition-all duration-200 hover:scale-105"
+          className="w-16 h-16 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-full shadow-xl shadow-red-600/30 hover:shadow-2xl transition-all duration-200 hover:scale-105"
           onClick={() => setShowCreateModal(true)}
         >
           <Plus className="w-7 h-7" />

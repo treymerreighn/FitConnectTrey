@@ -171,9 +171,9 @@ export default function ExerciseLibrary() {
   }, {} as Record<string, Exercise[]>);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-zinc-950 text-white">
       {/* Header */}
-      <div className="sticky top-0 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800 p-4 z-10">
+      <div className="sticky top-0 bg-zinc-900/95 backdrop-blur-sm border-b border-zinc-800 p-4 z-10">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
             <Button
@@ -192,7 +192,7 @@ export default function ExerciseLibrary() {
               variant="outline"
               size="sm"
               onClick={() => setShowCreateExercise(true)}
-              className="text-green-400 border-green-400 hover:bg-green-400/10"
+              className="text-red-400 border-red-400 hover:bg-red-400/10"
             >
               <Plus className="h-4 w-4 mr-2" />
               Add Exercise
@@ -217,7 +217,7 @@ export default function ExerciseLibrary() {
             placeholder="Search exercises..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-gray-800 border-gray-700 text-white placeholder-gray-400"
+            className="pl-10 bg-zinc-800 border-zinc-700 text-white placeholder-gray-400"
           />
         </div>
 
@@ -262,7 +262,7 @@ export default function ExerciseLibrary() {
                 {exercises.map(exercise => (
                   <Card 
                     key={exercise.id} 
-                    className="mobile-card p-3 bg-gray-800 border-gray-700 cursor-pointer hover:bg-gray-750 transition-colors"
+                    className="mobile-card p-3 bg-zinc-800 border-zinc-700 cursor-pointer hover:bg-zinc-700 transition-colors"
                     onClick={() => isSelectionMode ? toggleExerciseSelection(exercise) : setShowExerciseDetail(exercise)}
                   >
                     <CardContent className="p-3">

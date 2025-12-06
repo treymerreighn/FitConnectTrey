@@ -266,25 +266,28 @@ export default function BuildWorkout() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 transition-colors">
       {/* Header */}
-      <div className="sticky top-0 z-30 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-950/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-slate-950/60">
+      <div className="sticky top-0 z-30 border-b border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-950/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-zinc-950/60">
         <div className="mx-auto max-w-4xl px-5 py-4 flex items-center justify-center">
-          <h1 className="text-xl md:text-2xl font-semibold tracking-tight">BUILD</h1>
+          <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white">BUILD</h1>
         </div>
       </div>
 
       {/* Content */}
       <div className="mx-auto max-w-4xl px-2 sm:px-5 pt-6 pb-60 md:pb-56">
         {/* Workout meta */}
-        <Card className="border-slate-200 shadow-sm bg-white dark:bg-slate-900 dark:border-slate-800 mx-0">
+        <Card className="border-zinc-200 shadow-sm bg-white dark:bg-zinc-900 dark:border-zinc-800 mx-0">
           <CardHeader className="pb-3 px-3 sm:px-6">
-            <CardTitle className="text-lg">Plan Details</CardTitle>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Dumbbell className="h-5 w-5 text-red-500" />
+              Plan Details
+            </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-3 px-3 sm:px-6">
             <div className="space-y-2 md:col-span-1">
               <Label htmlFor="name">Workout name</Label>
-              <Input id="name" value={workoutName} onChange={(e) => setWorkoutName(e.target.value)} placeholder="e.g., Push Day - Hypertrophy" className="h-11 text-base" />
+              <Input id="name" value={workoutName} onChange={(e) => setWorkoutName(e.target.value)} placeholder="e.g., Push Day - Hypertrophy" className="h-11 text-base border-zinc-300 dark:border-zinc-700 focus:border-red-500 dark:focus:border-red-500 focus:ring-red-500" />
             </div>
             <div className="space-y-2 md:col-span-1">
               <Label htmlFor="goal">Goal (optional)</Label>
@@ -293,18 +296,18 @@ export default function BuildWorkout() {
                 value={workoutGoal}
                 onChange={(e) => setWorkoutGoal(e.target.value)}
                 placeholder="Strength, hypertrophy, endurance…"
-                className="h-11 text-base"
+                className="h-11 text-base border-zinc-300 dark:border-zinc-700 focus:border-red-500 dark:focus:border-red-500 focus:ring-red-500"
               />
             </div>
             <div className="flex flex-col gap-2 md:col-span-1">
               <Label className="text-sm">Overview</Label>
               <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
-                <Badge variant="secondary" className="h-7 rounded-full px-3 dark:bg-slate-800 dark:text-slate-100">Sets: {totals.totalSets}</Badge>
-                <Badge variant="secondary" className="h-7 rounded-full px-3 flex items-center gap-1 dark:bg-slate-800 dark:text-slate-100"><Timer className="h-4 w-4" />~{totals.estMinutes} min</Badge>
-                <Badge variant="secondary" className="h-7 rounded-full px-3 dark:bg-slate-800 dark:text-slate-100">Volume: {Intl.NumberFormat().format(totals.volume)} {weightUnit}</Badge>
+                <Badge variant="secondary" className="h-7 rounded-full px-3 bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300">Sets: {totals.totalSets}</Badge>
+                <Badge variant="secondary" className="h-7 rounded-full px-3 flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 dark:text-zinc-100"><Timer className="h-4 w-4" />~{totals.estMinutes} min</Badge>
+                <Badge variant="secondary" className="h-7 rounded-full px-3 bg-zinc-100 dark:bg-zinc-800 dark:text-zinc-100">Volume: {Intl.NumberFormat().format(totals.volume)} {weightUnit}</Badge>
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
-                <span className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Intensity</span>
+                <span className="text-[11px] uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Intensity</span>
                 {(["easy","moderate","hard"] as const).map(level => (
                   <Button
                     key={level}
@@ -313,8 +316,8 @@ export default function BuildWorkout() {
                     size="sm"
                     className={`h-7 rounded-full px-3 text-xs capitalize ${
                       intensity === level
-                        ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                        : "border-slate-300 text-slate-700 dark:border-slate-700 dark:text-slate-100"
+                        ? "bg-red-600 hover:bg-red-700 text-white border-red-600"
+                        : "border-zinc-300 text-zinc-700 dark:border-zinc-700 dark:text-zinc-100 hover:border-red-500 hover:text-red-600 dark:hover:text-red-400"
                     }`}
                     onClick={() => setIntensity(level)}
                   >
@@ -344,27 +347,27 @@ export default function BuildWorkout() {
         </div>
 
         <div className="mt-6 flex justify-center">
-          <Button onClick={() => setShowPicker(true)} className="h-12 rounded-xl px-6 text-base bg-indigo-600 hover:bg-indigo-700">
+          <Button onClick={() => setShowPicker(true)} className="h-12 rounded-xl px-6 text-base bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/30">
             <Plus className="mr-2 h-5 w-5" /> Add From Library
           </Button>
         </div>
       </div>
 
       {/* Sticky Footer Summary */}
-      <div className="fixed bottom-14 left-0 right-0 z-50 border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/90 backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-slate-950/70">
+      <div className="fixed bottom-14 left-0 right-0 z-50 border-t border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/90 backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-zinc-950/70">
         <div className="mx-auto max-w-4xl px-4 py-2 pb-[calc(env(safe-area-inset-bottom)+0.25rem)] flex flex-col gap-2">
           <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
-            <span className="font-medium">
+            <span className="font-medium text-zinc-900 dark:text-white">
               {workoutName || "Untitled Workout"}
               {workoutGoal && (
-                <span className="ml-1 text-xs font-normal text-slate-500 dark:text-slate-400">• {workoutGoal}</span>
+                <span className="ml-1 text-xs font-normal text-zinc-500 dark:text-zinc-400">• {workoutGoal}</span>
               )}
             </span>
             <Separator orientation="vertical" className="hidden md:block" />
-            <span>Sets: <b>{totals.totalSets}</b></span>
-            <span>Time: <b>~{totals.estMinutes} min</b></span>
-            <span>Volume: <b>{Intl.NumberFormat().format(totals.volume)} {weightUnit}</b></span>
-            <span className="ml-auto text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 hidden md:inline">
+            <span className="text-zinc-600 dark:text-zinc-400">Sets: <b className="text-red-600 dark:text-red-400">{totals.totalSets}</b></span>
+            <span className="text-zinc-600 dark:text-zinc-400">Time: <b className="text-zinc-900 dark:text-white">~{totals.estMinutes} min</b></span>
+            <span className="text-zinc-600 dark:text-zinc-400">Volume: <b className="text-zinc-900 dark:text-white">{Intl.NumberFormat().format(totals.volume)} {weightUnit}</b></span>
+            <span className="ml-auto text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400 hidden md:inline">
               {intensity === "easy" && "Easy Day"}
               {intensity === "moderate" && "Moderate"}
               {intensity === "hard" && "Hard"}
@@ -373,7 +376,7 @@ export default function BuildWorkout() {
           </div>
            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
             <Button
-              className="h-10 flex-1 rounded-2xl text-sm sm:text-base bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 shadow-md shadow-indigo-500/40 disabled:opacity-60 disabled:shadow-none"
+              className="h-10 flex-1 rounded-2xl text-sm sm:text-base bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-md shadow-red-600/40 disabled:opacity-60 disabled:shadow-none"
               onClick={startWorkout}
               disabled={exercises.length === 0}
             >
@@ -407,15 +410,15 @@ export default function BuildWorkout() {
       {/* Exercise Stats Dialog */}
       {selectedExerciseForStats && (
         <Dialog open={!!selectedExerciseForStats} onOpenChange={(open) => !open && setSelectedExerciseForStats(null)}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700" style={{ backgroundColor: 'var(--background, white)' }}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto !bg-white dark:!bg-zinc-900 border-2 border-gray-300 dark:border-zinc-700 rounded-xl shadow-2xl">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
-                <TrendingUp className="h-5 w-5" />
+                <TrendingUp className="h-5 w-5 text-red-500" />
                 {selectedExerciseForStats} - Exercise History
                 {isPremium && <Crown className="h-4 w-4 text-amber-500" />}
               </DialogTitle>
             </DialogHeader>
-            <div className="bg-white dark:bg-gray-800 p-2 rounded">
+            <div className="bg-gray-50 dark:bg-zinc-800 p-3 rounded-lg">
               <ExerciseStatsPremium
                 exerciseName={selectedExerciseForStats}
                 userId={userId}
@@ -468,20 +471,20 @@ function ExerciseCard({
   }
 
   return (
-  <Card className="border-slate-200 shadow-sm bg-white dark:bg-slate-900 dark:border-slate-800 mx-0">
+  <Card className="border-zinc-200 shadow-sm bg-white dark:bg-zinc-900 dark:border-zinc-800 mx-0">
       <CardHeader className="pb-2 px-3 sm:px-6">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="text-sm text-slate-500 dark:text-slate-400">Exercise {index}</div>
-            <CardTitle className="text-2xl tracking-tight">{ex.name}</CardTitle>
+            <div className="text-sm text-red-500 dark:text-red-400 font-medium">Exercise {index}</div>
+            <CardTitle className="text-2xl tracking-tight text-zinc-900 dark:text-white">{ex.name}</CardTitle>
             <div className="mt-2 flex flex-wrap gap-2">
-              <Badge variant="outline" className="dark:border-slate-700 dark:text-slate-200">Volume: {Intl.NumberFormat().format(volume)} {weightUnit}</Badge>
-              <Badge variant="outline" className="dark:border-slate-700 dark:text-slate-200">Sets: {ex.sets.length}</Badge>
+              <Badge variant="outline" className="border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200">Volume: {Intl.NumberFormat().format(volume)} {weightUnit}</Badge>
+              <Badge variant="outline" className="border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30">Sets: {ex.sets.length}</Badge>
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={onShowStats}
-                className="h-7 px-2 flex items-center gap-1"
+                className="h-7 px-2 flex items-center gap-1 border-zinc-300 dark:border-zinc-700 hover:border-red-500 hover:text-red-600"
               >
                 <TrendingUp className="h-3 w-3" />
                 <span className="hidden sm:inline text-xs">Stats</span>
@@ -490,8 +493,8 @@ function ExerciseCard({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={onRemove} className="text-rose-600 hover:text-rose-700"><Trash2 className="h-5 w-5"/></Button>
-            <Button variant="outline" size="icon" onClick={() => onChange((e) => ({ ...e, expanded: !e.expanded }))}>
+            <Button variant="ghost" size="icon" onClick={onRemove} className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"><Trash2 className="h-5 w-5"/></Button>
+            <Button variant="outline" size="icon" onClick={() => onChange((e) => ({ ...e, expanded: !e.expanded }))} className="border-zinc-300 dark:border-zinc-700">
               {ex.expanded ? <ChevronUp className="h-5 w-5"/> : <ChevronDown className="h-5 w-5"/>}
             </Button>
           </div>
@@ -499,9 +502,9 @@ function ExerciseCard({
       </CardHeader>
       <CardContent className="pt-0 px-3 sm:px-6">
         {ex.expanded && (
-          <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-950/40">
+          <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-950/40">
             {/* Header Row */}
-            <div className="grid grid-cols-10 sm:grid-cols-12 bg-slate-50 dark:bg-slate-900/60 px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-200 gap-1 sm:gap-0">
+            <div className="grid grid-cols-10 sm:grid-cols-12 bg-zinc-100 dark:bg-zinc-900/60 px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-zinc-600 dark:text-zinc-200 gap-1 sm:gap-0">
               <div className="col-span-1 sm:col-span-2">#</div>
               <div className="col-span-3">Reps</div>
               <div className="col-span-3">Weight ({weightUnit})</div>
@@ -511,8 +514,8 @@ function ExerciseCard({
 
             {/* Rows */}
             {ex.sets.map((s, i) => (
-              <div key={s.id} className="grid grid-cols-10 sm:grid-cols-12 items-center px-2 sm:px-4 py-2 sm:py-3 border-t text-base gap-1 sm:gap-0">
-                <div className="col-span-1 sm:col-span-2 text-slate-600 dark:text-slate-300 text-sm sm:text-base">{i + 1}</div>
+              <div key={s.id} className="grid grid-cols-10 sm:grid-cols-12 items-center px-2 sm:px-4 py-2 sm:py-3 border-t border-zinc-200 dark:border-zinc-800 text-base gap-1 sm:gap-0">
+                <div className="col-span-1 sm:col-span-2 text-red-500 dark:text-red-400 font-bold text-sm sm:text-base">{i + 1}</div>
                 <div className="col-span-3">
                   <StepInput value={s.reps} onChange={(v) => {
                     if (i === 0) {

@@ -14,7 +14,7 @@ export default function TopHeader({ notificationsCount = 0, messagesCount = 0, c
   const [, setLocation] = useLocation();
 
   return (
-    <header className={`fixed top-0 w-full bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-50 pt-[env(safe-area-inset-top)] ${className}`}>
+    <header className={`fixed top-0 w-full bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 z-50 pt-[env(safe-area-inset-top)] ${className}`}>
       <div className="flex items-center justify-between px-4 py-4">
         {showSearch && (
           <div className="absolute left-4">
@@ -30,7 +30,7 @@ export default function TopHeader({ notificationsCount = 0, messagesCount = 0, c
           <Button variant="ghost" size="sm" className="relative p-2 mobile-touch-target" onClick={() => setLocation('/notifications')}>
             <Heart className="!w-[20px] !h-[20px] text-gray-600 dark:text-gray-300" />
             {notificationsCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 rounded-full text-xs text-white flex items-center justify-center">
                 {notificationsCount}
               </span>
             )}
@@ -38,7 +38,7 @@ export default function TopHeader({ notificationsCount = 0, messagesCount = 0, c
           <Button variant="ghost" size="sm" className="relative p-2 mobile-touch-target" onClick={() => setLocation('/messages')}>
             <MessageCircle className="!w-[20px] !h-[20px] text-gray-600 dark:text-gray-300" />
             {messagesCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-fit-blue rounded-full text-xs text-white flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 rounded-full text-xs text-white flex items-center justify-center">
                 {messagesCount}
               </span>
             )}

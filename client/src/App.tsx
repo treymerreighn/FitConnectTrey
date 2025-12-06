@@ -77,7 +77,7 @@ function BottomNavigation() {
   };
 
   return (
-    <nav className="fixed bottom-0 w-full bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-40 h-16">
+    <nav className="fixed bottom-0 w-full bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 z-40 h-16">
       <div className="flex items-center justify-around h-full">
         {navItems.map(({ path, icon: Icon, label }) => {
           const isActive = location === path;
@@ -87,8 +87,8 @@ function BottomNavigation() {
                 variant="ghost"
                 className={`flex items-center justify-center p-0 h-full [&_svg]:!size-auto !bg-transparent hover:!bg-transparent focus:!bg-transparent active:!bg-transparent focus-visible:!bg-transparent ${
                   isActive
-                    ? "text-fit-green"
-                    : "text-gray-600 dark:text-gray-300 hover:text-fit-green"
+                    ? "text-red-600 dark:text-red-500"
+                    : "text-zinc-600 dark:text-zinc-400 hover:text-red-500"
                 }`}
                 aria-label={label}
                 onClick={(e) => handleNavClick(path, e)}

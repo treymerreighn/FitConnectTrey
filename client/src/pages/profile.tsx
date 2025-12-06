@@ -169,7 +169,7 @@ function ProgressInsightsTab({ userId, isOwner }: { userId: string; isOwner?: bo
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-blue-500" />
+                <BarChart3 className="w-5 h-5 text-red-500" />
                 Progress Trends
               </CardTitle>
               <div className="flex gap-2">
@@ -177,6 +177,7 @@ function ProgressInsightsTab({ userId, isOwner }: { userId: string; isOwner?: bo
                   variant={selectedMetric === "weight" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setSelectedMetric("weight")}
+                  className={selectedMetric === "weight" ? "bg-red-600 hover:bg-red-700" : ""}
                 >
                   Weight
                 </Button>
@@ -184,6 +185,7 @@ function ProgressInsightsTab({ userId, isOwner }: { userId: string; isOwner?: bo
                   variant={selectedMetric === "bodyFat" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setSelectedMetric("bodyFat")}
+                  className={selectedMetric === "bodyFat" ? "bg-red-600 hover:bg-red-700" : ""}
                 >
                   Body Fat
                 </Button>
@@ -191,6 +193,7 @@ function ProgressInsightsTab({ userId, isOwner }: { userId: string; isOwner?: bo
                   variant={selectedMetric === "muscle" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setSelectedMetric("muscle")}
+                  className={selectedMetric === "muscle" ? "bg-red-600 hover:bg-red-700" : ""}
                 >
                   Muscle
                 </Button>
@@ -208,9 +211,9 @@ function ProgressInsightsTab({ userId, isOwner }: { userId: string; isOwner?: bo
                   <Line 
                     type="monotone" 
                     dataKey={selectedMetric} 
-                    stroke="#3B82F6" 
+                    stroke="#DC2626" 
                     strokeWidth={2}
-                    dot={{ fill: '#3B82F6' }}
+                    dot={{ fill: '#DC2626' }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -222,10 +225,10 @@ function ProgressInsightsTab({ userId, isOwner }: { userId: string; isOwner?: bo
       {/* Activity Breakdown */}
       {activityData.length > 0 && (
         <div className="grid md:grid-cols-2 gap-0">
-          <Card className="rounded-none border-0 border-b md:border-r bg-white dark:bg-gray-800">
+          <Card className="rounded-none border-0 border-b md:border-r bg-white dark:bg-zinc-900">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Activity className="w-5 h-5 text-green-500" />
+                <Activity className="w-5 h-5 text-red-500" />
                 Activity Breakdown
               </CardTitle>
             </CardHeader>
@@ -725,7 +728,7 @@ export default function Profile() {
 
   if (userLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">
         <div className="text-center">
           <User className="h-12 w-12 mx-auto mb-4 text-gray-400 animate-pulse" />
           <p className="text-gray-500">Loading profile...</p>
@@ -736,7 +739,7 @@ export default function Profile() {
 
   if (!currentUser) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">
         <div className="text-center">
           <User className="h-12 w-12 mx-auto mb-4 text-gray-400" />
           <p className="text-gray-500">Profile not found</p>
@@ -770,7 +773,7 @@ export default function Profile() {
   const modalPronoun = isOwner ? "you" : currentUser.name || "this user";
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-16">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 pb-16">
       {/* Image Cropper Modal */}
       {imageToCrop && (
         <ImageCropper
@@ -839,12 +842,12 @@ export default function Profile() {
               <div className="relative">
                 <Avatar className="w-16 h-16 sm:w-20 sm:h-20">
                   <AvatarImage src={currentUser.avatar || ""} alt={currentUser.name || ""} />
-                  <AvatarFallback className="text-xl sm:text-2xl bg-fit-green text-white">
+                  <AvatarFallback className="text-xl sm:text-2xl bg-red-600 text-white">
                     {currentUser.name?.charAt(0).toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
                 {isOwner && (
-                  <label className="absolute -bottom-1 -right-1 rounded-full w-6 h-6 p-0 bg-fit-green hover:bg-fit-green/90 cursor-pointer flex items-center justify-center">
+                  <label className="absolute -bottom-1 -right-1 rounded-full w-6 h-6 p-0 bg-red-600 hover:bg-red-700 cursor-pointer flex items-center justify-center">
                     <Camera className="h-3 w-3 text-white" />
                     <input
                       type="file"
@@ -876,7 +879,7 @@ export default function Profile() {
                         @{currentUser.username}
                       </p>
                       {(currentUser.isPremium || currentUser.subscriptionTier === 'premium' || currentUser.subscriptionTier === 'pro' || localStorage.getItem('fitconnect-mock-premium') === 'true') && (
-                        <Badge variant="secondary" className="bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900/30 dark:to-yellow-900/30 text-amber-800 dark:text-amber-300 text-xs border-amber-300 dark:border-amber-700 flex items-center gap-1">
+                        <Badge variant="secondary" className="bg-gradient-to-r from-red-100 to-red-50 dark:from-red-900/30 dark:to-red-950/30 text-red-700 dark:text-red-300 text-xs border-red-300 dark:border-red-800 flex items-center gap-1">
                           <Trophy className="h-3 w-3" />
                           Premium
                         </Badge>

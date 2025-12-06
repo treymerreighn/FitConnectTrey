@@ -89,9 +89,9 @@ export default function SavedWorkouts() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-zinc-950 text-white">
       {/* Header */}
-      <div className="sticky top-0 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800 p-4 z-10">
+      <div className="sticky top-0 bg-zinc-900/95 backdrop-blur-sm border-b border-zinc-800 p-4 z-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Button
@@ -115,9 +115,9 @@ export default function SavedWorkouts() {
       {/* Saved Workouts List */}
       <div className="p-4 space-y-4">
         {isLoading ? (
-          <Card className="bg-gray-800 border-gray-700"><CardContent className="p-12 text-center">Loading...</CardContent></Card>
+          <Card className="bg-zinc-800 border-zinc-700"><CardContent className="p-12 text-center">Loading...</CardContent></Card>
         ) : savedWorkouts.length === 0 ? (
-          <Card className="bg-gray-800 border-gray-700">
+          <Card className="bg-zinc-800 border-zinc-700">
             <CardContent className="p-12 text-center">
               <Dumbbell className="h-16 w-16 text-gray-600 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-300 mb-2">No Saved Workouts</h3>
@@ -135,7 +135,7 @@ export default function SavedWorkouts() {
             const workoutData = snap?.workoutData || snap;
             const name = snap?.name || workoutData?.workoutType || "Saved Workout";
             return (
-            <Card key={workout.id} className="bg-gray-800 border-gray-700">
+            <Card key={workout.id} className="bg-zinc-800 border-zinc-700">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -165,17 +165,17 @@ export default function SavedWorkouts() {
               <CardContent>
                 {/* Workout Stats */}
                 {workoutData && (
-                  <div className="bg-gray-700 rounded-lg p-3 mb-3">
+                  <div className="bg-zinc-700 rounded-lg p-3 mb-3">
                     <div className="grid grid-cols-3 gap-3 text-center text-sm">
                       {workoutData.duration && (
                         <div>
-                          <div className="font-bold text-blue-400">{workoutData.duration}m</div>
+                          <div className="font-bold text-red-400">{workoutData.duration}m</div>
                           <div className="text-xs text-gray-400">Duration</div>
                         </div>
                       )}
                       {workoutData.calories && (
                         <div>
-                          <div className="font-bold text-green-400">{workoutData.calories}</div>
+                          <div className="font-bold text-red-400">{workoutData.calories}</div>
                           <div className="text-xs text-gray-400">Calories</div>
                         </div>
                       )}

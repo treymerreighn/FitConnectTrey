@@ -79,10 +79,10 @@
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   }
 
-  /* Floating Action Button */
+  /* Floating Action Button - KRATOS Style */
   .fab {
-    background: linear-gradient(135deg, var(--fit-green), var(--fit-blue));
-    box-shadow: 0 8px 24px rgba(2,6,23,0.28);
+    background: linear-gradient(135deg, hsl(0, 72%, 51%), hsl(348, 83%, 47%));
+    box-shadow: 0 8px 24px rgba(220, 38, 38, 0.4);
     border: 0;
   }
   
@@ -95,68 +95,76 @@
 
 @layer base {
   :root {
-    --background: hsl(0, 0%, 100%);
-    --foreground: hsl(222.2, 84%, 4.9%);
+    /* KRATOS Theme - Light Mode */
+    --background: hsl(0, 0%, 98%);
+    --foreground: hsl(0, 0%, 9%);
     --card: hsl(0, 0%, 100%);
-    --card-foreground: hsl(222.2, 84%, 4.9%);
+    --card-foreground: hsl(0, 0%, 9%);
     --popover: hsl(0, 0%, 100%);
-    --popover-foreground: hsl(222.2, 84%, 4.9%);
-    --primary: hsl(142.1, 76.2%, 36.3%);
-    --primary-foreground: hsl(355.7, 100%, 97.3%);
-    --secondary: hsl(210, 40%, 92%);
-    --secondary-foreground: hsl(222.2, 84%, 4.9%);
-    --muted: hsl(210, 40%, 96%);
-    --muted-foreground: hsl(215.4, 16.3%, 46.9%);
-    --accent: hsl(210, 40%, 96%);
-    --accent-foreground: hsl(222.2, 84%, 4.9%);
-    --destructive: hsl(0, 84.2%, 60.2%);
-    --destructive-foreground: hsl(210, 40%, 98%);
-    --border: hsl(214.3, 31.8%, 91.4%);
-    --input: hsl(214.3, 31.8%, 91.4%);
-    --ring: hsl(142.1, 76.2%, 36.3%);
-    --chart-1: hsl(12, 76%, 61%);
-    --chart-2: hsl(173, 58%, 39%);
-    --chart-3: hsl(197, 37%, 24%);
-    --chart-4: hsl(43, 74%, 66%);
-    --chart-5: hsl(27, 87%, 67%);
+    --popover-foreground: hsl(0, 0%, 9%);
+    --primary: hsl(0, 72%, 51%);
+    --primary-foreground: hsl(0, 0%, 100%);
+    --secondary: hsl(0, 0%, 92%);
+    --secondary-foreground: hsl(0, 0%, 9%);
+    --muted: hsl(0, 0%, 96%);
+    --muted-foreground: hsl(0, 0%, 45%);
+    --accent: hsl(0, 72%, 95%);
+    --accent-foreground: hsl(0, 72%, 40%);
+    --destructive: hsl(0, 84%, 60%);
+    --destructive-foreground: hsl(0, 0%, 100%);
+    --border: hsl(0, 0%, 88%);
+    --input: hsl(0, 0%, 88%);
+    --ring: hsl(0, 72%, 51%);
+    --chart-1: hsl(0, 72%, 51%);
+    --chart-2: hsl(0, 60%, 40%);
+    --chart-3: hsl(0, 0%, 20%);
+    --chart-4: hsl(0, 50%, 60%);
+    --chart-5: hsl(0, 40%, 70%);
     --radius: 0.5rem;
     
-    /* Custom fitness colors */
-    --fit-green: hsl(142.1, 76.2%, 36.3%);
-    --fit-blue: hsl(217.2, 91.2%, 59.8%);
-    --fit-gold: hsl(45.4, 93.4%, 47.5%);
+    /* KRATOS Custom Colors - Strength & Power */
+    --kratos-red: hsl(0, 72%, 51%);
+    --kratos-crimson: hsl(348, 83%, 47%);
+    --kratos-blood: hsl(0, 100%, 35%);
+    --kratos-black: hsl(0, 0%, 5%);
+    --kratos-dark: hsl(0, 0%, 12%);
+    --kratos-gold: hsl(45, 93%, 47%);
   }
 
   .dark {
-    --background: hsl(220, 15%, 3%);
-    --foreground: hsl(0, 0%, 100%);
-    --card: hsl(220, 15%, 5%);
-    --card-foreground: hsl(0, 0%, 100%);
-    --popover: hsl(220, 15%, 5%);
-    --popover-foreground: hsl(0, 0%, 100%);
-    --primary: hsl(142.1, 76.2%, 36.3%);
-    --primary-foreground: hsl(355.7, 100%, 97.3%);
-    --secondary: hsl(217.2, 32.6%, 10%);
-    --secondary-foreground: hsl(0, 0%, 95%);
-    --muted: hsl(217.2, 32.6%, 10%);
-    --muted-foreground: hsl(0, 0%, 85%);
-    --accent: hsl(217.2, 32.6%, 10%);
-    --accent-foreground: hsl(0, 0%, 100%);
-    --destructive: hsl(0, 62.8%, 30.6%);
+    /* KRATOS Theme - Dark Mode (Primary Experience) */
+    --background: hsl(0, 0%, 4%);
+    --foreground: hsl(0, 0%, 98%);
+    --card: hsl(0, 0%, 7%);
+    --card-foreground: hsl(0, 0%, 98%);
+    --popover: hsl(0, 0%, 7%);
+    --popover-foreground: hsl(0, 0%, 98%);
+    --primary: hsl(0, 72%, 51%);
+    --primary-foreground: hsl(0, 0%, 100%);
+    --secondary: hsl(0, 0%, 12%);
+    --secondary-foreground: hsl(0, 0%, 98%);
+    --muted: hsl(0, 0%, 15%);
+    --muted-foreground: hsl(0, 0%, 65%);
+    --accent: hsl(0, 50%, 15%);
+    --accent-foreground: hsl(0, 72%, 60%);
+    --destructive: hsl(0, 62%, 30%);
     --destructive-foreground: hsl(0, 0%, 100%);
-    --border: hsl(217.2, 32.6%, 12%);
-    --input: hsl(217.2, 32.6%, 8%);
-    --ring: hsl(142.1, 76.2%, 36.3%);
-    --chart-1: hsl(220, 70%, 50%);
-    --chart-2: hsl(160, 60%, 45%);
-    --chart-3: hsl(30, 80%, 55%);
-    --chart-4: hsl(280, 65%, 60%);
-    --chart-5: hsl(340, 75%, 55%);
+    --border: hsl(0, 0%, 15%);
+    --input: hsl(0, 0%, 12%);
+    --ring: hsl(0, 72%, 51%);
+    --chart-1: hsl(0, 72%, 55%);
+    --chart-2: hsl(0, 60%, 45%);
+    --chart-3: hsl(0, 0%, 70%);
+    --chart-4: hsl(0, 50%, 65%);
+    --chart-5: hsl(348, 70%, 55%);
     
-    /* Custom fitness colors for dark mode */
-    --fit-green: hsl(142.1, 76.2%, 36.3%);
-    --fit-blue: hsl(217.2, 91.2%, 59.8%);
-    --fit-gold: hsl(45.4, 93.4%, 47.5%);
+    /* KRATOS Custom Colors - Dark Mode */
+    --kratos-red: hsl(0, 72%, 51%);
+    --kratos-crimson: hsl(348, 83%, 47%);
+    --kratos-blood: hsl(0, 100%, 40%);
+    --kratos-black: hsl(0, 0%, 4%);
+    --kratos-dark: hsl(0, 0%, 8%);
+    --kratos-gold: hsl(45, 93%, 50%);
   }
 }
 
@@ -171,27 +179,60 @@
 }
 
 @layer utilities {
-  .fit-green {
-    color: var(--fit-green);
+  /* KRATOS Color Utilities */
+  .kratos-red {
+    color: var(--kratos-red);
   }
   
-  .bg-fit-green {
-    background-color: var(--fit-green);
+  .bg-kratos-red {
+    background-color: var(--kratos-red);
   }
   
-  .fit-blue {
-    color: var(--fit-blue);
+  .kratos-crimson {
+    color: var(--kratos-crimson);
   }
   
-  .bg-fit-blue {
-    background-color: var(--fit-blue);
+  .bg-kratos-crimson {
+    background-color: var(--kratos-crimson);
   }
   
-  .fit-gold {
-    color: var(--fit-gold);
+  .kratos-blood {
+    color: var(--kratos-blood);
   }
   
-  .bg-fit-gold {
-    background-color: var(--fit-gold);
+  .bg-kratos-blood {
+    background-color: var(--kratos-blood);
+  }
+  
+  .kratos-black {
+    color: var(--kratos-black);
+  }
+  
+  .bg-kratos-black {
+    background-color: var(--kratos-black);
+  }
+  
+  .kratos-gold {
+    color: var(--kratos-gold);
+  }
+  
+  .bg-kratos-gold {
+    background-color: var(--kratos-gold);
+  }
+  
+  /* Gradient utilities */
+  .bg-kratos-gradient {
+    background: linear-gradient(135deg, var(--kratos-red), var(--kratos-crimson));
+  }
+  
+  .bg-kratos-dark-gradient {
+    background: linear-gradient(180deg, var(--kratos-black), var(--kratos-dark));
+  }
+  
+  .text-kratos-gradient {
+    background: linear-gradient(135deg, var(--kratos-red), var(--kratos-crimson));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 }

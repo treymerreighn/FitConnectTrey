@@ -687,7 +687,7 @@ export class MemStorage implements IStorage {
       ...post,
       likes: [],
       comments: [],
-      createdAt: new Date(),
+      createdAt: (post as any).createdAt || new Date(),
     };
     this.posts.set(newPost.id, newPost);
     return newPost;

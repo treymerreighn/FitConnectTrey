@@ -410,15 +410,15 @@ export default function BuildWorkout() {
       {/* Exercise Stats Dialog */}
       {selectedExerciseForStats && (
         <Dialog open={!!selectedExerciseForStats} onOpenChange={(open) => !open && setSelectedExerciseForStats(null)}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto !bg-white dark:!bg-zinc-900 border-2 border-gray-300 dark:border-zinc-700 rounded-xl shadow-2xl">
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-white dark:bg-zinc-900 border-2 border-zinc-300 dark:border-zinc-700 rounded-xl shadow-2xl">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
+              <DialogTitle className="flex items-center gap-2 text-zinc-900 dark:text-white">
                 <TrendingUp className="h-5 w-5 text-red-500" />
                 {selectedExerciseForStats} - Exercise History
-                {isPremium && <Crown className="h-4 w-4 text-amber-500" />}
+                {isPremium && <Crown className="h-4 w-4 text-red-500" />}
               </DialogTitle>
             </DialogHeader>
-            <div className="bg-gray-50 dark:bg-zinc-800 p-3 rounded-lg">
+            <div className="p-1">
               <ExerciseStatsPremium
                 exerciseName={selectedExerciseForStats}
                 userId={userId}

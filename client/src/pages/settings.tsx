@@ -6,16 +6,50 @@ import { Switch } from '@/components/ui/switch';
 import { usePreferences } from '@/contexts/preferences-context';
 import { Button } from '@/components/ui/button';
 import { useLocation } from 'wouter';
-import { Weight, ArrowLeft, Crown, Zap } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+import { Weight, ArrowLeft, Crown, Zap, Database, Loader2 } from 'lucide-react';
 
 export default function Settings() {
   const { weightUnit, setWeightUnit } = usePreferences();
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [isSeeding, setIsSeeding] = React.useState(false);
   
   // Mock premium toggle for testing
   const [mockPremium, setMockPremium] = React.useState(() => {
     return localStorage.getItem('fitconnect-mock-premium') === 'true';
   });
+
+  const handleSeedDemoData = async () => {
+    setIsSeeding(true);
+    try {
+      const response = await fetch('/api/dev/seed-workout-history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user?.id || '44595091' }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        toast({
+          title: "Demo Data Seeded!",
+          description: `Created ${data.count || 4} workout posts with exercise history. Try viewing Bench Press, Squat, or Deadlift stats!`,
+        });
+      } else {
+        throw new Error('Failed to seed data');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to seed demo data",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSeeding(false);
+    }
+  };
 
   const handlePremiumToggle = (checked: boolean) => {
     setMockPremium(checked);
@@ -64,6 +98,43 @@ export default function Settings() {
               <p className="text-xs text-red-900 dark:text-red-200">
                 <strong>⚠️ Development Only:</strong> This toggle simulates premium subscription. 
                 Page will reload when toggled to update all components.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Seed Demo Data - For Testing Only */}
+        <Card className="border-blue-200 dark:border-blue-900 bg-gradient-to-r from-blue-50 to-zinc-50 dark:from-blue-950/30 dark:to-zinc-950/30">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Database className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <CardTitle className="text-blue-900 dark:text-blue-100">Seed Demo Data</CardTitle>
+            </div>
+            <CardDescription className="text-blue-800 dark:text-blue-300">
+              Create sample workout posts with exercise history for testing premium features
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              onClick={handleSeedDemoData}
+              disabled={isSeeding}
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+            >
+              {isSeeding ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Seeding...
+                </>
+              ) : (
+                <>
+                  <Database className="h-4 w-4 mr-2" />
+                  Seed Workout History
+                </>
+              )}
+            </Button>
+            <div className="mt-3 p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg border border-blue-300 dark:border-blue-800">
+              <p className="text-xs text-blue-900 dark:text-blue-200">
+                <strong>📊 Creates sample data for:</strong> Bench Press, Squat, Deadlift, Dumbbell Shoulder Press, and Bulgarian Split Squat with progressive overload history.
               </p>
             </div>
           </CardContent>

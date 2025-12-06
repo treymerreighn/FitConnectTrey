@@ -3,10 +3,21 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, Calendar, Weight, Target, Crown, Sparkles, Lock } from 'lucide-react';
+import { TrendingUp, Calendar, Weight, Target, Crown, Sparkles, Lock, AlertCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 import { calculateOneRepMax } from '@/lib/oneRepMax';
 import { format } from 'date-fns';
+
+// Safe date formatter that won't crash on invalid dates
+const safeFormatDate = (dateStr: string, formatStr: string): string => {
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return 'Unknown date';
+    return format(date, formatStr);
+  } catch {
+    return 'Unknown date';
+  }
+};
 
 interface ExerciseStatsPremiumProps {
   exerciseName: string;
@@ -16,6 +27,15 @@ interface ExerciseStatsPremiumProps {
   showHistory?: boolean; // Free users can see history but not 1RM
 }
 
+// Define types outside component
+type BestSetType = { weight: number; reps: number; date: string };
+type StatsType = {
+  bestSet: BestSetType | null;
+  estimated1RM: number | null;
+  totalSets: number;
+  suggestedWeight: number | null;
+};
+
 export function ExerciseStatsPremium({ 
   exerciseName, 
   userId, 
@@ -23,55 +43,29 @@ export function ExerciseStatsPremium({
   isPremium,
   showHistory = true
 }: ExerciseStatsPremiumProps) {
-  const { data: historyData, isLoading } = useQuery({
+  // ALL HOOKS MUST BE CALLED FIRST - before any returns
+  const { data: historyData, isLoading, error, isFetching } = useQuery({
     queryKey: ['exercise-history', userId, exerciseName],
     queryFn: () => api.getExerciseHistory(userId, exerciseName, 5),
     enabled: !!userId && !!exerciseName && showHistory,
+    staleTime: 30000,
+    retry: 2,
   });
-
-  if (isLoading) {
-    return (
-      <Card className="border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-            <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
-            Loading exercise history...
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   const history = historyData?.history || [];
   const totalWorkouts = historyData?.totalWorkouts || 0;
 
-  // Define types
-  type BestSetType = { weight: number; reps: number; date: string };
-  type StatsType = {
-    bestSet: BestSetType | null;
-    estimated1RM: number | null;
-    totalSets: number;
-    suggestedWeight: number | null;
-  };
-
-  // Calculate stats from history
+  // Calculate stats from history - useMemo MUST be called every render
   const stats = useMemo((): StatsType => {
     let bestSet: BestSetType | null = null;
     let estimated1RM: number | null = null;
     let totalSets = 0;
 
     if (history.length > 0) {
-      let weightSum = 0;
-      let weightCount = 0;
-
       history.forEach(workout => {
         workout.sets.forEach(set => {
           totalSets++;
           if (set.weight != null && set.weight > 0) {
-            weightSum += set.weight;
-            weightCount++;
-
-            // Track best set
             const currentBest = bestSet;
             if (!currentBest || set.weight > currentBest.weight || (set.weight === currentBest.weight && set.reps > currentBest.reps)) {
               bestSet = {
@@ -84,7 +78,6 @@ export function ExerciseStatsPremium({
         });
       });
 
-      // Calculate estimated 1RM from best set (PREMIUM ONLY)
       if (isPremium && bestSet !== null) {
         const bs: BestSetType = bestSet;
         if (bs.weight > 0 && bs.reps > 0) {
@@ -94,12 +87,11 @@ export function ExerciseStatsPremium({
       }
     }
 
-    // Suggested weight (PREMIUM ONLY): 90% of best weight, or 80% of estimated 1RM
     let suggestedWeight: number | null = null;
     if (isPremium && bestSet !== null) {
       const bs: BestSetType = bestSet;
       if (bs.weight > 0) {
-        suggestedWeight = Math.round(bs.weight * 0.9); // 90% of previous best
+        suggestedWeight = Math.round(bs.weight * 0.9);
       }
     }
 
@@ -107,6 +99,37 @@ export function ExerciseStatsPremium({
   }, [history, isPremium]);
 
   const { bestSet, estimated1RM, totalSets, suggestedWeight } = stats;
+
+  // NOW we can do early returns - after all hooks have been called
+  if (isLoading || (!historyData && isFetching)) {
+    return (
+      <Card className="border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center gap-3 text-zinc-600 dark:text-zinc-300">
+            <div className="animate-spin rounded-full h-5 w-5 border-2 border-red-500 border-t-transparent" />
+            <span>Loading history for {exerciseName}...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="border-red-200 dark:border-red-800 bg-white dark:bg-zinc-800">
+        <CardContent className="p-6">
+          <div className="text-center">
+            <div className="text-red-600 dark:text-red-400 font-medium mb-2">
+              Failed to load exercise history
+            </div>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              Please try again later.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   // Free version - just shows basic history
   const freeContent = (
@@ -147,7 +170,7 @@ export function ExerciseStatsPremium({
               {history.slice(0, 3).map((workout, idx) => (
                 <div key={idx} className="flex items-center justify-between text-xs">
                   <span className="text-zinc-600 dark:text-zinc-400">
-                    {format(new Date(workout.date), 'MMM d')}
+                    {safeFormatDate(workout.date, 'MMM d')}
                   </span>
                   <span className="text-zinc-900 dark:text-white font-medium">
                     {workout.sets.length} sets
@@ -159,8 +182,12 @@ export function ExerciseStatsPremium({
         )}
 
         {history.length === 0 && (
-          <div className="text-center py-4 text-sm text-zinc-500 dark:text-zinc-400">
-            <p>No previous workouts found.</p>
+          <div className="text-center py-6 px-4 bg-zinc-50 dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
+            <Target className="h-8 w-8 text-zinc-400 dark:text-zinc-500 mx-auto mb-3" />
+            <p className="text-zinc-700 dark:text-zinc-300 font-medium">No workout history yet</p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+              Complete a workout with this exercise to track your progress!
+            </p>
           </div>
         )}
       </CardContent>
@@ -214,7 +241,7 @@ export function ExerciseStatsPremium({
               <span className="text-sm text-zinc-600 dark:text-zinc-400">lbs × {bestSet.reps} reps</span>
             </div>
             <div className="text-xs text-zinc-500 mt-1">
-              {format(new Date(bestSet.date), 'MMM d, yyyy')}
+              {safeFormatDate(bestSet.date, 'MMM d, yyyy')}
             </div>
           </div>
         )}
@@ -255,7 +282,7 @@ export function ExerciseStatsPremium({
               {history.slice(0, 3).map((workout, idx) => (
                 <div key={idx} className="flex items-center justify-between text-xs">
                   <span className="text-zinc-600 dark:text-zinc-400">
-                    {format(new Date(workout.date), 'MMM d')}
+                    {safeFormatDate(workout.date, 'MMM d')}
                   </span>
                   <span className="text-zinc-900 dark:text-white font-medium">
                     {workout.sets.length} sets
@@ -268,9 +295,17 @@ export function ExerciseStatsPremium({
 
         {/* Empty State */}
         {history.length === 0 && (
-          <div className="text-center py-4 text-sm text-zinc-500 dark:text-zinc-400">
-            <p>No previous workouts found for this exercise.</p>
-            <p className="text-xs mt-1">Complete a workout to see stats!</p>
+          <div className="text-center py-6 px-4 bg-white/50 dark:bg-zinc-800/50 rounded-lg border border-red-200 dark:border-red-900">
+            <Sparkles className="h-8 w-8 text-red-400 dark:text-red-500 mx-auto mb-3" />
+            <p className="text-zinc-700 dark:text-zinc-300 font-medium">No workout history yet</p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+              Complete a workout with this exercise to unlock:
+            </p>
+            <ul className="text-xs text-red-600 dark:text-red-400 mt-2 space-y-1">
+              <li>✨ Best performance tracking</li>
+              <li>💪 Projected 1RM calculation</li>
+              <li>🎯 Auto-load recommended weights</li>
+            </ul>
           </div>
         )}
       </CardContent>

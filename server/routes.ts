@@ -1087,8 +1087,8 @@ router.get("/api/users/:userId/exercise-history/:exerciseName", async (req, res)
     for (const post of posts) {
       if (post.type === 'workout' && post.workoutData?.exercises) {
         for (const exercise of post.workoutData.exercises) {
-          // Case-insensitive match - check both 'name' and 'exerciseName' fields
-          const exName = exercise.name || exercise.exerciseName;
+          // Case-insensitive match
+          const exName = exercise.name || (exercise as any).exerciseName;
           if (exName?.toLowerCase() === exerciseName.toLowerCase()) {
             console.log(`[Exercise History] Found match in post ${post.id}: ${exName}`);
             history.push({

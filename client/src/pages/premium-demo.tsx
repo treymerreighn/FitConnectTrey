@@ -55,12 +55,18 @@ export default function PremiumDemo() {
       const data = await response.json();
       console.log('✅ Seed response:', data);
       
-      // Invalidate exercise history queries to refetch with new data
-      queryClient.invalidateQueries({ queryKey: ['exercise-history'] });
+      // Force refetch all exercise history queries
+      await queryClient.invalidateQueries({ queryKey: ['exercise-history'] });
+      await queryClient.refetchQueries({ queryKey: ['exercise-history'] });
+      
+      // Trigger re-render by toggling exercise name
+      const currentName = exerciseName;
+      setExerciseName('');
+      setTimeout(() => setExerciseName(currentName), 100);
       
       toast({
         title: "Workout History Seeded! 🎉",
-        description: `Added ${data.count} sample workouts. Try "Bench Press", "Squat", or "Deadlift".`,
+        description: `Added ${data.count} sample workouts. Stats should now appear!`,
       });
     } catch (error) {
       console.error('❌ Seed error:', error);
@@ -75,18 +81,18 @@ export default function PremiumDemo() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-4 pb-20">
+    <div className="min-h-screen bg-yellow-300 p-4 pb-24">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <Card className="border-2 border-primary">
+        <Card className="border-2 border-red-500 bg-white">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-6 w-6 text-primary" />
+            <CardTitle className="flex items-center gap-2 text-black">
+              <Sparkles className="h-6 w-6 text-red-500" />
               Premium Features Demo
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <div className="p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="font-medium text-blue-900 dark:text-blue-300 mb-1">
@@ -101,21 +107,21 @@ export default function PremiumDemo() {
                   onClick={seedWorkoutHistory}
                   disabled={isSeeding}
                   size="sm"
-                  className="shrink-0"
+                  className="shrink-0 bg-blue-600 hover:bg-blue-700"
                 >
                   {isSeeding ? "Seeding..." : "Seed Data"}
                 </Button>
               </div>
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+            <div className="flex items-center justify-between p-4 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-800">
               <div className="flex items-center gap-3">
-                <Crown className="h-5 w-5 text-amber-500" />
+                <Crown className="h-5 w-5 text-red-500" />
                 <div>
-                  <Label htmlFor="premium-toggle" className="font-medium text-gray-900 dark:text-white">
+                  <Label htmlFor="premium-toggle" className="font-medium text-zinc-900 dark:text-white">
                     Premium Mode
                   </Label>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
                     Toggle to see free vs premium features
                   </p>
                 </div>
@@ -128,14 +134,15 @@ export default function PremiumDemo() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="exercise-name">Exercise Name</Label>
+              <Label htmlFor="exercise-name" className="text-zinc-900 dark:text-white">Exercise Name</Label>
               <Input
                 id="exercise-name"
                 value={exerciseName}
                 onChange={(e) => setExerciseName(e.target.value)}
                 placeholder="e.g., Bench Press, Squat, Deadlift"
+                className="bg-white dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700"
               />
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">
                 Try: "Bench Press", "Squat", "Deadlift", "Bulgarian Split Squat", "Dumbbell Shoulder Press"
               </p>
             </div>
@@ -146,7 +153,7 @@ export default function PremiumDemo() {
         <div className="grid md:grid-cols-2 gap-6">
           {/* Free Version */}
           <div>
-            <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">
+            <h3 className="text-lg font-semibold mb-3 text-zinc-900 dark:text-white">
               Free User View
             </h3>
             <ExerciseStatsPremium
@@ -159,8 +166,8 @@ export default function PremiumDemo() {
 
           {/* Premium Version */}
           <div>
-            <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white flex items-center gap-2">
-              <Crown className="h-5 w-5 text-amber-500" />
+            <h3 className="text-lg font-semibold mb-3 text-zinc-900 dark:text-white flex items-center gap-2">
+              <Crown className="h-5 w-5 text-red-500" />
               Premium User View
             </h3>
             <ExerciseStatsPremium
@@ -174,42 +181,42 @@ export default function PremiumDemo() {
         </div>
 
         {/* What You're Currently Seeing */}
-        <Card className={isPremium ? "border-2 border-amber-500" : "border-gray-200 dark:border-gray-800"}>
+        <Card className={isPremium ? "border-2 border-red-500 bg-white dark:bg-zinc-900" : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"}>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              {isPremium && <Crown className="h-5 w-5 text-amber-500" />}
+            <CardTitle className="flex items-center gap-2 text-zinc-900 dark:text-white">
+              {isPremium && <Crown className="h-5 w-5 text-red-500" />}
               You're Currently Viewing: {isPremium ? "Premium" : "Free"} Mode
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="text-sm space-y-2">
-                <p className="font-medium text-gray-900 dark:text-white">
+                <p className="font-medium text-zinc-900 dark:text-white">
                   {isPremium ? "Premium Features Active:" : "Free Features:"}
                 </p>
-                <ul className="list-disc list-inside space-y-1 text-gray-600 dark:text-gray-400">
+                <ul className="list-disc list-inside space-y-1 text-zinc-600 dark:text-zinc-400">
                   <li>✅ View total workout count</li>
                   <li>✅ See total sets performed</li>
                   <li>✅ View recent workout sessions</li>
                   {isPremium ? (
                     <>
-                      <li className="text-amber-600 dark:text-amber-400">✨ Best performance tracking (weight × reps)</li>
-                      <li className="text-amber-600 dark:text-amber-400">💪 Projected 1RM calculation</li>
-                      <li className="text-amber-600 dark:text-amber-400">🎯 Auto-load recommended weights</li>
-                      <li className="text-amber-600 dark:text-amber-400">📊 Premium styling and badges</li>
+                      <li className="text-red-600 dark:text-red-400">✨ Best performance tracking (weight × reps)</li>
+                      <li className="text-red-600 dark:text-red-400">💪 Projected 1RM calculation</li>
+                      <li className="text-red-600 dark:text-red-400">🎯 Auto-load recommended weights</li>
+                      <li className="text-red-600 dark:text-red-400">📊 Premium styling and badges</li>
                     </>
                   ) : (
                     <>
-                      <li className="text-gray-400 line-through">Best performance tracking</li>
-                      <li className="text-gray-400 line-through">Projected 1RM calculation</li>
-                      <li className="text-gray-400 line-through">Auto-load recommended weights</li>
+                      <li className="text-zinc-400 line-through">Best performance tracking</li>
+                      <li className="text-zinc-400 line-through">Projected 1RM calculation</li>
+                      <li className="text-zinc-400 line-through">Auto-load recommended weights</li>
                     </>
                   )}
                 </ul>
               </div>
 
               {suggestedWeight && (
-                <div className="p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
+                <div className="p-4 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg">
                   <p className="text-sm font-medium text-green-900 dark:text-green-300">
                     ✅ Auto-loaded {suggestedWeight} lbs
                   </p>
@@ -219,8 +226,8 @@ export default function PremiumDemo() {
                 </div>
               )}
 
-              <div className="pt-4 border-t border-gray-200 dark:border-gray-800">
-                <p className="text-xs text-gray-500">
+              <div className="pt-4 border-t border-zinc-200 dark:border-zinc-700">
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
                   <strong>Note:</strong> This demo shows both versions side-by-side. In the real app, 
                   users will only see their subscription tier's features.
                 </p>
@@ -230,35 +237,35 @@ export default function PremiumDemo() {
         </Card>
 
         {/* Implementation Details */}
-        <Card>
+        <Card className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
           <CardHeader>
-            <CardTitle>How It Works</CardTitle>
+            <CardTitle className="text-zinc-900 dark:text-white">How It Works</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3 text-sm">
               <div>
-                <p className="font-medium text-gray-900 dark:text-white mb-1">1. Exercise History API</p>
-                <code className="text-xs bg-gray-100 dark:bg-gray-900 p-2 rounded block">
+                <p className="font-medium text-zinc-900 dark:text-white mb-1">1. Exercise History API</p>
+                <code className="text-xs bg-zinc-100 dark:bg-zinc-800 p-2 rounded block text-zinc-800 dark:text-zinc-200">
                   GET /api/users/:userId/exercise-history/:exerciseName
                 </code>
-                <p className="text-gray-600 dark:text-gray-400 mt-1">
+                <p className="text-zinc-600 dark:text-zinc-400 mt-1">
                   Analyzes all your workout posts to extract performance data for specific exercises.
                 </p>
               </div>
 
               <div>
-                <p className="font-medium text-gray-900 dark:text-white mb-1">2. 1RM Calculation (Brzycki Formula)</p>
-                <code className="text-xs bg-gray-100 dark:bg-gray-900 p-2 rounded block">
+                <p className="font-medium text-zinc-900 dark:text-white mb-1">2. 1RM Calculation (Brzycki Formula)</p>
+                <code className="text-xs bg-zinc-100 dark:bg-zinc-800 p-2 rounded block text-zinc-800 dark:text-zinc-200">
                   1RM = Weight × (36 / (37 - Reps))
                 </code>
-                <p className="text-gray-600 dark:text-gray-400 mt-1">
+                <p className="text-zinc-600 dark:text-zinc-400 mt-1">
                   Pure math, zero API costs. Accurate for 1-10 rep ranges.
                 </p>
               </div>
 
               <div>
-                <p className="font-medium text-gray-900 dark:text-white mb-1">3. Smart Weight Recommendations</p>
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="font-medium text-zinc-900 dark:text-white mb-1">3. Smart Weight Recommendations</p>
+                <p className="text-zinc-600 dark:text-zinc-400">
                   Suggests 90% of your previous best performance, or 80% of estimated 1RM for hypertrophy training.
                 </p>
               </div>

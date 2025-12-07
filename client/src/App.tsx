@@ -39,6 +39,8 @@ import MealsPage from "./pages/meals";
 import Settings from "./pages/settings";
 import PremiumDemo from "./pages/premium-demo";
 import AdminReports from "./pages/admin-reports";
+import WorkoutSummary from "./pages/workout-summary";
+import CreateStory from "./pages/create-story";
 
 // Scroll to top when route changes
 function ScrollToTop() {
@@ -142,6 +144,8 @@ function Router() {
           <Route path="/settings" component={Settings} />
           <Route path="/premium-demo" component={PremiumDemo} />
           <Route path="/admin/reports" component={AdminReports} />
+          <Route path="/workout-summary" component={WorkoutSummary} />
+          <Route path="/create-story" component={CreateStory} />
         </>
       )}
       <Route component={NotFound} />

@@ -94,6 +94,28 @@ export class AWSImageService {
     }
   }
 
+  private static async saveLocally(
+    buffer: Buffer,
+    fileName: string
+  ): Promise<ImageUploadResult> {
+    const uploadsDir = path.join(process.cwd(), "public", "uploads");
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+    const localFileName = `${Date.now()}-${fileName.replace(/[^a-zA-Z0-9.-]/g, '')}`;
+    const filePath = path.join(uploadsDir, localFileName);
+    
+    fs.writeFileSync(filePath, buffer);
+    console.log(`📁 Saved file locally: ${filePath}`);
+    
+    const publicUrl = `/uploads/${localFileName}`;
+    return {
+      key: localFileName,
+      url: publicUrl,
+      publicUrl,
+    };
+  }
+
   static async uploadImage(
     buffer: Buffer,
     fileName: string,
@@ -104,39 +126,33 @@ export class AWSImageService {
     const key = `images/${Date.now()}-${fileName.replace(/[^a-zA-Z0-9.-]/g, '')}`;
     
     if (!hasAwsCredentials) {
-      // Local file upload
-      const uploadsDir = path.join(process.cwd(), "public", "uploads");
-      const localFileName = `${Date.now()}-${fileName.replace(/[^a-zA-Z0-9.-]/g, '')}`;
-      const filePath = path.join(uploadsDir, localFileName);
+      // Local file upload when no credentials
+      return this.saveLocally(buffer, fileName);
+    }
+
+    // Try S3, fall back to local if it fails
+    try {
+      const command = new PutObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key,
+        Body: buffer,
+        ContentType: contentType,
+        // ACL removed - using bucket policy for public access instead
+      });
+
+      await s3Client!.send(command);
+
+      const publicUrl = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
       
-      fs.writeFileSync(filePath, buffer);
-      console.log(`Saved file locally: ${filePath}`);
-      
-      const publicUrl = `/uploads/${localFileName}`;
       return {
-        key: localFileName,
+        key,
         url: publicUrl,
         publicUrl,
       };
+    } catch (error: any) {
+      console.warn(`⚠️ S3 upload failed (${error.Code || error.message}), falling back to local storage`);
+      return this.saveLocally(buffer, fileName);
     }
-
-    const command = new PutObjectCommand({
-      Bucket: BUCKET_NAME,
-      Key: key,
-      Body: buffer,
-      ContentType: contentType,
-      // ACL removed - using bucket policy for public access instead
-    });
-
-    await s3Client!.send(command);
-
-    const publicUrl = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
-    
-    return {
-      key,
-      url: publicUrl,
-      publicUrl,
-    };
   }
 
   static async getSignedUrl(key: string): Promise<string> {

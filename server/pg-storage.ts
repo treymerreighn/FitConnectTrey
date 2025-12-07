@@ -3,7 +3,7 @@ import { db } from "./db.ts";
 import { users, posts, comments, connections, progressEntries, exercises, notifications, conversations, messages } from "../shared/db-schema.ts";
 import type { IStorage, Notification, Message, Conversation } from "./storage.ts";
 import type { WorkoutTemplate, InsertWorkoutTemplate, SavedWorkout, InsertSavedWorkout } from "../shared/workout-types.ts";
-import type { User, Post, Comment, Connection, ProgressEntry, Exercise, Recipe, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, WorkoutSession, InsertWorkoutSession, ExerciseProgress, InsertExerciseProgress, CommunityMeal, ProgressInsight, InsertProgressInsight, Story, InsertStory, SavedMeal, InsertSavedMeal, Report } from "../shared/schema.ts";
+import type { User, Post, Comment, Connection, ProgressEntry, Exercise, Recipe, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, WorkoutSession, InsertWorkoutSession, ExerciseProgress, InsertExerciseProgress, CommunityMeal, ProgressInsight, InsertProgressInsight, StrengthInsight, InsertStrengthInsight, Story, InsertStory, SavedMeal, InsertSavedMeal, Report } from "../shared/schema.ts";
 
 export class PgStorage implements IStorage {
   constructor() {
@@ -18,6 +18,7 @@ export class PgStorage implements IStorage {
   private exerciseProgress: Map<string, ExerciseProgress> = new Map();
   private communityMeals: Map<string, CommunityMeal> = new Map();
   private progressInsights: Map<string, ProgressInsight> = new Map();
+  private strengthInsights: Map<string, StrengthInsight> = new Map();
   private workoutTemplates: Map<string, WorkoutTemplate> = new Map(); // in-memory until table added
   private savedWorkouts: Map<string, SavedWorkout[]> = new Map(); // in-memory bookmark persistence
   private savedMeals: Map<string, SavedMeal[]> = new Map(); // in-memory saved meals persistence
@@ -974,6 +975,35 @@ export class PgStorage implements IStorage {
 
   async deleteProgressInsight(id: string): Promise<boolean> {
     return this.progressInsights.delete(id);
+  }
+
+  // Strength insights (in-memory fallback for premium workout analysis)
+  async createStrengthInsight(insight: InsertStrengthInsight): Promise<StrengthInsight> {
+    const newInsight: StrengthInsight = {
+      id: crypto.randomUUID(),
+      ...insight,
+      createdAt: new Date(),
+    } as StrengthInsight;
+    this.strengthInsights.set(newInsight.id, newInsight);
+    return newInsight;
+  }
+
+  async getStrengthInsightsByUserId(userId: string): Promise<StrengthInsight[]> {
+    return Array.from(this.strengthInsights.values())
+      .filter(i => i.userId === userId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async getStrengthInsightByPostId(postId: string): Promise<StrengthInsight | null> {
+    return Array.from(this.strengthInsights.values()).find(i => i.postId === postId) || null;
+  }
+
+  async getStrengthInsight(id: string): Promise<StrengthInsight | null> {
+    return this.strengthInsights.get(id) || null;
+  }
+
+  async deleteStrengthInsight(id: string): Promise<boolean> {
+    return this.strengthInsights.delete(id);
   }
 
   // Notifications & Messaging

@@ -1,4 +1,4 @@
-import type { User, Post, Comment, Connection, ProgressEntry, Exercise, WorkoutSession, ExerciseProgress, Recipe, CommunityMeal, ProgressInsight, Story, SavedMeal, Report, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, InsertWorkoutSession, InsertExerciseProgress, InsertProgressInsight, InsertStory, InsertSavedMeal, InsertReport } from "../shared/schema.ts";
+import type { User, Post, Comment, Connection, ProgressEntry, Exercise, WorkoutSession, ExerciseProgress, Recipe, CommunityMeal, ProgressInsight, StrengthInsight, Story, SavedMeal, Report, InsertUser, InsertPost, InsertComment, InsertConnection, InsertProgressEntry, InsertExercise, InsertWorkoutSession, InsertExerciseProgress, InsertProgressInsight, InsertStrengthInsight, InsertStory, InsertSavedMeal, InsertReport } from "../shared/schema.ts";
 import type { WorkoutTemplate, InsertWorkoutTemplate, SavedWorkout, InsertSavedWorkout } from "../shared/workout-types.ts";
 // Lightweight messaging/notification types used by server storage
 export type Notification = {
@@ -164,6 +164,13 @@ export interface IStorage {
   getProgressInsight(id: string): Promise<ProgressInsight | null>;
   deleteProgressInsight(id: string): Promise<boolean>;
 
+  // Strength insights operations - AI workout analysis (premium feature)
+  createStrengthInsight(insight: InsertStrengthInsight): Promise<StrengthInsight>;
+  getStrengthInsightsByUserId(userId: string): Promise<StrengthInsight[]>;
+  getStrengthInsightByPostId(postId: string): Promise<StrengthInsight | null>;
+  getStrengthInsight(id: string): Promise<StrengthInsight | null>;
+  deleteStrengthInsight(id: string): Promise<boolean>;
+
   // Stories operations - 24-hour disappearing stories
   createStory(story: InsertStory): Promise<Story>;
   getActiveStories(): Promise<Story[]>; // Get all non-expired stories
@@ -192,6 +199,7 @@ export class MemStorage implements IStorage {
   private recipes: Map<string, Recipe> = new Map();
   private communityMeals: Map<string, CommunityMeal> = new Map();
   private progressInsights: Map<string, ProgressInsight> = new Map();
+  private strengthInsights: Map<string, StrengthInsight> = new Map();
   private notifications: Map<string, Notification[]> = new Map();
   private conversations: Map<string, Conversation> = new Map();
   private messages: Map<string, Message[]> = new Map();
@@ -1388,6 +1396,36 @@ export class MemStorage implements IStorage {
 
   async deleteProgressInsight(id: string): Promise<boolean> {
     return this.progressInsights.delete(id);
+  }
+
+  // Strength insights methods for AI-powered workout analysis (premium feature)
+  async createStrengthInsight(insight: InsertStrengthInsight): Promise<StrengthInsight> {
+    const newInsight: StrengthInsight = {
+      id: nanoid(),
+      ...insight,
+      createdAt: new Date(),
+    };
+    this.strengthInsights.set(newInsight.id, newInsight);
+    return newInsight;
+  }
+
+  async getStrengthInsightsByUserId(userId: string): Promise<StrengthInsight[]> {
+    return Array.from(this.strengthInsights.values())
+      .filter(insight => insight.userId === userId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async getStrengthInsightByPostId(postId: string): Promise<StrengthInsight | null> {
+    return Array.from(this.strengthInsights.values())
+      .find(insight => insight.postId === postId) || null;
+  }
+
+  async getStrengthInsight(id: string): Promise<StrengthInsight | null> {
+    return this.strengthInsights.get(id) || null;
+  }
+
+  async deleteStrengthInsight(id: string): Promise<boolean> {
+    return this.strengthInsights.delete(id);
   }
 
   // Notifications

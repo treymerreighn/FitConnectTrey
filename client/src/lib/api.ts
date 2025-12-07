@@ -201,4 +201,72 @@ export const api = {
   deleteSavedMeal: async (id: string, userId: string): Promise<{ success: boolean }> => {
     return await apiRequest("DELETE", `/api/saved-meals/${id}?userId=${userId}`);
   },
+
+  // =========================================================================
+  // Strength Insights - AI-powered workout analysis (premium feature)
+  // =========================================================================
+
+  generateStrengthInsights: async (data: {
+    userId: string;
+    postId?: string;
+    workoutData: {
+      exercises: Array<{
+        name: string;
+        sets: Array<{ reps: number; weight?: number }>;
+      }>;
+      duration?: number;
+      workoutType?: string;
+    };
+    userGoals?: string[];
+  }): Promise<{
+    id: string;
+    userId: string;
+    postId?: string;
+    workoutData: any;
+    insights: {
+      summary: string;
+      volumeAnalysis: string;
+      strengthTrends: Array<{ exercise: string; trend: string; note: string }>;
+      muscleGroupFocus: string[];
+      personalRecords: Array<{ exercise: string; achievement: string; previousBest?: string }>;
+      recommendations: string[];
+      motivationalMessage: string;
+      recoveryTips: string[];
+      nextWorkoutSuggestion?: string;
+    };
+    createdAt: string;
+  }> => {
+    return await apiRequest("POST", "/api/strength-insights", data);
+  },
+
+  getStrengthInsightsByUser: async (userId: string): Promise<any[]> => {
+    return await apiRequest("GET", `/api/strength-insights/user/${userId}`);
+  },
+
+  getStrengthInsightByPost: async (postId: string): Promise<any | null> => {
+    return await apiRequest("GET", `/api/strength-insights/post/${postId}`);
+  },
+
+  getStrengthInsight: async (id: string): Promise<any> => {
+    return await apiRequest("GET", `/api/strength-insights/${id}`);
+  },
+
+  generateWeeklyStrengthSummary: async (data: {
+    userId: string;
+    userGoals?: string[];
+  }): Promise<{
+    weeklyVolume: number;
+    workoutCount: number;
+    topExercises: string[];
+    summary: string;
+    achievements: string[];
+    areasToFocus: string[];
+    motivationalMessage: string;
+  }> => {
+    return await apiRequest("POST", "/api/strength-insights/weekly-summary", data);
+  },
+
+  deleteStrengthInsight: async (id: string): Promise<{ success: boolean }> => {
+    return await apiRequest("DELETE", `/api/strength-insights/${id}`);
+  },
 };

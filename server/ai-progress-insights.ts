@@ -1,13 +1,13 @@
-import { requireOpenAI } from "./openai.ts";
+import { isAIAvailable, generateVisionCompletion, getProviderName } from "./ai-provider.ts";
 
 export interface ProgressInsight {
   overallAssessment: string;
   muscleDefinition: {
-    score: number; // 1-10
+    score: number;
     notes: string;
   };
   posture: {
-    score: number; // 1-10
+    score: number;
     notes: string;
   };
   bodyComposition: {
@@ -18,7 +18,62 @@ export interface ProgressInsight {
   motivationalMessage: string;
 }
 
-export async function analyzeProgressPhoto(imageBase64: string, previousInsights?: ProgressInsight[]): Promise<ProgressInsight> {
+function getFallbackInsight(): ProgressInsight {
+  return {
+    overallAssessment: "Photo uploaded successfully! Track your progress over time to see your transformation.",
+    muscleDefinition: {
+      score: 5,
+      notes: "Continue tracking your progress photos for detailed muscle definition analysis.",
+    },
+    posture: {
+      score: 5,
+      notes: "Regular photo tracking helps monitor posture improvements over time.",
+    },
+    bodyComposition: {
+      assessment: "Photo recorded for progress tracking.",
+      changes: ["Photo saved to your progress timeline"],
+    },
+    recommendations: [
+      "Take photos in consistent lighting for best comparison",
+      "Use the same pose and angle each time",
+      "Track weekly or bi-weekly for visible changes",
+      "Combine with weight and measurement tracking",
+    ],
+    motivationalMessage: "Every photo is a step forward on your fitness journey! Keep documenting your progress.",
+  };
+}
+
+function validateInsight(result: any): ProgressInsight {
+  return {
+    overallAssessment: result.overallAssessment || "Progress analysis completed.",
+    muscleDefinition: {
+      score: Math.max(1, Math.min(10, result.muscleDefinition?.score || 5)),
+      notes: result.muscleDefinition?.notes || "Muscle definition analysis performed.",
+    },
+    posture: {
+      score: Math.max(1, Math.min(10, result.posture?.score || 5)),
+      notes: result.posture?.notes || "Posture assessment completed.",
+    },
+    bodyComposition: {
+      assessment: result.bodyComposition?.assessment || "Body composition evaluated.",
+      changes: Array.isArray(result.bodyComposition?.changes) ? result.bodyComposition.changes : [],
+    },
+    recommendations: Array.isArray(result.recommendations)
+      ? result.recommendations
+      : ["Continue your current fitness routine."],
+    motivationalMessage: result.motivationalMessage || "Keep up the great work on your fitness journey!",
+  };
+}
+
+export async function analyzeProgressPhoto(
+  imageBase64: string,
+  previousInsights?: ProgressInsight[]
+): Promise<ProgressInsight> {
+  if (!isAIAvailable()) {
+    console.log("[ProgressInsights] No AI provider available - using fallback");
+    return getFallbackInsight();
+  }
+
   try {
     const systemPrompt = `You are a certified fitness professional and body composition expert. Analyze progress photos to provide detailed, constructive insights about fitness transformation.
 
@@ -31,64 +86,32 @@ Guidelines:
 - Give 3-5 specific recommendations
 - End with a motivational message
 
-Previous insights context: ${previousInsights ? JSON.stringify(previousInsights.slice(-2)) : 'None'}
+Previous insights context: ${previousInsights ? JSON.stringify(previousInsights.slice(-2)) : "None"}
 
-Respond in JSON format matching the ProgressInsight interface.`;
+Respond in valid JSON format:
+{
+  "overallAssessment": "string",
+  "muscleDefinition": {"score": number, "notes": "string"},
+  "posture": {"score": number, "notes": "string"},
+  "bodyComposition": {"assessment": "string", "changes": ["string"]},
+  "recommendations": ["string"],
+  "motivationalMessage": "string"
+}`;
 
-    const openai = requireOpenAI();
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt
-        },
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: "Analyze this progress photo and provide detailed fitness insights. Consider muscle definition, posture, body composition changes, and provide actionable recommendations."
-            },
-            {
-              type: "image_url",
-              image_url: {
-                url: `data:image/jpeg;base64,${imageBase64}`
-              }
-            }
-          ]
-        }
-      ],
-      response_format: { type: "json_object" },
-      max_tokens: 800,
+    const userPrompt = "Analyze this progress photo and provide detailed fitness insights. Consider muscle definition, posture, body composition changes, and provide actionable recommendations.";
+
+    console.log(`[ProgressInsights] Analyzing photo with ${getProviderName()}...`);
+
+    const responseText = await generateVisionCompletion(systemPrompt, userPrompt, imageBase64, {
+      maxTokens: 800,
+      temperature: 0.7,
     });
 
-    const result = JSON.parse(response.choices[0].message.content || '{}');
-    
-    // Validate and structure the response
-    const insight: ProgressInsight = {
-      overallAssessment: result.overallAssessment || 'Progress analysis completed.',
-      muscleDefinition: {
-        score: Math.max(1, Math.min(10, result.muscleDefinition?.score || 5)),
-        notes: result.muscleDefinition?.notes || 'Muscle definition analysis performed.'
-      },
-      posture: {
-        score: Math.max(1, Math.min(10, result.posture?.score || 5)),
-        notes: result.posture?.notes || 'Posture assessment completed.'
-      },
-      bodyComposition: {
-        assessment: result.bodyComposition?.assessment || 'Body composition evaluated.',
-        changes: Array.isArray(result.bodyComposition?.changes) ? result.bodyComposition.changes : []
-      },
-      recommendations: Array.isArray(result.recommendations) ? result.recommendations : ['Continue your current fitness routine.'],
-      motivationalMessage: result.motivationalMessage || 'Keep up the great work on your fitness journey!'
-    };
-
-    return insight;
-
+    const result = JSON.parse(responseText);
+    return validateInsight(result);
   } catch (error) {
-    console.error('Error analyzing progress photo:', error);
-    throw new Error('Failed to analyze progress photo. Please try again.');
+    console.error("[ProgressInsights] Error analyzing progress photo:", error);
+    return getFallbackInsight();
   }
 }
 
@@ -97,6 +120,14 @@ export async function compareProgressPhotos(
   previousImageBase64: string,
   timePeriod: string
 ): Promise<ProgressInsight> {
+  if (!isAIAvailable()) {
+    console.log("[ProgressInsights] No AI provider available - using fallback for comparison");
+    return {
+      ...getFallbackInsight(),
+      overallAssessment: `Photos from ${timePeriod} apart have been saved. Enable AI for detailed comparison analysis.`,
+    };
+  }
+
   try {
     const systemPrompt = `You are a certified fitness professional analyzing progress photos taken ${timePeriod} apart. Compare the two images to identify specific changes and transformations.
 
@@ -108,66 +139,32 @@ Focus on:
 - Specific areas of improvement
 - Areas that need continued focus
 
-Provide detailed comparison insights in JSON format.`;
+Respond in valid JSON format:
+{
+  "overallAssessment": "string",
+  "muscleDefinition": {"score": number, "notes": "string"},
+  "posture": {"score": number, "notes": "string"},
+  "bodyComposition": {"assessment": "string", "changes": ["string"]},
+  "recommendations": ["string"],
+  "motivationalMessage": "string"
+}`;
 
-    const openai = requireOpenAI();
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt
-        },
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: `Compare these two progress photos taken ${timePeriod} apart. Analyze the transformation and provide detailed insights on changes, improvements, and recommendations.`
-            },
-            {
-              type: "image_url",
-              image_url: {
-                url: `data:image/jpeg;base64,${previousImageBase64}`,
-              }
-            },
-            {
-              type: "image_url", 
-              image_url: {
-                url: `data:image/jpeg;base64,${currentImageBase64}`,
-              }
-            }
-          ]
-        }
-      ],
-      response_format: { type: "json_object" },
-      max_tokens: 1000,
+    const userPrompt = `Compare these two progress photos taken ${timePeriod} apart. Analyze the transformation and provide detailed insights on changes, improvements, and recommendations.`;
+
+    console.log(`[ProgressInsights] Comparing photos with ${getProviderName()}...`);
+
+    const responseText = await generateVisionCompletion(systemPrompt, userPrompt, currentImageBase64, {
+      maxTokens: 1000,
+      temperature: 0.7,
     });
 
-    const result = JSON.parse(response.choices[0].message.content || '{}');
-    
-    const insight: ProgressInsight = {
-      overallAssessment: result.overallAssessment || `Transformation analysis completed for ${timePeriod} period.`,
-      muscleDefinition: {
-        score: Math.max(1, Math.min(10, result.muscleDefinition?.score || 5)),
-        notes: result.muscleDefinition?.notes || 'Muscle definition changes analyzed.'
-      },
-      posture: {
-        score: Math.max(1, Math.min(10, result.posture?.score || 5)),
-        notes: result.posture?.notes || 'Posture improvement assessment completed.'
-      },
-      bodyComposition: {
-        assessment: result.bodyComposition?.assessment || 'Body composition transformation evaluated.',
-        changes: Array.isArray(result.bodyComposition?.changes) ? result.bodyComposition.changes : []
-      },
-      recommendations: Array.isArray(result.recommendations) ? result.recommendations : ['Continue your transformation journey.'],
-      motivationalMessage: result.motivationalMessage || `Excellent progress over ${timePeriod}! Keep pushing forward.`
-    };
-
-    return insight;
-
+    const result = JSON.parse(responseText);
+    return validateInsight(result);
   } catch (error) {
-    console.error('Error comparing progress photos:', error);
-    throw new Error('Failed to compare progress photos. Please try again.');
+    console.error("[ProgressInsights] Error comparing progress photos:", error);
+    return {
+      ...getFallbackInsight(),
+      overallAssessment: `Comparison over ${timePeriod} recorded. Try again later for AI analysis.`,
+    };
   }
 }

@@ -1947,6 +1947,161 @@ router.delete('/api/progress-insights/:id', async (req, res) => {
   }
 });
 
+// =============================================================================
+// Strength Insights API - AI-powered workout analysis (premium feature)
+// =============================================================================
+
+// Generate strength insights for a workout
+router.post('/api/strength-insights', async (req, res) => {
+  try {
+    const { userId, postId, workoutData, userGoals } = req.body;
+    
+    if (!userId || !workoutData) {
+      return res.status(400).json({ error: 'userId and workoutData are required' });
+    }
+
+    // Get user's workout history for comparison
+    const userPosts = await storage.getPostsByUserId(userId);
+    const workoutHistory = userPosts
+      .filter((p: any) => p.type === 'workout' && p.workoutData?.exercises)
+      .slice(0, 10) // Last 10 workouts
+      .map((p: any) => ({
+        date: p.createdAt?.toISOString() || new Date().toISOString(),
+        exercises: p.workoutData.exercises,
+        duration: p.workoutData.duration,
+      }));
+
+    // Generate AI insights
+    const { generateWorkoutInsights } = await import('./ai-strength-insights.ts');
+    const insights = await generateWorkoutInsights(workoutData, workoutHistory, userGoals || []);
+
+    // Store the insight
+    const strengthInsight = await storage.createStrengthInsight({
+      userId,
+      postId,
+      workoutData,
+      insights,
+    });
+
+    res.status(201).json(strengthInsight);
+  } catch (error: any) {
+    console.error('Error generating strength insights:', error);
+    res.status(500).json({ error: 'Failed to generate strength insights' });
+  }
+});
+
+// Get user's strength insights history
+router.get('/api/strength-insights/user/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const insights = await storage.getStrengthInsightsByUserId(userId);
+    res.json(insights);
+  } catch (error: any) {
+    console.error('Error fetching strength insights:', error);
+    res.status(500).json({ error: 'Failed to fetch strength insights' });
+  }
+});
+
+// Get strength insight for a specific post
+router.get('/api/strength-insights/post/:postId', async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const insight = await storage.getStrengthInsightByPostId(postId);
+    
+    if (!insight) {
+      return res.status(404).json({ error: 'Strength insight not found for this post' });
+    }
+
+    res.json(insight);
+  } catch (error: any) {
+    console.error('Error fetching strength insight:', error);
+    res.status(500).json({ error: 'Failed to fetch strength insight' });
+  }
+});
+
+// Get a specific strength insight by ID
+router.get('/api/strength-insights/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const insight = await storage.getStrengthInsight(id);
+    
+    if (!insight) {
+      return res.status(404).json({ error: 'Strength insight not found' });
+    }
+
+    res.json(insight);
+  } catch (error: any) {
+    console.error('Error fetching strength insight:', error);
+    res.status(500).json({ error: 'Failed to fetch strength insight' });
+  }
+});
+
+// Generate weekly strength summary
+router.post('/api/strength-insights/weekly-summary', async (req, res) => {
+  try {
+    const { userId, userGoals } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+
+    const userPosts = await storage.getPostsByUserId(userId);
+    
+    // Get this week's and last week's workouts
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+    const thisWeekWorkouts = userPosts
+      .filter((p: any) => {
+        const postDate = new Date(p.createdAt);
+        return p.type === 'workout' && p.workoutData?.exercises && postDate >= oneWeekAgo;
+      })
+      .map((p: any) => ({
+        date: p.createdAt?.toISOString() || new Date().toISOString(),
+        exercises: p.workoutData.exercises,
+        duration: p.workoutData.duration,
+      }));
+
+    const lastWeekWorkouts = userPosts
+      .filter((p: any) => {
+        const postDate = new Date(p.createdAt);
+        return p.type === 'workout' && p.workoutData?.exercises && 
+               postDate >= twoWeeksAgo && postDate < oneWeekAgo;
+      })
+      .map((p: any) => ({
+        date: p.createdAt?.toISOString() || new Date().toISOString(),
+        exercises: p.workoutData.exercises,
+        duration: p.workoutData.duration,
+      }));
+
+    const { generateWeeklySummary } = await import('./ai-strength-insights.ts');
+    const summary = await generateWeeklySummary(thisWeekWorkouts, lastWeekWorkouts, userGoals || []);
+
+    res.json(summary);
+  } catch (error: any) {
+    console.error('Error generating weekly summary:', error);
+    res.status(500).json({ error: 'Failed to generate weekly summary' });
+  }
+});
+
+// Delete a strength insight
+router.delete('/api/strength-insights/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await storage.deleteStrengthInsight(id);
+    
+    if (!deleted) {
+      return res.status(404).json({ error: 'Strength insight not found' });
+    }
+
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('Error deleting strength insight:', error);
+    res.status(500).json({ error: 'Failed to delete strength insight' });
+  }
+});
+
 // Workout Session Endpoints
 router.post('/api/workout-sessions', async (req, res) => {
   try {

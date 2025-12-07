@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CURRENT_USER_ID } from "@/lib/constants";
 import { useLocation } from "wouter";
 import { ImageUpload } from "@/components/image-upload";
+import { useAuth } from "@/hooks/useAuth";
 import type { InsertPost, Exercise as ExerciseType } from "@shared/schema";
 
 interface WorkoutSet {
@@ -34,6 +35,11 @@ export default function LogWorkout() {
   const [location, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isPremium = user?.isPremium || 
+                   user?.subscriptionTier === 'premium' || 
+                   user?.subscriptionTier === 'pro' ||
+                   localStorage.getItem('fitconnect-mock-premium') === 'true';
   
   const [workoutName, setWorkoutName] = useState("");
   const [caption, setCaption] = useState("");
@@ -141,13 +147,32 @@ export default function LogWorkout() {
     mutationFn: async (workoutData: InsertPost) => {
       return api.createPost(workoutData);
     },
-    onSuccess: () => {
+    onSuccess: (post) => {
       toast({
         title: "Workout logged!",
         description: "Your workout has been saved and shared with your followers.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
-      setLocation("/feed");
+      // Also invalidate exercise history so stats update immediately
+      queryClient.invalidateQueries({ queryKey: ['exercise-history'] });
+      
+      // Redirect to workout summary page with workout data
+      const summaryData = {
+        workoutType: workoutName,
+        duration,
+        calories,
+        exercises: exercises
+          .filter(ex => ex.name && ex.sets.length > 0)
+          .map(ex => ({
+            name: ex.name,
+            sets: ex.sets.map(s => ({
+              reps: s.reps || 1,
+              weight: s.weight,
+            })),
+          })),
+      };
+      const encoded = encodeURIComponent(JSON.stringify(summaryData));
+      setLocation(`/workout-summary?data=${encoded}&postId=${post.id}`);
     },
     onError: () => {
       toast({
@@ -168,28 +193,28 @@ export default function LogWorkout() {
       return;
     }
 
-    const workoutData: InsertPost = {
-      userId: CURRENT_USER_ID,
-      type: "workout",
+    // Prepare workout summary data and go to summary page FIRST
+    // The actual post will be created from the summary page when user clicks "Share"
+    const summaryData = {
+      workoutType: workoutName,
+      duration,
+      calories,
+      exercises: exercises
+        .filter(ex => ex.name && ex.sets.length > 0)
+        .map(ex => ({
+          name: ex.name,
+          sets: ex.sets.map(set => ({
+            reps: set.reps || 1,
+            weight: set.weight,
+          })),
+        })),
+      // Include caption and images for the create-post page
       caption: caption || `Just completed ${workoutName}! 💪`,
       images,
-      workoutData: {
-        workoutType: workoutName,
-        duration,
-        calories,
-        exercises: exercises
-          .filter(ex => ex.name && ex.sets.length > 0)
-          .map(ex => ({
-            ...ex,
-            sets: ex.sets.map(set => ({
-              ...set,
-              reps: set.reps || 1 // Ensure reps is always defined
-            }))
-          })),
-      },
     };
-
-    saveWorkoutMutation.mutate(workoutData);
+    
+    const encoded = encodeURIComponent(JSON.stringify(summaryData));
+    setLocation(`/workout-summary?data=${encoded}`);
   };
 
   return (
@@ -211,11 +236,10 @@ export default function LogWorkout() {
             </Button>
             <Button 
               onClick={handleSaveWorkout}
-              disabled={saveWorkoutMutation.isPending}
               className="bg-fit-green hover:bg-fit-green/90"
             >
               <Save className="h-4 w-4 mr-2" />
-              Save Workout
+              Finish Workout
             </Button>
           </div>
         </div>

@@ -346,7 +346,8 @@ const WorkoutSession: React.FC = () => {
     const snapshot = buildSnapshot();
     if (!snapshot) return;
     const encoded = encodeURIComponent(JSON.stringify(snapshot));
-    setLocation(`/create-post?type=workout&workoutData=${encoded}`);
+    // Go to workout summary first, then user can choose to share from there
+    setLocation(`/workout-summary?data=${encoded}`);
   };
 
   const completeSet = (exerciseIdx: number, setIdx: number) => {

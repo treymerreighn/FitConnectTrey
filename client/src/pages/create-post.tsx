@@ -44,14 +44,27 @@ const extractSearchParams = (path: string) => {
 };
 
 const parseWorkoutDataFromParams = (params: URLSearchParams) => {
+  // First check URL param
   const raw = params.get("workoutData");
-  if (!raw) return null;
-  try {
-    return JSON.parse(decodeURIComponent(raw));
-  } catch (err) {
-    console.error("Failed to parse workoutData", err);
-    return null;
+  if (raw) {
+    try {
+      return JSON.parse(decodeURIComponent(raw));
+    } catch (err) {
+      console.error("Failed to parse workoutData from URL", err);
+    }
   }
+  // Check sessionStorage (used when coming from workout summary)
+  const stored = sessionStorage.getItem('pendingWorkoutPost');
+  if (stored) {
+    try {
+      const data = JSON.parse(stored);
+      // Keep in storage until post is created (don't clear yet)
+      return data;
+    } catch (err) {
+      console.error("Failed to parse workoutData from sessionStorage", err);
+    }
+  }
+  return null;
 };
 
 export default function CreatePost() {
@@ -216,12 +229,18 @@ export default function CreatePost() {
       console.log('✅ Post created:', result);
       return result;
     },
-    onSuccess: () => {
+    onSuccess: (post) => {
+      // Clear pending workout data from sessionStorage
+      sessionStorage.removeItem('pendingWorkoutPost');
+      
       toast({
         title: "Post created!",
         description: `Your ${postType} post has been shared successfully.`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+      queryClient.invalidateQueries({ queryKey: ['exercise-history'] });
+      
+      // Redirect to feed after posting (user already saw summary before posting)
       setLocation("/");
     },
     onError: () => {

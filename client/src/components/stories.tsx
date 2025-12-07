@@ -191,8 +191,6 @@ export function Stories({ users }: StoriesProps) {
     return acc;
   }, {} as Record<string, Story[]>);
 
-  const currentUserHasStory = storiesByUser[CURRENT_USER_ID]?.length > 0;
-
   // Check if user has viewed a story
   const hasViewedStory = (story: Story) => {
     return story.views.includes(CURRENT_USER_ID);
@@ -203,18 +201,34 @@ export function Stories({ users }: StoriesProps) {
     return userStories.some(story => !hasViewedStory(story));
   };
 
+  // Get current user's stories
+  const currentUserStories = storiesByUser[CURRENT_USER_ID] || [];
+  const currentUserHasActiveStory = currentUserStories.length > 0;
+
   return (
     <>
       <div className="bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
         <div className="px-4 py-1">
           <div className="flex items-center space-x-4 overflow-x-auto scrollbar-hide">
-            {/* Current user's add story button */}
+            {/* Current user's story button - shows ring if has active story */}
             <div className="flex-shrink-0 text-center">
               <button
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => {
+                  if (currentUserHasActiveStory) {
+                    // View their own story first
+                    handleStoryClick(currentUserStories[0]);
+                  } else {
+                    // Create new story
+                    fileInputRef.current?.click();
+                  }
+                }}
                 className="relative inline-block"
               >
-                <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-gray-300 to-gray-400 dark:from-zinc-600 dark:to-zinc-700 p-0.5 shadow-md">
+                <div className={`w-16 h-16 rounded-full ${
+                  currentUserHasActiveStory 
+                    ? 'bg-gradient-to-tr from-red-500 to-red-600 ring-2 ring-red-500 ring-offset-0' 
+                    : 'bg-gradient-to-tr from-gray-300 to-gray-400 dark:from-zinc-600 dark:to-zinc-700'
+                } p-0.5 shadow-md`}>
                   <div className="w-full h-full rounded-full bg-white dark:bg-zinc-900 p-0.5 flex items-center justify-center">
                     <UserAvatar
                       src={users.find(u => u.id === CURRENT_USER_ID)?.avatar || ""}
@@ -330,11 +344,11 @@ export function Stories({ users }: StoriesProps) {
       {selectedStory && (
         <Dialog open={!!selectedStory} onOpenChange={() => setSelectedStory(null)}>
           <DialogContent 
-            className="!max-w-none w-screen h-screen p-0 bg-black m-0 rounded-none border-0 !translate-x-0 !translate-y-0 !left-0 !top-0 flex focus:outline-none focus-visible:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0 [&>button]:!absolute [&>button]:!right-4 [&>button]:!top-4 [&>button]:z-[60] [&>button]:!text-white [&>button]:!opacity-100 [&>button]:!bg-transparent [&>button]:hover:!opacity-100 [&>button]:focus:!ring-0 [&>button]:focus:!ring-offset-0 [&>button]:focus-visible:!ring-0 [&>button]:!rounded-full [&>button]:!p-1"
+            className="!max-w-none w-screen h-screen p-0 bg-black m-0 rounded-none border-0 !translate-x-0 !translate-y-0 !left-0 !top-0 flex items-center justify-center focus:outline-none focus-visible:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0 [&>button]:!absolute [&>button]:!right-4 [&>button]:!top-4 [&>button]:z-[60] [&>button]:!text-white [&>button]:!opacity-100 [&>button]:!bg-transparent [&>button]:hover:!opacity-100 [&>button]:focus:!ring-0 [&>button]:focus:!ring-offset-0 [&>button]:focus-visible:!ring-0 [&>button]:!rounded-full [&>button]:!p-1"
             style={{ outline: 'none', boxShadow: 'none' }}
           >
             <div 
-              className="relative w-full h-full cursor-pointer outline-none focus:outline-none transition-transform" 
+              className="relative w-full h-full flex items-center justify-center cursor-pointer outline-none focus:outline-none transition-transform" 
               onClick={handleStoryScreenClick}
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
@@ -345,10 +359,19 @@ export function Stories({ users }: StoriesProps) {
                 transition: isDragging ? 'none' : 'transform 0.3s ease-out, opacity 0.3s ease-out'
               }}
             >
-              <img src={selectedStory.image} alt="Story" className="w-full h-full object-cover pointer-events-none" />
+              {/* Story image - properly scaled and centered */}
+              <img 
+                src={selectedStory.image} 
+                alt="Story" 
+                className="max-w-full max-h-full object-contain pointer-events-none"
+                style={{
+                  maxHeight: 'calc(100vh - 120px)', // Leave room for header/footer
+                  maxWidth: 'calc(100vw - 32px)',
+                }}
+              />
               
               {/* Story header */}
-              <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/50 to-transparent">
+              <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/70 to-transparent">
                 <div className="flex items-center space-x-3">
                   <UserAvatar
                     src={users.find(u => u.id === selectedStory.userId)?.avatar || ""}
@@ -368,7 +391,7 @@ export function Stories({ users }: StoriesProps) {
 
               {/* Caption */}
               {selectedStory.caption && (
-                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent">
+                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/70 to-transparent">
                   <p className="text-white text-center">{selectedStory.caption}</p>
                 </div>
               )}

@@ -113,6 +113,49 @@ export const progressInsightSchema = z.object({
 export type ProgressInsight = z.infer<typeof progressInsightSchema>;
 export type InsertProgressInsight = Omit<ProgressInsight, 'id' | 'createdAt'>;
 
+// Strength Insights schema for post-workout AI analysis (premium feature)
+export const strengthInsightSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  postId: z.string().optional(), // Associated workout post
+  workoutData: z.object({
+    exercises: z.array(z.object({
+      name: z.string(),
+      sets: z.array(z.object({
+        reps: z.number(),
+        weight: z.number().optional(),
+        isPersonalRecord: z.boolean().optional(),
+      })),
+      totalVolume: z.number().optional(), // sets × reps × weight
+    })),
+    duration: z.number().optional(),
+    workoutType: z.string().optional(),
+  }),
+  insights: z.object({
+    summary: z.string(), // Quick workout summary
+    volumeAnalysis: z.string(), // Analysis of training volume
+    strengthTrends: z.array(z.object({
+      exercise: z.string(),
+      trend: z.enum(["increasing", "decreasing", "maintaining", "new"]),
+      note: z.string(),
+    })),
+    muscleGroupFocus: z.array(z.string()), // Primary muscle groups worked
+    personalRecords: z.array(z.object({
+      exercise: z.string(),
+      achievement: z.string(),
+      previousBest: z.string().optional(),
+    })),
+    recommendations: z.array(z.string()),
+    motivationalMessage: z.string(),
+    recoveryTips: z.array(z.string()),
+    nextWorkoutSuggestion: z.string().optional(),
+  }),
+  createdAt: z.date().default(() => new Date()),
+});
+
+export type StrengthInsight = z.infer<typeof strengthInsightSchema>;
+export type InsertStrengthInsight = Omit<StrengthInsight, 'id' | 'createdAt'>;
+
 // Post base schema
 export const postSchema = z.object({
   id: z.string(),

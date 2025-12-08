@@ -536,8 +536,8 @@ export function PostCard({ post }: PostCardProps) {
         </div>
         
         <div className="space-y-2">
-          <div className="flex items-center space-x-2">
-            <Badge className={`${typeConfig.color} text-white text-xs px-2 py-1`}>
+          <div className="flex items-center space-x-2 flex-wrap gap-y-2">
+            <Badge className={`bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 ${typeConfig.textColor} text-xs px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-800`}>
               <span className="mr-1">{typeConfig.icon}</span>
               {typeConfig.label}
             </Badge>
@@ -578,7 +578,7 @@ export function PostCard({ post }: PostCardProps) {
             <Button
               variant="ghost"
               size="sm"
-              className={`p-0 h-auto ${isLiked ? 'text-red-500' : 'text-gray-600'} hover:text-red-500`}
+              className={`p-0 h-auto hover:bg-transparent ${isLiked ? 'text-red-500' : 'text-gray-600'} hover:text-red-500`}
               onClick={() => likeMutation.mutate()}
               disabled={likeMutation.isPending}
             >
@@ -588,7 +588,7 @@ export function PostCard({ post }: PostCardProps) {
             <Button
               variant="ghost"
               size="sm"
-              className="p-0 h-auto text-gray-600 hover:text-gray-800"
+              className="p-0 h-auto hover:bg-transparent text-gray-600 hover:text-gray-800"
               onClick={() => setShowComments(!showComments)}
             >
               <MessageCircle className="h-5 w-5 mr-1" />
@@ -597,7 +597,7 @@ export function PostCard({ post }: PostCardProps) {
             <Button
               variant="ghost"
               size="sm"
-              className="p-0 h-auto text-gray-600 hover:text-gray-800 -ml-2"
+              className="p-0 h-auto hover:bg-transparent text-gray-600 hover:text-gray-800 -ml-2"
               onClick={handleShareWorkout}
             >
               <ExternalLink className="h-5 w-5" />
@@ -606,7 +606,7 @@ export function PostCard({ post }: PostCardProps) {
           <Button
             variant="ghost"
             size="sm"
-            className={`p-0 h-auto ${
+            className={`p-0 h-auto hover:bg-transparent ${
               (post.type === "workout" && isWorkoutSaved) || (post.type === "nutrition" && isMealSaved)
                 ? 'text-blue-600' 
                 : 'text-gray-600'

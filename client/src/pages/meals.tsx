@@ -263,7 +263,7 @@ export default function MealsPage() {
                       
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <Badge className="bg-fit-blue text-white text-xs px-2 py-1">
+                          <Badge className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-fit-blue text-xs px-2 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-800">
                             <span className="mr-1">🍎</span>
                             Nutrition
                           </Badge>
@@ -297,7 +297,7 @@ export default function MealsPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="p-0 h-auto text-gray-600 hover:text-red-500"
+                            className="p-0 h-auto hover:bg-transparent text-gray-600 hover:text-red-500"
                           >
                             <Heart className="h-5 w-5 mr-1" />
                             <span className="font-medium">{likesCount}</span>
@@ -305,7 +305,7 @@ export default function MealsPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="p-0 h-auto text-gray-600 hover:text-gray-800"
+                            className="p-0 h-auto hover:bg-transparent text-gray-600 hover:text-gray-800"
                           >
                             <MessageCircle className="h-5 w-5 mr-1" />
                             <span>{commentsCount}</span>
@@ -313,7 +313,7 @@ export default function MealsPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="p-0 h-auto text-gray-600 hover:text-gray-800 -ml-2"
+                            className="p-0 h-auto hover:bg-transparent text-gray-600 hover:text-gray-800 -ml-2"
                           >
                             <ExternalLink className="h-5 w-5" />
                           </Button>
@@ -322,7 +322,7 @@ export default function MealsPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleToggleSaveMeal(meal)}
-                          className={`p-0 h-auto ${isMealSaved(meal.id) ? 'text-blue-600' : 'text-gray-600'} hover:text-blue-600`}
+                          className={`p-0 h-auto hover:bg-transparent ${isMealSaved(meal.id) ? 'text-blue-600' : 'text-gray-600'} hover:text-blue-600`}
                         >
                           <Bookmark className={`h-5 w-5 ${isMealSaved(meal.id) ? 'fill-current' : ''}`} />
                         </Button>

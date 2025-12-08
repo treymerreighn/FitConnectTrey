@@ -918,7 +918,19 @@ export default function Profile() {
                     {isOwner ? (
                       <>
                         <Button
-                          onClick={() => setIsEditModalOpen(true)}
+                          onClick={() => {
+                            if (currentUser) {
+                              form.reset({
+                                name: currentUser.name || "",
+                                bio: currentUser.bio || "",
+                                location: (currentUser as any)?.location ?? undefined,
+                                fitnessGoals: currentUser.fitnessGoals || [],
+                                height: (currentUser as any)?.height ?? undefined,
+                                weight: (currentUser as any)?.weight ?? undefined,
+                              });
+                            }
+                            setIsEditModalOpen(true);
+                          }}
                           variant="outline"
                           size="sm"
                           className="flex items-center gap-1 sm:gap-2"
@@ -1098,7 +1110,7 @@ export default function Profile() {
                 </Button>
               </div>
             ) : (
-              <div className="space-y-4 px-4 py-4">
+              <div className="space-y-4 py-4">
                 {userPosts.map((post) => (
                   <PostCard key={post.id} post={post} />
                 ))}
@@ -1193,7 +1205,7 @@ export default function Profile() {
 
         {/* Edit Profile Modal */}
         <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md rounded-2xl p-6" onOpenAutoFocus={(e) => e.preventDefault()}>
             <DialogHeader>
               <DialogTitle>Edit Profile</DialogTitle>
               <DialogDescription>
@@ -1207,9 +1219,9 @@ export default function Profile() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Name</FormLabel>
+                      <FormLabel>Name <span className="text-red-500">*</span></FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter your name" {...field} />
+                        <Input placeholder="Enter your name" required {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -1274,19 +1286,11 @@ export default function Profile() {
                   />
                 </div>
                 
-                <div className="flex space-x-2 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsEditModalOpen(false)}
-                    className="flex-1"
-                  >
-                    Cancel
-                  </Button>
+                <div className="pt-4">
                   <Button
                     type="submit"
                     disabled={updateProfileMutation.isPending}
-                    className="flex-1 bg-fit-green hover:bg-fit-green/90"
+                    className="w-full bg-fit-green/10 text-fit-green hover:bg-fit-green/20 border border-fit-green/20"
                   >
                     {updateProfileMutation.isPending ? "Saving..." : "Save Changes"}
                   </Button>

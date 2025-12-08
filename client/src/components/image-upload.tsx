@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Upload, X, Loader2 } from 'lucide-react';
 import { validateImageFile, uploadImage } from '@/lib/imageUpload';
 import { useToast } from '@/hooks/use-toast';
+import { ImageCropper } from '@/components/image-cropper';
 
 interface ImageUploadProps {
   onImageUploaded: (imageUrl: string) => void;
@@ -13,6 +14,7 @@ interface ImageUploadProps {
   disabled?: boolean;
   label?: string;
   className?: string;
+  aspectRatio?: number;
 }
 
 export function ImageUpload({ 
@@ -21,10 +23,13 @@ export function ImageUpload({
   currentImageUrl, 
   disabled = false,
   label = "Upload Image",
-  className = "" 
+  className = "",
+  aspectRatio = 4/5
 }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(currentImageUrl || null);
+  const [showCropper, setShowCropper] = useState(false);
+  const [cropperImgSrc, setCropperImgSrc] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,7 +50,25 @@ export function ImageUpload({
       return;
     }
 
-    console.log('✅ Validation passed, starting upload...');
+    console.log('✅ Validation passed, opening cropper...');
+    
+    // Open cropper instead of directly uploading
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        setCropperImgSrc(e.target.result as string);
+        setShowCropper(true);
+      }
+    };
+    reader.readAsDataURL(file);
+    
+    // Reset input value so same file can be selected again
+    event.target.value = '';
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setShowCropper(false);
+    setCropperImgSrc(null);
     setUploading(true);
     
     try {
@@ -54,9 +77,10 @@ export function ImageUpload({
       reader.onload = (e) => {
         setPreview(e.target?.result as string);
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(croppedBlob);
 
       // Upload to AWS S3
+      const file = new File([croppedBlob], "upload.jpg", { type: "image/jpeg" });
       console.log('🚀 Calling uploadImage...');
       const result = await uploadImage(file);
       console.log('📥 Upload result:', result);
@@ -117,7 +141,7 @@ export function ImageUpload({
         </div>
       ) : (
         <div className="relative">
-          <div className="aspect-square w-full max-w-xs mx-auto">
+          <div className="aspect-[4/5] w-full max-w-xs mx-auto">
             <img
               src={preview}
               alt="Preview"
@@ -143,6 +167,20 @@ export function ImageUpload({
           <Loader2 className="h-4 w-4 animate-spin" />
           <span>Uploading to cloud storage...</span>
         </div>
+      )}
+
+      {cropperImgSrc && (
+        <ImageCropper
+          open={showCropper}
+          onClose={() => {
+            setShowCropper(false);
+            setCropperImgSrc(null);
+          }}
+          imageSrc={cropperImgSrc}
+          onCropComplete={handleCropComplete}
+          aspectRatio={aspectRatio}
+          circularCrop={false}
+        />
       )}
     </div>
   );

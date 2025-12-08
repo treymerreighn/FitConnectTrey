@@ -76,12 +76,23 @@ export function ImageCropper({
     const cropWidth = completedCrop.width * scaleX;
     const cropHeight = completedCrop.height * scaleY;
 
-    // Use a reasonable output size (max 512px for profile pictures)
-    const maxSize = 512;
-    const outputSize = Math.min(maxSize, Math.max(cropWidth, cropHeight));
+    // Use a reasonable output size based on aspect ratio
+    const maxDimension = 1024;
+    let outputWidth: number;
+    let outputHeight: number;
     
-    canvas.width = outputSize;
-    canvas.height = outputSize;
+    if (aspectRatio >= 1) {
+      // Landscape or square
+      outputWidth = Math.min(maxDimension, cropWidth);
+      outputHeight = outputWidth / aspectRatio;
+    } else {
+      // Portrait (like 4:5)
+      outputHeight = Math.min(maxDimension, cropHeight);
+      outputWidth = outputHeight * aspectRatio;
+    }
+    
+    canvas.width = outputWidth;
+    canvas.height = outputHeight;
 
     // Draw the cropped area
     ctx.drawImage(
@@ -92,8 +103,8 @@ export function ImageCropper({
       cropHeight,
       0,
       0,
-      outputSize,
-      outputSize
+      outputWidth,
+      outputHeight
     );
 
     return new Promise((resolve) => {
@@ -123,7 +134,7 @@ export function ImageCropper({
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-[90vw] md:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Crop Profile Picture</DialogTitle>
+          <DialogTitle>Crop Image</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col items-center justify-center py-4">
           <div className="w-full flex items-center justify-center" style={{ maxHeight: "60vh" }}>

@@ -69,6 +69,7 @@ export type Recipe = z.infer<typeof recipeSchema>;
 export const communityMealSchema = z.object({
   id: z.string(),
   userId: z.string(),
+  title: z.string(),
   caption: z.string(),
   imageUrl: z.string().optional(),
   ingredients: z.array(z.string()).default([]),

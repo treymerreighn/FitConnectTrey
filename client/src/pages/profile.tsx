@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { User, Settings, Camera, Edit3, MapPin, Calendar, Trophy, Users, Heart, MessageCircle, Share2, MoreHorizontal, Plus, Dumbbell, TrendingUp, Target, Weight, Clock, Flame, BarChart3, X, Activity, Brain, Lock, Flag } from "lucide-react";
+import { User, Settings, Camera, Edit3, MapPin, Calendar, Trophy, Users, Heart, MessageCircle, Share2, MoreHorizontal, Plus, Dumbbell, TrendingUp, Target, Weight, Clock, Flame, BarChart3, X, Activity, Brain, Lock, Flag, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OptimizedImage } from "@/components/OptimizedImage";
@@ -840,15 +840,17 @@ export default function Profile() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
               {/* Avatar */}
               <div className="relative">
-                <Avatar className="w-16 h-16 sm:w-20 sm:h-20">
-                  <AvatarImage src={currentUser.avatar || ""} alt={currentUser.name || ""} />
-                  <AvatarFallback className="text-xl sm:text-2xl bg-red-600 text-white">
-                    {currentUser.name?.charAt(0).toUpperCase() || "U"}
-                  </AvatarFallback>
-                </Avatar>
-                {isOwner && (
-                  <label className="absolute -bottom-1 -right-1 rounded-full w-6 h-6 p-0 bg-red-600 hover:bg-red-700 cursor-pointer flex items-center justify-center">
-                    <Camera className="h-3 w-3 text-white" />
+                {isOwner ? (
+                  <label className="cursor-pointer relative block group">
+                    <Avatar className="w-16 h-16 sm:w-20 sm:h-20 group-hover:opacity-90 transition-opacity">
+                      <AvatarImage src={currentUser.avatar || ""} alt={currentUser.name || ""} />
+                      <AvatarFallback className="text-xl sm:text-2xl bg-red-600 text-white">
+                        {currentUser.name?.charAt(0).toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="absolute -bottom-1 -right-1 rounded-full w-6 h-6 p-0 bg-red-600 group-hover:bg-red-700 flex items-center justify-center transition-colors">
+                      <Camera className="h-3 w-3 text-white" />
+                    </div>
                     <input
                       type="file"
                       accept="image/*"
@@ -856,6 +858,13 @@ export default function Profile() {
                       className="hidden"
                     />
                   </label>
+                ) : (
+                  <Avatar className="w-16 h-16 sm:w-20 sm:h-20">
+                    <AvatarImage src={currentUser.avatar || ""} alt={currentUser.name || ""} />
+                    <AvatarFallback className="text-xl sm:text-2xl bg-red-600 text-white">
+                      {currentUser.name?.charAt(0).toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
                 )}
               </div>
 
@@ -880,7 +889,7 @@ export default function Profile() {
                       </p>
                       {(currentUser.isPremium || currentUser.subscriptionTier === 'premium' || currentUser.subscriptionTier === 'pro' || localStorage.getItem('fitconnect-mock-premium') === 'true') && (
                         <Badge variant="secondary" className="bg-gradient-to-r from-red-100 to-red-50 dark:from-red-900/30 dark:to-red-950/30 text-red-700 dark:text-red-300 text-xs border-red-300 dark:border-red-800 flex items-center gap-1">
-                          <Trophy className="h-3 w-3" />
+                          <Crown className="h-3 w-3" />
                           Premium
                         </Badge>
                       )}
@@ -1036,16 +1045,25 @@ export default function Profile() {
 
         {/* Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 rounded-none">
-            <TabsTrigger value="posts" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+          <TabsList className="grid w-full grid-cols-3 h-auto p-0 rounded-none bg-transparent border-b">
+            <TabsTrigger 
+              value="posts" 
+              className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-4 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-none"
+            >
               <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4" />
               <span>Posts</span>
             </TabsTrigger>
-            <TabsTrigger value="workouts" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <TabsTrigger 
+              value="workouts" 
+              className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-4 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-none"
+            >
               <Dumbbell className="h-3 w-3 sm:h-4 sm:w-4" />
               <span>Workouts</span>
             </TabsTrigger>
-            <TabsTrigger value="progress" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <TabsTrigger 
+              value="progress" 
+              className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-4 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-none"
+            >
               <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
               <span>Progress</span>
             </TabsTrigger>

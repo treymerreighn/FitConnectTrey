@@ -1713,11 +1713,12 @@ router.post("/api/meal-helper/generate-multiple", async (req, res) => {
 // Community meals endpoints
 router.post("/api/meals/share", async (req, res) => {
   try {
-    const { caption, ingredients = [], calories, protein, carbs, fat, fiber, imageUrl, postToFeed = true } = req.body;
+    const { title, caption, ingredients = [], calories, protein, carbs, fat, fiber, imageUrl, postToFeed = true } = req.body;
     
     const communityMeal = {
       id: nanoid(),
       userId: "44595091", // Current user ID
+      title: title || "Shared Meal",
       caption,
       imageUrl,
       ingredients,
@@ -1744,7 +1745,7 @@ router.post("/api/meals/share", async (req, res) => {
         comments: [],
         createdAt: new Date(),
         nutritionData: {
-          mealType: "shared_meal",
+          mealType: title || "Shared Meal",
           calories: calories || 0,
           protein: protein || 0,
           carbs: carbs || 0,

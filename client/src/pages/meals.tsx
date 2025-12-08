@@ -1,22 +1,38 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Utensils, Plus, Bookmark } from "lucide-react";
+import { Utensils, Plus, Bookmark, Heart, MessageCircle, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import ShareMealModal from "@/components/share-meal-modal";
 import TopHeader from "@/components/TopHeader";
 import { OptimizedImage } from "@/components/OptimizedImage";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { CURRENT_USER_ID } from "@/lib/constants";
 import type { User } from "@shared/schema";
 
+// Helper function to format time ago
+const formatTimeAgo = (date: Date) => {
+  const now = new Date();
+  const diffMs = now.getTime() - new Date(date).getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return new Date(date).toLocaleDateString();
+};
+
 interface CommunityMeal {
   id: string;
   userId: string;
+  title: string;
   caption: string;
   imageUrl?: string;
   ingredients: string[];
@@ -180,7 +196,7 @@ export default function MealsPage() {
               {[1, 2, 3].map((i) => (
                 <Card key={i} className="animate-pulse">
                   <CardContent className="p-0">
-                    <div className="aspect-video w-full bg-gray-200 dark:bg-gray-700" />
+                    <div className="aspect-[4/5] w-full bg-gray-200 dark:bg-gray-700" />
                     <div className="p-4 space-y-3">
                       <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
                       <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
@@ -193,28 +209,22 @@ export default function MealsPage() {
 
           {/* Empty State */}
           {!isLoading && communityMeals.length === 0 && (
-            <Card className="text-center py-12 mx-4">
-              <CardContent>
-                <div className="flex flex-col items-center space-y-4">
-                  <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
-                    <Utensils className="h-12 w-12 text-gray-400" />
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                      No community meals yet
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
-                      Be the first to share a delicious meal with the community! Post your recipes, food photos, and macro information.
-                    </p>
-                  </div>
-                  <Button
-                    onClick={handleShareMeal}
-                    className="bg-fit-green hover:bg-fit-green/90 text-white"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Share Your First Meal
-                  </Button>
-                </div>
+            <Card className="border-dashed border-2 border-gray-200 dark:border-gray-700 mx-4">
+              <CardContent className="p-12 text-center">
+                <Utensils className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  No community meals yet
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-4 max-w-md mx-auto">
+                  Be the first to share a delicious meal with the community! Post your recipes, food photos, and macro information.
+                </p>
+                <Button
+                  onClick={handleShareMeal}
+                  className="bg-fit-green hover:bg-fit-green/90 text-white"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Share Your First Meal
+                </Button>
               </CardContent>
             </Card>
           )}
@@ -224,108 +234,159 @@ export default function MealsPage() {
             <div className="grid gap-4">
               {sortedMeals.map((meal) => {
                 const user = getUserById(meal.userId);
-                const hasMacros = meal.calories || meal.protein || meal.carbs || meal.fat;
+                const hasMacros = meal.calories !== undefined || meal.protein !== undefined || meal.carbs !== undefined || meal.fat !== undefined;
+                const likesCount = meal.likes?.length || 0;
+                const commentsCount = meal.comments?.length || 0;
                 
                 return (
-                  <Card key={meal.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                    <CardContent className="p-0">
-                      {/* Meal Image */}
-                      {meal.imageUrl && (
-                        <div className="aspect-video w-full overflow-hidden">
-                          <OptimizedImage
-                            src={meal.imageUrl}
-                            alt={meal.caption}
-                            width={800}
-                            height={450}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                      
-                      <div className="p-4 space-y-4">
-                        {/* User Info */}
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
+                  <Card key={meal.id} className="w-full border-0 shadow-sm">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <Link href={`/profile/${user?.id}`} asChild>
+                          <div className="flex items-center space-x-3 cursor-pointer">
                             <UserAvatar 
                               src={user?.avatar}
                               name={user?.name || "Unknown User"}
-                              size="sm"
+                              alt={`${user?.name || "Unknown User"}'s avatar`}
                             />
                             <div>
-                              <p className="font-medium text-gray-900 dark:text-white">
+                              <p className="font-semibold text-sm text-gray-900 dark:text-gray-100">
                                 {user?.name || "Unknown User"}
                               </p>
                               <p className="text-xs text-gray-500 dark:text-gray-400">
-                                @{user?.username || "unknown"}
+                                {formatTimeAgo(meal.createdAt)}
                               </p>
                             </div>
                           </div>
+                        </Link>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Badge className="bg-fit-blue text-white text-xs px-2 py-1">
+                            <span className="mr-1">🍎</span>
+                            Nutrition
+                          </Badge>
+                          {meal.title && (
+                            <span className="font-semibold text-sm text-gray-900 dark:text-white">
+                              {meal.title}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-900 dark:text-gray-100">{meal.caption}</p>
+                      </div>
+                    </CardHeader>
+
+                    {/* Meal Image */}
+                    {meal.imageUrl && (
+                      <div className="px-0">
+                        <OptimizedImage
+                          src={meal.imageUrl}
+                          alt={meal.caption}
+                          width={800}
+                          height={1000}
+                          className="w-full aspect-[4/5] rounded-md overflow-hidden"
+                          placeholder="blur"
+                        />
+                      </div>
+                    )}
+
+                    <CardContent className="pt-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center space-x-4">
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleToggleSaveMeal(meal)}
-                            className={isMealSaved(meal.id) ? "text-fit-green" : "text-gray-500"}
+                            className="p-0 h-auto text-gray-600 hover:text-red-500"
                           >
-                            <Bookmark className={`h-5 w-5 ${isMealSaved(meal.id) ? "fill-current" : ""}`} />
+                            <Heart className="h-5 w-5 mr-1" />
+                            <span className="font-medium">{likesCount}</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="p-0 h-auto text-gray-600 hover:text-gray-800"
+                          >
+                            <MessageCircle className="h-5 w-5 mr-1" />
+                            <span>{commentsCount}</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="p-0 h-auto text-gray-600 hover:text-gray-800 -ml-2"
+                          >
+                            <ExternalLink className="h-5 w-5" />
                           </Button>
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleToggleSaveMeal(meal)}
+                          className={`p-0 h-auto ${isMealSaved(meal.id) ? 'text-blue-600' : 'text-gray-600'} hover:text-blue-600`}
+                        >
+                          <Bookmark className={`h-5 w-5 ${isMealSaved(meal.id) ? 'fill-current' : ''}`} />
+                        </Button>
+                      </div>
 
-                        {/* Caption */}
-                        <p className="text-gray-800 dark:text-gray-200">
-                          {meal.caption}
-                        </p>
+                      {/* Meal Details */}
+                      {(meal.ingredients.length > 0 || hasMacros) && (
+                        <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-3 mt-3">
+                          <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2 text-sm">
+                            Nutrition Facts
+                          </h4>
 
-                        {/* Ingredients */}
-                        {meal.ingredients.length > 0 && (
-                          <div>
-                            <h5 className="font-medium text-gray-900 dark:text-white text-sm mb-2">
-                              Ingredients:
-                            </h5>
-                            <div className="flex flex-wrap gap-1">
-                              {meal.ingredients.slice(0, 5).map((ingredient, index) => (
-                                <Badge key={index} variant="secondary" className="text-xs">
-                                  {ingredient}
-                                </Badge>
-                              ))}
-                              {meal.ingredients.length > 5 && (
-                                <Badge variant="outline" className="text-xs">
-                                  +{meal.ingredients.length - 5} more
-                                </Badge>
+                          {/* Ingredients */}
+                          {meal.ingredients.length > 0 && (
+                            <div className="mb-2">
+                              <h5 className="font-medium text-gray-900 dark:text-white text-sm mb-2">
+                                Ingredients:
+                              </h5>
+                              <div className="flex flex-wrap gap-1">
+                                {meal.ingredients.slice(0, 5).map((ingredient, index) => (
+                                  <Badge key={index} variant="secondary" className="text-xs">
+                                    {ingredient}
+                                  </Badge>
+                                ))}
+                                {meal.ingredients.length > 5 && (
+                                  <Badge variant="outline" className="text-xs">
+                                    +{meal.ingredients.length - 5} more
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Nutrition Info */}
+                          {hasMacros && (
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-3 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
+                              {meal.calories !== undefined && (
+                                <div className="text-center">
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">Calories</p>
+                                  <p className="font-semibold text-gray-900 dark:text-white">{meal.calories}</p>
+                                </div>
+                              )}
+                              {meal.protein !== undefined && (
+                                <div className="text-center">
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">Protein</p>
+                                  <p className="font-semibold text-gray-900 dark:text-white">{meal.protein}g</p>
+                                </div>
+                              )}
+                              {meal.carbs !== undefined && (
+                                <div className="text-center">
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">Carbs</p>
+                                  <p className="font-semibold text-gray-900 dark:text-white">{meal.carbs}g</p>
+                                </div>
+                              )}
+                              {meal.fat !== undefined && (
+                                <div className="text-center">
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">Fat</p>
+                                  <p className="font-semibold text-gray-900 dark:text-white">{meal.fat}g</p>
+                                </div>
                               )}
                             </div>
-                          </div>
-                        )}
-
-                        {/* Nutrition Info */}
-                        {hasMacros && (
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                            {meal.calories && (
-                              <div className="text-center">
-                                <p className="text-xs text-gray-500 dark:text-gray-400">Calories</p>
-                                <p className="font-semibold text-gray-900 dark:text-white">{meal.calories}</p>
-                              </div>
-                            )}
-                            {meal.protein && (
-                              <div className="text-center">
-                                <p className="text-xs text-gray-500 dark:text-gray-400">Protein</p>
-                                <p className="font-semibold text-gray-900 dark:text-white">{meal.protein}g</p>
-                              </div>
-                            )}
-                            {meal.carbs && (
-                              <div className="text-center">
-                                <p className="text-xs text-gray-500 dark:text-gray-400">Carbs</p>
-                                <p className="font-semibold text-gray-900 dark:text-white">{meal.carbs}g</p>
-                              </div>
-                            )}
-                            {meal.fat && (
-                              <div className="text-center">
-                                <p className="text-xs text-gray-500 dark:text-gray-400">Fat</p>
-                                <p className="font-semibold text-gray-900 dark:text-white">{meal.fat}g</p>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                          )}
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 );

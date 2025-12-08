@@ -499,7 +499,7 @@ export class MemStorage implements IStorage {
         userId: "user1",
         type: "workout",
         caption: "Crushed today's upper body session! 💪 Feeling stronger every day. Who's joining me tomorrow for legs?",
-        images: ["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop"],
+        images: ["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=1000&fit=crop"],
         likes: ["user2", "user3", "user4"],
         comments: ["comment1", "comment2"],
         workoutData: {
@@ -546,7 +546,7 @@ export class MemStorage implements IStorage {
         userId: "user2",
         type: "nutrition",
         caption: "Perfect post-workout fuel! 🥗 Grilled chicken, quinoa, and fresh veggies. Simple, clean, effective.",
-        images: ["https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&h=600&fit=crop"],
+        images: ["https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&h=1000&fit=crop"],
         likes: ["user1", "user3"],
         comments: ["comment3"],
         nutritionData: {
@@ -563,7 +563,7 @@ export class MemStorage implements IStorage {
         userId: "user3",
         type: "progress",
         caption: "3 months of consistency! 💯 Down 15lbs and feeling incredible. Thank you to everyone for the support! 🙏",
-        images: ["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=600&fit=crop"],
+        images: ["https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=800&h=1000&fit=crop"],
         likes: ["user1", "user2", "user4"],
         comments: ["comment4", "comment5"],
         progressData: {

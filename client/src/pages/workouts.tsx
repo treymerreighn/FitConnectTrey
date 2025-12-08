@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Dumbbell, Target, Plus, TrendingUp, Search, Star, BookOpen, Users, X, PlusCircle, Bookmark } from "lucide-react";
+import { Dumbbell, Target, Plus, TrendingUp, Search, Star, BookOpen, Users, Globe, X, PlusCircle, Bookmark } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -565,17 +565,20 @@ export default function Workouts() {
       {/* Main Content */}
       <div className="py-6 space-y-6 pb-20">
         {/* Main Content Tabs */}
-        <Tabs defaultValue="community" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4 max-w-6xl mx-auto px-4">
-            <TabsTrigger value="exercises" className="py-2">
-              <BookOpen className="h-5 w-5 mr-2" />
-              Exercise Library
-            </TabsTrigger>
-            <TabsTrigger value="community" className="py-2">
-              <Users className="h-5 w-5 mr-2" />
-              Community Workouts
-            </TabsTrigger>
-          </TabsList>
+        <Tabs defaultValue="community" className="w-full space-y-6">
+          <div className="px-4 max-w-6xl mx-auto w-full">
+            <TabsList className="grid w-full grid-cols-2 h-auto p-1">
+              <TabsTrigger value="exercises" className="py-3">
+                <BookOpen className="h-5 w-5 mr-2" />
+                Exercise Library
+              </TabsTrigger>
+              <TabsTrigger value="community" className="py-3">
+                <Users className="h-5 w-5 mr-2" />
+                Community Workouts
+                <Globe className="h-5 w-5 ml-2" />
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Exercise Library Tab */}
           <TabsContent value="exercises" className="space-y-4 max-w-6xl mx-auto px-4">

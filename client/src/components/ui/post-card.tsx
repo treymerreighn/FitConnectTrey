@@ -548,7 +548,7 @@ export function PostCard({ post }: PostCardProps) {
             )}
             {post.nutritionData && (
               <span className={`text-sm font-medium ${typeConfig.textColor}`}>
-                {post.nutritionData.mealType}
+                {post.nutritionData.mealType === "shared_meal" ? "Shared Meal" : post.nutritionData.mealType}
               </span>
             )}
             {post.progressData && (
@@ -566,8 +566,8 @@ export function PostCard({ post }: PostCardProps) {
             src={post.images[0]} 
             alt="Post content" 
             width={800}
-            height={450}
-            className="w-full aspect-video rounded-md overflow-hidden"
+            height={1000}
+            className="w-full aspect-[4/5] rounded-md overflow-hidden"
             placeholder="blur"
           />
         </div>

@@ -208,16 +208,18 @@ export default function RecipesPage() {
             </div>
 
             {(userMealPosts as any[]).length === 0 ? (
-              <div className="text-center py-12">
-                <Users className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-                  No community meals yet
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  Be the first to share a healthy meal with the community!
-                </p>
-                <Button>Share Your Meal</Button>
-              </div>
+              <Card className="border-dashed border-2 border-gray-200 dark:border-gray-700">
+                <CardContent className="p-12 text-center">
+                  <Users className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                    No community meals yet
+                  </h3>
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">
+                    Be the first to share a healthy meal with the community!
+                  </p>
+                  <Button>Share Your Meal</Button>
+                </CardContent>
+              </Card>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {(userMealPosts as any[]).map((post: any) => (
@@ -349,7 +351,7 @@ function UserMealCard({ post }: { post: any }) {
       <CardContent className="p-4 space-y-3">
         <div>
           <h3 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-fit-green transition-colors">
-            {post.nutritionData?.mealType || "Healthy Meal"}
+            {post.nutritionData?.mealType === "shared_meal" ? "Shared Meal" : (post.nutritionData?.mealType || "Healthy Meal")}
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
             {post.caption}

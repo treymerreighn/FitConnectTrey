@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Camera, TrendingUp, Brain, Calendar, Weight, Eye, EyeOff, Share2, Sparkles, BarChart3, Crown } from "lucide-react";
+import { Plus, Camera, TrendingUp, Brain, Calendar, Weight, Eye, EyeOff, Share2, Sparkles, BarChart3, Crown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +26,10 @@ import { apiRequest } from "@/lib/queryClient";
 import { Link } from "@/components/ui/link";
 import { PremiumFeatureDialog } from "@/components/premium-feature-dialog";
 import { useLocation } from "wouter";
+import { uploadMultipleImages, uploadImage } from "@/lib/imageUpload";
+import { useToast } from "@/hooks/use-toast";
+import { usePreferences } from "@/contexts/preferences-context";
+import { ImageCropper } from "@/components/image-cropper";
 
 const progressFormSchema = z.object({
   date: z.string(),
@@ -39,14 +43,19 @@ type ProgressFormData = z.infer<typeof progressFormSchema>;
 export default function Progress() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { weightUnit } = usePreferences();
   const [location, setLocation] = useLocation();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
+  const [showCropper, setShowCropper] = useState(false);
+  const [cropperImgSrc, setCropperImgSrc] = useState<string | null>(null);
   const [generatingInsights, setGeneratingInsights] = useState<string | null>(null);
   const [showWeightChart, setShowWeightChart] = useState(true);
   const [weightTrendAnalysis, setWeightTrendAnalysis] = useState<any>(null);
   const [selectedPhotoForAnalysis, setSelectedPhotoForAnalysis] = useState<string | null>(null);
   const [showPremiumDialog, setShowPremiumDialog] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const { toast } = useToast();
 
   const userId = user?.id || CURRENT_USER_ID;
   const isPremiumUser = user?.isPremium || user?.subscriptionTier === 'premium' || user?.subscriptionTier === 'pro';
@@ -167,14 +176,53 @@ export default function Progress() {
     },
   });
 
-  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files) {
-      // Simulate photo upload - in real app, upload to cloud storage
-      const mockUrls = Array.from(files).map((file, index) => 
-        `https://images.unsplash.com/photo-${Date.now()}-${index}?w=300&h=400&fit=crop`
-      );
-      setSelectedPhotos(prev => [...prev, ...mockUrls]);
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        setCropperImgSrc(e.target.result as string);
+        setShowCropper(true);
+      }
+    };
+    reader.readAsDataURL(file);
+    
+    // Reset input value so same file can be selected again
+    event.target.value = "";
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setShowCropper(false);
+    setCropperImgSrc(null);
+    setIsUploading(true);
+    
+    try {
+      const file = new File([croppedBlob], "progress-photo.jpg", { type: "image/jpeg" });
+      const result = await uploadImage(file);
+      if (result.success) {
+        setSelectedPhotos(prev => [...prev, result.url]);
+        toast({
+          title: "Photo uploaded",
+          description: "Successfully uploaded photo.",
+        });
+      } else {
+        toast({
+          title: "Upload failed",
+          description: "Failed to upload photo. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Photo upload error:", error);
+      toast({
+        title: "Upload error",
+        description: "An error occurred while uploading photos.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -271,37 +319,39 @@ export default function Progress() {
                   <span className="hidden sm:inline">Add Entry</span>
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+              <DialogContent 
+                className="w-[calc(100vw-1rem)] max-w-md max-h-[90vh] overflow-y-auto rounded-2xl"
+                onOpenAutoFocus={(e) => e.preventDefault()}
+              >
                 <DialogHeader>
                   <DialogTitle>Add Progress Entry</DialogTitle>
                 </DialogHeader>
               
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <div>
-                    <Label htmlFor="date">Date</Label>
+                    <Label htmlFor="date">Date *</Label>
                     <Input
                       id="date"
                       type="date"
+                      className="h-10 appearance-none text-left block w-full"
                       {...form.register("date")}
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="weight">Weight (lbs)</Label>
+                    <Label htmlFor="weight">Weight ({weightUnit}) *</Label>
                     <Input
                       id="weight"
                       type="number"
                       step="0.1"
                       placeholder="Enter your current weight"
-                      autoFocus
                       {...form.register("weight", { valueAsNumber: true })}
                     />
                   </div>
 
                   {/* Photos */}
                   <div>
-                    <Label>Progress Photos - Optional</Label>
-                    <p className="text-xs text-gray-500 mb-2">Add photos to track your visual progress with AI analysis</p>
+                    <Label>Progress Photos</Label>
                     <div className="mt-2">
                       <input
                         type="file"
@@ -313,13 +363,25 @@ export default function Progress() {
                       />
                       <label
                         htmlFor="photo-upload"
-                        className="flex items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+                        className={`flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
-                        <div className="text-center">
-                          <Camera className="w-6 h-6 text-gray-400 mx-auto mb-1" />
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            Add photos (optional)
-                          </p>
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                          {isUploading ? (
+                            <>
+                              <Loader2 className="w-10 h-10 text-gray-400 mb-3 animate-spin" />
+                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                                Uploading...
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <Camera className="w-10 h-10 mb-3 text-gray-400" />
+                              <p className="mb-2 text-sm text-gray-500">
+                                <span className="font-semibold">Click to upload</span> progress photos
+                              </p>
+                              <p className="text-xs text-gray-500">PNG, JPG or JPEG (MAX. 10MB)</p>
+                            </>
+                          )}
                         </div>
                       </label>
                     
@@ -330,7 +392,7 @@ export default function Progress() {
                               key={index}
                               src={photo}
                               alt={`Progress ${index + 1}`}
-                              className="w-full h-20 object-cover rounded"
+                              className="w-full aspect-[4/5] object-cover rounded"
                             />
                           ))}
                         </div>
@@ -339,7 +401,7 @@ export default function Progress() {
                   </div>
 
                   <div>
-                    <Label htmlFor="notes">Notes - Optional</Label>
+                    <Label htmlFor="notes">Notes</Label>
                     <Textarea
                       id="notes"
                       placeholder="How are you feeling? Any observations?"
@@ -349,27 +411,50 @@ export default function Progress() {
 
                   {/* Privacy Toggle */}
                   <div className="flex items-center space-x-2">
-                    <Switch
-                      id="privacy"
-                      checked={form.watch("isPrivate")}
-                      onCheckedChange={(checked) => form.setValue("isPrivate", checked)}
-                    />
-                    <Label htmlFor="privacy" className="flex items-center space-x-2">
-                      {form.watch("isPrivate") ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      <span>{form.watch("isPrivate") ? "Private" : "Shareable"}</span>
-                    </Label>
+                    <div 
+                      className={`relative inline-flex h-8 w-24 items-center rounded-full transition-colors cursor-pointer border ${form.watch("isPrivate") ? 'bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600' : 'bg-green-500 border-green-600'}`}
+                      onClick={() => form.setValue("isPrivate", !form.watch("isPrivate"))}
+                    >
+                      <span className={`absolute left-2 text-xs font-medium transition-opacity ${form.watch("isPrivate") ? 'opacity-0' : 'opacity-100 text-white'}`}>
+                        Public
+                      </span>
+                      <span className={`absolute right-2 text-xs font-medium transition-opacity ${form.watch("isPrivate") ? 'opacity-100 text-gray-600 dark:text-gray-300' : 'opacity-0'}`}>
+                        Private
+                      </span>
+                      <span
+                        className={`inline-block h-6 w-10 transform rounded-full bg-white shadow-sm border border-gray-200 transition-transform duration-200 ease-in-out ${
+                          form.watch("isPrivate") ? 'translate-x-1' : 'translate-x-[3.25rem]'
+                        }`}
+                      />
+                    </div>
                   </div>
 
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-fit-green hover:bg-fit-green/90"
-                    disabled={createProgressMutation.isPending}
-                  >
-                    {createProgressMutation.isPending ? "Saving..." : "Save Entry"}
-                  </Button>
+                  <div className="!mt-2">
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full"
+                      disabled={createProgressMutation.isPending}
+                    >
+                      {createProgressMutation.isPending ? "Saving..." : "Save Entry"}
+                    </Button>
+                  </div>
                 </form>
               </DialogContent>
             </Dialog>
+            
+            {cropperImgSrc && (
+              <ImageCropper
+                open={showCropper}
+                onClose={() => {
+                  setShowCropper(false);
+                  setCropperImgSrc(null);
+                }}
+                imageSrc={cropperImgSrc}
+                onCropComplete={handleCropComplete}
+                aspectRatio={4/5}
+                circularCrop={false}
+              />
+            )}
           </div>
         </div>
       </div>
@@ -377,7 +462,7 @@ export default function Progress() {
       {/* Main Content */}
       <div className="py-4 sm:py-6 space-y-4">
         {/* Action Buttons Row */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 px-4">
+        <div className="grid grid-cols-2 gap-3 px-4 pb-2">
             <Button 
               variant="outline" 
               size="sm"
@@ -388,7 +473,7 @@ export default function Progress() {
                   window.location.href = '/progress-insights';
                 }
               }}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-none hover:from-purple-600 hover:to-pink-600 flex-shrink-0"
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white border-none hover:from-purple-600 hover:to-pink-600"
             >
               <Brain className="w-4 h-4 mr-1 sm:mr-2" />
               <span className="text-xs sm:text-sm">AI Insights</span>
@@ -399,7 +484,7 @@ export default function Progress() {
               <Button
                 variant="outline"
                 size="sm"
-                className="flex items-center gap-1 sm:gap-2 flex-shrink-0"
+                className="w-full flex items-center gap-1 sm:gap-2"
               >
                 <BarChart3 className="w-4 h-4" />
                 <span className="text-xs sm:text-sm">Exercise Progress</span>
@@ -449,7 +534,7 @@ export default function Progress() {
               </div>
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Start Your Progress Journey</h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4">Track your weight and visual progress with optional photos and AI insights</p>
-              <Button onClick={() => setIsCreateModalOpen(true)} className="bg-fit-green hover:bg-fit-green/90">
+              <Button onClick={() => setIsCreateModalOpen(true)} className="bg-gray-100 text-gray-900 hover:bg-gray-200 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
                 Add Your First Entry
               </Button>
             </div>

@@ -226,7 +226,7 @@ export function Stories({ users }: StoriesProps) {
               >
                 <div className={`w-16 h-16 rounded-full ${
                   currentUserHasActiveStory 
-                    ? 'bg-gradient-to-tr from-red-500 to-red-600 ring-2 ring-red-500 ring-offset-0' 
+                    ? (hasUnviewedStories(currentUserStories) ? 'bg-red-500' : 'bg-gray-300 dark:bg-zinc-600')
                     : 'bg-gradient-to-tr from-gray-300 to-gray-400 dark:from-zinc-600 dark:to-zinc-700'
                 } p-0.5 shadow-md`}>
                   <div className="w-full h-full rounded-full bg-white dark:bg-zinc-900 p-0.5 flex items-center justify-center">
@@ -268,8 +268,8 @@ export function Stories({ users }: StoriesProps) {
                 return (
                   <div key={userId} className="flex-shrink-0 text-center pt-1">
                     <button onClick={() => handleStoryClick(userStories[0])} className="relative">
-                      <div className={`w-16 h-16 rounded-full bg-gradient-to-tr from-red-500 to-red-600 shadow-md ${
-                        unviewed ? 'ring-2 ring-red-500 ring-offset-0 dark:ring-offset-0 p-[3px]' : 'p-0.5'
+                      <div className={`w-16 h-16 rounded-full shadow-md p-0.5 ${
+                        unviewed ? 'bg-red-500' : 'bg-gray-300 dark:bg-zinc-600'
                       }`}>
                         <div className="w-full h-full rounded-full bg-white dark:bg-zinc-900 p-0.5">
                           <UserAvatar

@@ -25,6 +25,16 @@
     font-size: 16px;
   }
   
+  /* Normalize date input styling on iOS */
+  input[type="date"] {
+    -webkit-appearance: none;
+    appearance: none;
+    min-height: unset;
+    text-align: left;
+    display: block;
+    width: 100%;
+  }
+  
   /* Smooth scrolling for better mobile UX */
   html {
     scroll-behavior: smooth;

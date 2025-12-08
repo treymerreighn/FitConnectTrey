@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowLeft, Plus, Trash2, Camera, Upload, X, Dumbbell, Clock, Flame, Target, Search, ChevronDown, ChevronUp, Save, Check, Filter, Book } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Camera, Upload, X, Dumbbell, Clock, Flame, Target, Search, ChevronDown, ChevronUp, Save, Check, Filter, Book, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,7 +16,7 @@ import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { CURRENT_USER_ID } from "@/lib/constants";
 import { useLocation } from "wouter";
-import { ImageUpload } from "@/components/image-upload";
+import { MediaUpload } from "@/components/image-upload";
 import type { InsertPost, Exercise as ExerciseType } from "@shared/schema";
 
 interface WorkoutSet {
@@ -84,9 +84,9 @@ export default function CreatePost() {
   
   // Common fields
   const [caption, setCaption] = useState("");
-  const [images, setImages] = useState<string[]>([]);
-  
-  // Workout specific
+  const [images, setImages] = useState<string[]>([]); // Keep for backward compatibility
+  const [mediaTypes, setMediaTypes] = useState<('image' | 'video')[]>([]); // Keep for backward compatibility
+  const [mediaItems, setMediaItems] = useState<Array<{url: string, type: 'image' | 'video', exerciseTags: string[]}>>([]);
   const [workoutName, setWorkoutName] = useState(incomingWorkoutData?.workoutType || "");
   const [duration, setDuration] = useState<number>(incomingWorkoutData?.duration || 0);
   const [calories, setCalories] = useState<number>(incomingWorkoutData?.calories || 0);
@@ -129,20 +129,26 @@ export default function CreatePost() {
     queryFn: () => api.getExercises({}),
   });
 
-  const addImage = (imageUrl: string) => {
-    console.log('🖼️ Adding image to post:', imageUrl);
-    if (images.length < 4) {
-      setImages([...images, imageUrl]);
-      console.log('✅ Images array now:', [...images, imageUrl]);
+  const addMedia = (mediaUrl: string, mediaType: 'image' | 'video') => {
+    console.log('📎 Adding media to post:', mediaUrl, mediaType);
+    if (mediaItems.length < 4) {
+      const newMediaItem = { url: mediaUrl, type: mediaType, exerciseTags: [] };
+      setMediaItems([...mediaItems, newMediaItem]);
+      // Keep backward compatibility
+      setImages([...images, mediaUrl]);
+      setMediaTypes([...mediaTypes, mediaType]);
+      console.log('✅ Media array now:', [...images, mediaUrl]);
       toast({
-        title: "Photo added!",
-        description: "Photo uploaded successfully.",
+        title: `${mediaType === 'video' ? 'Video' : 'Photo'} added!`,
+        description: `${mediaType === 'video' ? 'Video' : 'Photo'} uploaded successfully.`,
       });
     }
   };
 
-  const removeImage = (index: number) => {
+  const removeMedia = (index: number) => {
+    setMediaItems(mediaItems.filter((_, i) => i !== index));
     setImages(images.filter((_, i) => i !== index));
+    setMediaTypes(mediaTypes.filter((_, i) => i !== index));
   };
 
   const addExercise = () => {
@@ -277,6 +283,8 @@ export default function CreatePost() {
       type: postType,
       caption: caption || (postType === "workout" ? workoutCaptionFallback : ""),
       images,
+      exerciseTags: [], // Keep for backward compatibility
+      mediaItems,
     };
 
     if (postType === "workout") {
@@ -393,32 +401,174 @@ export default function CreatePost() {
           </CardHeader>
           <CardContent className="space-y-4">
             {images.length < 4 && (
-              <ImageUpload 
-                onImageUploaded={addImage}
-                label={`Add ${postType} photo`}
+              <MediaUpload 
+                key={images.length}
+                onMediaUploaded={addMedia}
+                label={`Add ${postType} photo or video`}
                 className="w-full"
               />
             )}
             
-            {images.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {images.map((image, index) => (
-                  <div key={index} className="relative group">
-                    <img
-                      src={image}
-                      alt={`Photo ${index + 1}`}
-                      className="w-full h-24 object-cover rounded-lg border-2 border-gray-200 dark:border-gray-700"
-                    />
-                    <Button
-                      onClick={() => removeImage(index)}
-                      variant="destructive"
-                      size="sm"
-                      className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0"
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ))}
+            {mediaItems.length > 0 && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {mediaItems.map((mediaItem, index) => (
+                    <div key={index} className="relative group">
+                      {mediaItem.type === 'video' ? (
+                        <video
+                          src={mediaItem.url}
+                          className="w-full h-24 object-cover rounded-lg border-2 border-gray-200 dark:border-gray-700"
+                          muted
+                          playsInline
+                        />
+                      ) : (
+                        <img
+                          src={mediaItem.url}
+                          alt={`Media ${index + 1}`}
+                          className="w-full h-24 object-cover rounded-lg border-2 border-gray-200 dark:border-gray-700"
+                        />
+                      )}
+                      <Button
+                        onClick={() => removeMedia(index)}
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                      {mediaItem.type === 'video' && (
+                        <div className="absolute bottom-1 left-1">
+                          <Badge variant="secondary" className="text-xs bg-black/70 text-white">
+                            <Play className="h-3 w-3 mr-1" />
+                            Video
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Individual Media Tagging */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Tag exercises for each video:
+                  </h4>
+                  {mediaItems.map((mediaItem, index) => (
+                    <div key={index} className="border rounded-lg p-3 bg-gray-50 dark:bg-gray-800">
+                      <div className="flex items-center gap-3 mb-2">
+                        {mediaItem.type === 'video' ? (
+                          <video
+                            src={mediaItem.url}
+                            className="w-12 h-12 object-cover rounded"
+                            muted
+                            playsInline
+                          />
+                        ) : (
+                          <img
+                            src={mediaItem.url}
+                            alt={`Media ${index + 1}`}
+                            className="w-12 h-12 object-cover rounded"
+                          />
+                        )}
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">
+                            {mediaItem.type === 'video' ? 'Video' : 'Photo'} {index + 1}
+                          </p>
+                          {mediaItem.exerciseTags.length > 0 && (
+                            <p className="text-xs text-gray-500">
+                              Tagged: {mediaItem.exerciseTags.join(', ')}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {mediaItem.type === 'video' && (
+                        <div className="space-y-2">
+                          <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                            Exercises shown in this video:
+                          </label>
+                          <div className="flex flex-wrap gap-1">
+                            {mediaItem.exerciseTags.map((tag, tagIndex) => (
+                              <Badge 
+                                key={tagIndex} 
+                                variant="secondary" 
+                                className="text-xs cursor-pointer hover:bg-red-100 hover:text-red-800 dark:hover:bg-red-900 dark:hover:text-red-200"
+                                onClick={() => {
+                                  const updatedItems = [...mediaItems];
+                                  updatedItems[index].exerciseTags = updatedItems[index].exerciseTags.filter((_, i) => i !== tagIndex);
+                                  setMediaItems(updatedItems);
+                                }}
+                              >
+                                {tag} ×
+                              </Badge>
+                            ))}
+                          </div>
+                          
+                          {/* Add exercise tag for this specific video */}
+                          <div className="border rounded-md max-h-32 overflow-y-auto">
+                            <div className="p-2">
+                              {(() => {
+                                // Get exercises from the current workout log
+                                const workoutExerciseNames = exercises
+                                  .map(e => e.name)
+                                  .filter(n => n && !mediaItem.exerciseTags.includes(n));
+                                
+                                let displayExercises: any[] = [];
+
+                                if (workoutExerciseNames.length > 0) {
+                                  // Map names to library objects to get muscle groups if available
+                                  displayExercises = workoutExerciseNames.map(name => {
+                                    const libExercise = exerciseLibrary.find(e => e.name === name);
+                                    return libExercise || { id: name, name, muscleGroups: [] };
+                                  });
+                                  // Remove duplicates
+                                  displayExercises = displayExercises.filter((ex, i, self) => 
+                                    i === self.findIndex((e) => e.name === ex.name)
+                                  );
+                                } else {
+                                  // Fallback to library if no workout exercises
+                                  displayExercises = exerciseLibrary
+                                    .filter(ex => !mediaItem.exerciseTags.includes(ex.name))
+                                    .sort((a, b) => a.name.localeCompare(b.name))
+                                    .slice(0, 10);
+                                }
+
+                                if (displayExercises.length === 0) {
+                                  return <p className="text-xs text-gray-500 text-center py-2">No more exercises to tag</p>;
+                                }
+
+                                return (
+                                  <div className="space-y-1">
+                                    {displayExercises.map((exercise) => (
+                                      <div
+                                        key={exercise.id}
+                                        onClick={() => {
+                                          const updatedItems = [...mediaItems];
+                                          updatedItems[index].exerciseTags = [...updatedItems[index].exerciseTags, exercise.name];
+                                          setMediaItems(updatedItems);
+                                        }}
+                                        className="flex items-center justify-between p-1 rounded cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-xs"
+                                      >
+                                        <span>{exercise.name}</span>
+                                        <div className="flex gap-1">
+                                          {exercise.muscleGroups.slice(0, 2).map((muscle: string) => (
+                                            <Badge key={muscle} variant="outline" className="text-xs">
+                                              {muscle}
+                                            </Badge>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </CardContent>

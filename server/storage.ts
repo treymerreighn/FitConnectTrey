@@ -46,6 +46,7 @@ export interface IStorage {
   getPostById(id: string): Promise<Post | null>;
   getAllPosts(): Promise<Post[]>;
   getPostsByUserId(userId: string): Promise<Post[]>;
+  getPostsByExerciseTag(exerciseName: string, limit?: number): Promise<Post[]>;
   updatePost(id: string, updates: Partial<Post>): Promise<Post>;
   deletePost(id: string): Promise<boolean>;
   getTrendingWorkouts(hours?: number): Promise<Post[]>;
@@ -500,6 +501,8 @@ export class MemStorage implements IStorage {
         type: "workout",
         caption: "Crushed today's upper body session! 💪 Feeling stronger every day. Who's joining me tomorrow for legs?",
         images: ["https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=1000&fit=crop"],
+        exerciseTags: [],
+        mediaItems: [],
         likes: ["user2", "user3", "user4"],
         comments: ["comment1", "comment2"],
         workoutData: {
@@ -547,6 +550,8 @@ export class MemStorage implements IStorage {
         type: "nutrition",
         caption: "Perfect post-workout fuel! 🥗 Grilled chicken, quinoa, and fresh veggies. Simple, clean, effective.",
         images: ["https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&h=1000&fit=crop"],
+        exerciseTags: [],
+        mediaItems: [],
         likes: ["user1", "user3"],
         comments: ["comment3"],
         nutritionData: {
@@ -564,6 +569,8 @@ export class MemStorage implements IStorage {
         type: "progress",
         caption: "3 months of consistency! 💯 Down 15lbs and feeling incredible. Thank you to everyone for the support! 🙏",
         images: ["https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=800&h=1000&fit=crop"],
+        exerciseTags: [],
+        mediaItems: [],
         likes: ["user1", "user2", "user4"],
         comments: ["comment4", "comment5"],
         progressData: {
@@ -715,6 +722,52 @@ export class MemStorage implements IStorage {
     return Array.from(this.posts.values())
       .filter(post => post.userId === userId)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async getPostsByExerciseTag(exerciseName: string, limit: number = 10): Promise<Post[]> {
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+    const allMatchingPosts = Array.from(this.posts.values())
+      .filter(post => {
+        // Must be a workout post
+        if (post.type !== 'workout') return false;
+
+        // Check if exercise is in workout data (legacy or general match)
+        const hasExerciseInWorkout = post.workoutData?.exercises?.some((exercise: any) => 
+          exercise.name?.toLowerCase().includes(exerciseName.toLowerCase()) ||
+          exercise.exerciseName?.toLowerCase().includes(exerciseName.toLowerCase())
+        );
+
+        // Check for videos in mediaItems (new structure)
+        // We want videos that are explicitly tagged with this exercise.
+        // We do NOT fallback to workout data for untagged videos to prevent
+        // showing the wrong video (e.g. Squat video for Bench Press).
+        const hasVideoInMediaItems = post.mediaItems?.some(item => 
+          item.type === 'video' && 
+          item.exerciseTags?.some(tag => tag.toLowerCase().includes(exerciseName.toLowerCase()))
+        );
+
+        // Check for videos in images (legacy structure)
+        // Only check this if mediaItems is NOT present or empty to avoid double counting
+        // and incorrect fallback for new posts that have mediaItems
+        const hasVideoInImages = (!post.mediaItems || post.mediaItems.length === 0) && post.images?.some((image: string) => 
+          image.toLowerCase().match(/\.(mp4|mov|avi|webm|ogg)$/)
+        ) && hasExerciseInWorkout;
+
+        return hasVideoInMediaItems || hasVideoInImages;
+      })
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    // Filter for past week
+    const recentPosts = allMatchingPosts.filter(post => new Date(post.createdAt) >= oneWeekAgo);
+
+    if (recentPosts.length > 0) {
+      return recentPosts.slice(0, limit);
+    }
+
+    // If no recent posts, return the latest ones
+    return allMatchingPosts.slice(0, limit);
   }
 
   async updatePost(id: string, updates: Partial<Post>): Promise<Post> {

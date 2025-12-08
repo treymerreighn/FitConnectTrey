@@ -28,6 +28,7 @@ export const posts = pgTable("posts", {
   likes: text("likes").array().default([]),
   comments: text("comments").array().default([]),
   createdAt: timestamp("created_at").defaultNow(),
+  exerciseTags: text("exercise_tags").array().default([]),
   workoutData: jsonb("workout_data"),
   nutritionData: jsonb("nutrition_data"),
   progressData: jsonb("progress_data"),

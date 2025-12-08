@@ -97,6 +97,7 @@ const MOCK_EXERCISES: Exercise[] = [
 
 export default function ExerciseLibrary() {
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm, 300);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [selectedExercises, setSelectedExercises] = useState<Exercise[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -106,8 +107,12 @@ export default function ExerciseLibrary() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Debounced search so we don't refetch while the user is typing
-  const debouncedSearch = useDebounce(searchTerm, 400);
+  // Fetch recent posts tagged with this exercise (for community videos)
+  const { data: recentVideos = [] } = useQuery({
+    queryKey: ['exercise-videos', showExerciseDetail?.name],
+    queryFn: () => showExerciseDetail ? api.getPostsByExerciseTag(showExerciseDetail.name, 5) : [],
+    enabled: !!showExerciseDetail,
+  });
 
   // Fetch exercises from database - include search and category where applicable
   const exercisesQueryUrl = (() => {
@@ -368,6 +373,49 @@ export default function ExerciseLibrary() {
                   ))}
                 </ul>
               </div>
+
+              {/* Recent Community Videos */}
+              {recentVideos.length > 0 && (
+                <div>
+                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                    <Play className="h-4 w-4" />
+                    Recent Form Videos
+                  </h4>
+                  <div className="space-y-2">
+                    {recentVideos.map((post: any) => (
+                      <div key={post.id} className="flex items-center gap-3 p-2 bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-600 transition-colors">
+                        {post.images?.[0] && (
+                          <img 
+                            src={post.images[0]} 
+                            alt="Exercise video thumbnail" 
+                            className="w-12 h-12 rounded object-cover"
+                          />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{post.caption || "Workout video"}</p>
+                          <p className="text-xs text-gray-400">
+                            {new Date(post.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="text-xs"
+                          onClick={() => {
+                            setShowExerciseDetail(null);
+                            setLocation(`/posts/${post.id}`);
+                          }}
+                        >
+                          View
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-2">
+                    Community videos from the last week
+                  </p>
+                </div>
+              )}
 
               <Button 
                 onClick={() => {

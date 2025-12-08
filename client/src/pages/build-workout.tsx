@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Trash2, Dumbbell, Timer, Save, Play, ChevronDown, ChevronUp, Share2, TrendingUp, Crown } from "lucide-react";
+import { Plus, Trash2, Dumbbell, Timer, Save, Play, ChevronDown, ChevronUp, Share2, TrendingUp, Crown, HelpCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,7 +20,15 @@ import { CURRENT_USER_ID } from "@/lib/constants";
 
 type SetRow = { id: string; reps: number; weight?: number; restTime?: number };
 type ExerciseRow = { id: string; name: string; notes?: string; sets: SetRow[]; expanded?: boolean; sourceExerciseId?: string };
-type LibraryExercise = { id: string; name: string; muscleGroups: string[]; difficulty: string };
+type LibraryExercise = { 
+  id: string; 
+  name: string; 
+  muscleGroups: string[]; 
+  difficulty: string;
+  instructions?: string[];
+  images?: string[];
+  videos?: string[];
+};
 
 const generateId = () => {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -66,6 +74,7 @@ export default function BuildWorkout() {
   const [showPicker, setShowPicker] = useState(false);
   const [pickerSearch, setPickerSearch] = useState("");
   const [selectedExerciseForStats, setSelectedExerciseForStats] = useState<string | null>(null);
+  const [selectedExerciseForHowTo, setSelectedExerciseForHowTo] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -339,6 +348,7 @@ export default function BuildWorkout() {
                 onRemove={() => removeExercise(ex.id)}
                 onChange={(updater) => updateExercise(ex.id, updater)}
                 onShowStats={() => setSelectedExerciseForStats(ex.name)}
+                onShowHowTo={() => setSelectedExerciseForHowTo(ex.name)}
                 isPremium={isPremium}
                 weightUnit={weightUnit}
               />
@@ -436,6 +446,13 @@ export default function BuildWorkout() {
         </Dialog>
       )}
 
+      {selectedExerciseForHowTo && (
+        <HowToModal 
+          exerciseName={selectedExerciseForHowTo} 
+          onClose={() => setSelectedExerciseForHowTo(null)} 
+        />
+      )}
+
       {showPicker && <ExercisePickerModal onClose={() => setShowPicker(false)} onSelect={async ex => { await addExerciseFromLibrary(ex); setShowPicker(false); }} search={pickerSearch} setSearch={setPickerSearch} />}
     </div>
   );
@@ -447,6 +464,7 @@ function ExerciseCard({
   onRemove, 
   onChange,
   onShowStats,
+  onShowHowTo,
   isPremium,
   weightUnit
 }: { 
@@ -455,6 +473,7 @@ function ExerciseCard({
   onRemove: () => void; 
   onChange: (updater: (e: ExerciseRow) => ExerciseRow) => void;
   onShowStats: () => void;
+  onShowHowTo: () => void;
   isPremium: boolean;
   weightUnit: 'lbs' | 'kg';
 }) {
@@ -476,7 +495,18 @@ function ExerciseCard({
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="text-sm text-red-500 dark:text-red-400 font-medium">Exercise {index}</div>
-            <CardTitle className="text-2xl tracking-tight text-zinc-900 dark:text-white">{ex.name}</CardTitle>
+            <CardTitle className="text-2xl tracking-tight text-zinc-900 dark:text-white flex items-center gap-2">
+              {ex.name}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={onShowHowTo}
+                className="h-6 w-6 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                title="How To"
+              >
+                <HelpCircle className="h-4 w-4 text-blue-500" />
+              </Button>
+            </CardTitle>
             <div className="mt-2 flex flex-wrap gap-2">
               <Badge variant="outline" className="border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200">Volume: {Intl.NumberFormat().format(volume)} {weightUnit}</Badge>
               <Badge variant="outline" className="border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30">Sets: {ex.sets.length}</Badge>
@@ -601,12 +631,140 @@ function StepInput({ value, onChange, min = 0, max = 999, step = 1 }: { value: n
   );
 }
 
+function HowToModal({ exerciseName, initialData, onClose }: { exerciseName: string; initialData?: LibraryExercise; onClose: () => void }) {
+  const { data: exercises = [], isLoading: exercisesLoading } = useQuery<LibraryExercise[]>({ 
+    queryKey: ["/api/exercises"],
+    enabled: !initialData
+  });
+  
+  const exercise = useMemo(() => {
+    if (initialData) return initialData;
+    if (!exercises.length) return null;
+    
+    // Try exact match first
+    const exact = exercises.find(e => e.name.toLowerCase() === exerciseName.toLowerCase());
+    if (exact) return exact;
+    
+    // Try partial match
+    return exercises.find(e => e.name.toLowerCase().includes(exerciseName.toLowerCase())) || {
+      id: 'unknown', 
+      name: exerciseName, 
+      muscleGroups: [], 
+      difficulty: 'Unknown',
+      instructions: [],
+      videos: []
+    };
+  }, [initialData, exercises, exerciseName]);
+
+  const { data: taggedPosts = [] } = useQuery({
+    queryKey: ['exercise-videos', exerciseName],
+    queryFn: () => api.getPostsByExerciseTag(exerciseName, 5),
+  });
+
+  // Extract videos from posts
+  const communityVideos = useMemo(() => {
+    const videos: { url: string; caption?: string; author?: string }[] = [];
+    
+    taggedPosts.forEach(post => {
+      // Check mediaItems (new structure)
+      if (post.mediaItems && post.mediaItems.length > 0) {
+        post.mediaItems.forEach(item => {
+          if (item.type === 'video') {
+            // Only include if it has specific tags matching the current exercise
+            if (item.exerciseTags && item.exerciseTags.some(t => t.toLowerCase().includes(exerciseName.toLowerCase()))) {
+              videos.push({ url: item.url, caption: post.caption, author: post.userId });
+            }
+          }
+        });
+      } 
+      // Only check legacy images if mediaItems is NOT present or empty
+      // This prevents double-counting and incorrect fallback for new posts
+      else if (post.images) {
+        post.images.forEach(img => {
+          if (img.match(/\.(mp4|mov|avi|webm|ogg)$/i)) {
+             videos.push({ url: img, caption: post.caption, author: post.userId });
+          }
+        });
+      }
+    });
+    
+    // Deduplicate by URL
+    return videos.filter((v, i, self) => i === self.findIndex(t => t.url === v.url));
+  }, [taggedPosts, exerciseName]);
+
+  return (
+    <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <HelpCircle className="h-5 w-5" />
+            How to: {exercise ? exercise.name : exerciseName}
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-6">
+          {/* Instructions Section */}
+          <div>
+            <h3 className="text-lg font-semibold mb-2">Instructions</h3>
+            {exercisesLoading && !exercise ? (
+              <div className="space-y-2">
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 animate-pulse"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 animate-pulse"></div>
+              </div>
+            ) : exercise && exercise.instructions && exercise.instructions.length > 0 ? (
+              <ol className="list-decimal list-inside space-y-1 text-sm text-slate-700 dark:text-slate-300">
+                {exercise.instructions.map((step, i) => (
+                  <li key={i}>{step}</li>
+                ))}
+              </ol>
+            ) : (
+              <p className="text-sm text-slate-500">No instructions available.</p>
+            )}
+          </div>
+
+          {/* Community Videos Section */}
+          <div>
+            <h3 className="text-lg font-semibold mb-2">Community Videos</h3>
+            <p className="text-xs text-slate-500 mb-3">Showing videos from the past week (or latest available)</p>
+            {communityVideos.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {communityVideos.map((video, i) => (
+                  <div key={i} className="rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 bg-black">
+                    <video 
+                      src={video.url} 
+                      controls 
+                      className="w-full aspect-video object-contain"
+                    />
+                    {video.caption && (
+                      <div className="p-2 text-xs text-white bg-zinc-900 truncate">
+                        {video.caption}
+                      </div>
+                    )}
+                    {video.author && (
+                      <div className="px-2 pb-1 text-[10px] text-zinc-400 bg-zinc-900">
+                        By user {video.author}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500">No community videos found.</p>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ExercisePickerModal({ onClose, onSelect, search, setSearch }: { onClose: () => void; onSelect: (ex: LibraryExercise) => void | Promise<void>; search: string; setSearch: (v: string) => void }) {
   const { data: libraryExercises = [] } = useQuery<LibraryExercise[]>({ queryKey: ["/api/exercises"] });
 
   // Step 1: choose body part or "See All"
   const [stage, setStage] = useState<'choose' | 'list'>("choose");
   const [selectedPart, setSelectedPart] = useState<string | 'all' | null>(null);
+  const [howToExercise, setHowToExercise] = useState<LibraryExercise | null>(null);
 
   // Friendly labels + alias matching to exercise.muscleGroups values
   const PARTS: { key: string; label: string; aliases: string[] }[] = [
@@ -677,7 +835,12 @@ function ExercisePickerModal({ onClose, onSelect, search, setSearch }: { onClose
                     <span className="font-medium">{ex.name}</span>
                     <span className="text-xs text-slate-500 dark:text-slate-400">{(ex.muscleGroups||[]).slice(0,3).join(', ')}</span>
                   </div>
-                  <Button size="sm" onClick={() => onSelect(ex)}>Add</Button>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="ghost" onClick={() => setHowToExercise(ex)} title="How To">
+                      <HelpCircle className="h-4 w-4" />
+                    </Button>
+                    <Button size="sm" onClick={() => onSelect(ex)}>Add</Button>
+                  </div>
                 </div>
               ))}
               {filtered.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">No matches.</p>}
@@ -685,6 +848,9 @@ function ExercisePickerModal({ onClose, onSelect, search, setSearch }: { onClose
           </>
         )}
       </div>
+      {howToExercise && (
+        <HowToModal exerciseName={howToExercise.name} initialData={howToExercise} onClose={() => setHowToExercise(null)} />
+      )}
     </div>
   );
 }

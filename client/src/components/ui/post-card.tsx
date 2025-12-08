@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Heart, MessageCircle, ExternalLink, Bookmark, MoreHorizontal, Play, Save, Copy, Pencil, Trash2, Flag } from "lucide-react";
+import { Heart, MessageCircle, ExternalLink, Bookmark, MoreHorizontal, Play, Save, Copy, Pencil, Trash2, Flag, ChevronLeft, ChevronRight } from "lucide-react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ export function PostCard({ post }: PostCardProps) {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [showComments, setShowComments] = useState(false);
+  const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   
   // ALL HOOKS MUST COME FIRST - NO CONDITIONAL LOGIC ABOVE HOOKS
   const { data: user } = useQuery<User>({
@@ -560,16 +561,107 @@ export function PostCard({ post }: PostCardProps) {
           <p className="text-sm text-gray-900 dark:text-gray-100">{post.caption}</p>
         </div>
       </CardHeader>
-      {post.images && post.images.length > 0 && (
-        <div className="px-0">
-          <OptimizedImage 
-            src={post.images[0]} 
-            alt="Post content" 
-            width={800}
-            height={1000}
-            className="w-full aspect-[4/5] rounded-md overflow-hidden"
-            placeholder="blur"
-          />
+      {/* Media Carousel */}
+      {((post.mediaItems && post.mediaItems.length > 0) || (post.images && post.images.length > 0)) && (
+        <div className="px-0 relative">
+          <div className="relative overflow-hidden rounded-md">
+            {/* Current Media Item */}
+            {(() => {
+              const mediaItems = post.mediaItems && post.mediaItems.length > 0 
+                ? post.mediaItems 
+                : post.images?.map(url => ({ url, type: 'image' as const, exerciseTags: [] })) || [];
+              
+              const currentItem = mediaItems[currentMediaIndex];
+              
+              return currentItem.type === 'video' ? (
+                <video
+                  src={currentItem.url}
+                  controls
+                  className="w-full aspect-[4/5] object-cover"
+                  poster={currentItem.url} // Use video thumbnail
+                />
+              ) : (
+                <OptimizedImage 
+                  src={currentItem.url} 
+                  alt="Post content" 
+                  width={800}
+                  height={1000}
+                  className="w-full aspect-[4/5] object-cover"
+                  placeholder="blur"
+                />
+              );
+            })()}
+            
+            {/* Navigation Arrows */}
+            {((post.mediaItems?.length || 0) > 1 || (post.images?.length || 0) > 1) && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white border-0 h-8 w-8 p-0"
+                  onClick={() => {
+                    const totalItems = post.mediaItems?.length || post.images?.length || 0;
+                    setCurrentMediaIndex((prev) => (prev - 1 + totalItems) % totalItems);
+                  }}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white border-0 h-8 w-8 p-0"
+                  onClick={() => {
+                    const totalItems = post.mediaItems?.length || post.images?.length || 0;
+                    setCurrentMediaIndex((prev) => (prev + 1) % totalItems);
+                  }}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+          </div>
+          
+          {/* Dots Indicator */}
+          {((post.mediaItems?.length || 0) > 1 || (post.images?.length || 0) > 1) && (
+            <div className="flex justify-center mt-2 space-x-1">
+              {Array.from({ length: post.mediaItems?.length || post.images?.length || 0 }).map((_, index) => (
+                <button
+                  key={index}
+                  className={`w-1.5 h-1.5 rounded-full min-w-0 min-h-0 ${
+                    index === currentMediaIndex ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'
+                  }`}
+                  onClick={() => setCurrentMediaIndex(index)}
+                />
+              ))}
+            </div>
+          )}
+          
+          {/* Exercise Tags for Current Media */}
+          {(() => {
+            const mediaItems = post.mediaItems && post.mediaItems.length > 0 
+              ? post.mediaItems 
+              : post.images?.map(url => ({ url, type: 'image' as const, exerciseTags: [] })) || [];
+            
+            const currentItem = mediaItems[currentMediaIndex];
+            
+            if (currentItem?.exerciseTags && currentItem.exerciseTags.length > 0) {
+              return (
+                <div className="mt-2">
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                    Exercises in this {currentItem.type}:
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {currentItem.exerciseTags.map((tag, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          })()}
         </div>
       )}
       <CardContent className="pt-4">

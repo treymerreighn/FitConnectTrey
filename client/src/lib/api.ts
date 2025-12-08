@@ -42,6 +42,11 @@ export const api = {
   getPostsByUserId: async (userId: string): Promise<Post[]> => {
     return await apiRequest("GET", `/api/posts/user/${userId}`);
   },
+  getPostsByExerciseTag: async (exerciseName: string, limit?: number): Promise<Post[]> => {
+    const params = new URLSearchParams();
+    if (limit) params.append('limit', limit.toString());
+    return await apiRequest("GET", `/api/posts/exercise/${encodeURIComponent(exerciseName)}?${params}`);
+  },
   
   // Comments
   getComments: async (postId: string): Promise<Comment[]> => {

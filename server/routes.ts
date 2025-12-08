@@ -386,6 +386,8 @@ router.post("/api/dev/seed-workout-history", async (req, res) => {
         type: workout.type as "workout" | "nutrition" | "progress",
         caption: workout.caption,
         images: [],
+        exerciseTags: [],
+        mediaItems: [],
         workoutData: workout.workoutData
       });
       createdPosts.push(post);
@@ -1741,6 +1743,8 @@ router.post("/api/meals/share", async (req, res) => {
         type: "nutrition" as const,
         caption,
         images: imageUrl ? [imageUrl] : [],
+        exerciseTags: [],
+        mediaItems: [],
         likes: [],
         comments: [],
         createdAt: new Date(),

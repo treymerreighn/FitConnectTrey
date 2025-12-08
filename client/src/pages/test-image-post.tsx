@@ -30,6 +30,8 @@ export default function TestImagePost() {
         type: 'progress',
         caption: 'Test post with images',
         images: images,
+        exerciseTags: [],
+        mediaItems: [],
       };
 
       console.log('📤 Creating post with data:', postData);

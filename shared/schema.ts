@@ -163,10 +163,18 @@ export const postSchema = z.object({
   userId: z.string(),
   type: z.enum(["workout", "nutrition", "progress"]),
   caption: z.string(),
-  images: z.array(z.string()).default([]),
+  images: z.array(z.string()).default([]), // Keep for backward compatibility
   likes: z.array(z.string()).default([]),
   comments: z.array(z.string()).default([]),
   createdAt: z.date().default(() => new Date()),
+  // Exercise tags for workout videos (community feature)
+  exerciseTags: z.array(z.string()).default([]), // Keep for backward compatibility
+  // New media items structure with individual tagging
+  mediaItems: z.array(z.object({
+    url: z.string(),
+    type: z.enum(['image', 'video']),
+    exerciseTags: z.array(z.string()).default([]), // Tags specific to this media item
+  })).default([]).optional(),
   // Type-specific data
   workoutData: z.object({
     workoutType: z.string(),

@@ -21,13 +21,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const upload = multer({
     storage: multer.memoryStorage(),
     limits: {
-      fileSize: 5 * 1024 * 1024, // 5MB limit
+      fileSize: 50 * 1024 * 1024, // 50MB limit for videos
     },
     fileFilter: (req, file, cb) => {
-      if (file.mimetype.startsWith('image/')) {
+      const allowedTypes = [
+        // Images
+        'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+        // Videos
+        'video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm', 'video/ogg'
+      ];
+
+      if (allowedTypes.includes(file.mimetype)) {
         cb(null, true);
       } else {
-        cb(new Error('Only image files are allowed'));
+        cb(new Error('Only image and video files are allowed'));
       }
     },
   });
@@ -100,6 +107,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(posts);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch trending posts" });
+    }
+  });
+
+  app.get("/api/posts/exercise/:exerciseName", async (req, res) => {
+    try {
+      const exerciseName = decodeURIComponent(req.params.exerciseName);
+      const limit = parseInt(req.query.limit as string) || 10;
+      const posts = await storage.getPostsByExerciseTag(exerciseName, limit);
+      res.json(posts);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch posts by exercise tag" });
     }
   });
 
@@ -383,8 +401,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         keys: results.map(r => r.key),
       });
     } catch (error) {
-      console.error("Error uploading images:", error);
-      res.status(500).json({ message: "Failed to upload images" });
+      console.error("❌ Error uploading file:", error);
+      console.error("Error details:", {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        file: req.file ? {
+          name: req.file.originalname,
+          size: req.file.size,
+          mimetype: req.file.mimetype
+        } : 'No file'
+      });
+      
+      res.status(500).json({ 
+        message: "Failed to upload file", 
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 
@@ -555,6 +586,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const communityMeal = {
         id: nanoid(),
         userId: "44595091", // Current user ID
+        title: caption || "Shared Meal",
         caption,
         imageUrl,
         ingredients,
@@ -577,6 +609,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: "nutrition" as const,
           caption,
           images: imageUrl ? [imageUrl] : [],
+          exerciseTags: [],
+          mediaItems: [],
           likes: [],
           comments: [],
           createdAt: new Date(),

@@ -311,6 +311,19 @@ export class PgStorage implements IStorage {
     return await db.select().from(posts).where(eq(posts.userId, userId)).orderBy(desc(posts.createdAt));
   }
 
+  async getPostsByExerciseTag(exerciseName: string, limit: number = 10): Promise<Post[]> {
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+    return await db.select().from(posts)
+      .where(and(
+        sql`${exerciseName} = ANY(exercise_tags)`,
+        sql`created_at > ${oneWeekAgo}`
+      ))
+      .orderBy(desc(posts.createdAt))
+      .limit(limit);
+  }
+
   async updatePost(id: string, updates: Partial<Post>): Promise<Post> {
     await db.update(posts).set(updates).where(eq(posts.id, id));
     const updated = await this.getPostById(id);

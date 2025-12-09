@@ -13,6 +13,7 @@ export const users = pgTable("users", {
   fitnessGoals: text("fitness_goals").array().default([]),
   followers: text("followers").array().default([]),
   following: text("following").array().default([]),
+  blockedUsers: text("blocked_users").array().default([]),
   location: text("location"),
   height: integer("height"),
   weight: integer("weight"),

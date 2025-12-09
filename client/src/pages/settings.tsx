@@ -8,7 +8,11 @@ import { Button } from '@/components/ui/button';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Weight, ArrowLeft, Crown, Zap, Database, Loader2 } from 'lucide-react';
+import { Weight, ArrowLeft, Crown, Zap, Database, Loader2, Ban, UserX } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '@/lib/api';
+import { UserAvatar } from '@/components/ui/user-avatar';
+import { User } from '@shared/schema';
 
 export default function Settings() {
   const { weightUnit, setWeightUnit } = usePreferences();
@@ -16,6 +20,34 @@ export default function Settings() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isSeeding, setIsSeeding] = React.useState(false);
+  const queryClient = useQueryClient();
+
+  const { data: allUsers = [] } = useQuery<User[]>({
+    queryKey: ["/api/users"],
+  });
+
+  const blockedUsersList = allUsers.filter(u => user?.blockedUsers?.includes(u.id));
+
+  const unblockUserMutation = useMutation({
+    mutationFn: async (targetUserId: string) => {
+      return api.unblockUser(targetUserId, user?.id || "");
+    },
+    onSuccess: () => {
+      toast({
+        title: "User unblocked",
+        description: "You have unblocked this user.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${user?.id}`] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to unblock user.",
+        variant: "destructive",
+      });
+    },
+  });
   
   // Mock premium toggle for testing
   const [mockPremium, setMockPremium] = React.useState(() => {
@@ -175,6 +207,53 @@ export default function Settings() {
                 Existing workout data will be converted automatically.
               </p>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Ban className="h-5 w-5 text-red-500" />
+              <CardTitle>Blocked Users</CardTitle>
+            </div>
+            <CardDescription>
+              Manage users you have blocked
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {blockedUsersList.length === 0 ? (
+              <div className="text-center py-6 text-gray-500">
+                <UserX className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>You haven't blocked any users.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {blockedUsersList.map(blockedUser => (
+                  <div key={blockedUser.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-800">
+                    <div className="flex items-center gap-3">
+                      <UserAvatar 
+                        src={blockedUser.avatar} 
+                        name={blockedUser.name} 
+                        className="h-10 w-10"
+                      />
+                      <div>
+                        <div className="font-medium text-sm">{blockedUser.name}</div>
+                        <div className="text-xs text-gray-500">@{blockedUser.username}</div>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                      onClick={() => unblockUserMutation.mutate(blockedUser.id)}
+                      disabled={unblockUserMutation.isPending}
+                    >
+                      Unblock
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

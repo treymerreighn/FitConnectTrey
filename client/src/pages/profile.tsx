@@ -28,6 +28,7 @@ import { useAuth } from "@/hooks/useAuth";
 import type { User as UserType, Post, ProgressEntry } from "@shared/schema";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { PostCard } from "@/components/ui/post-card";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const editProfileSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -552,6 +553,28 @@ export default function Profile() {
     },
   });
 
+  const blockUserMutation = useMutation({
+    mutationFn: async (targetUserId: string) => {
+      return api.blockUser(targetUserId, canonicalViewerId);
+    },
+    onSuccess: () => {
+      toast({
+        title: "User blocked",
+        description: "You have blocked this user.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      if (viewerKeyTuple) queryClient.invalidateQueries({ queryKey: viewerKeyTuple });
+      setLocation("/");
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to block user.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -896,15 +919,36 @@ export default function Profile() {
                       (() => {
                         const isFollowing = resolverFollowing.includes(userId);
                         return (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => followMutation.mutate(userId)}
-                            disabled={followMutation.isPending}
-                            className={getFollowButtonClass(isFollowing)}
-                          >
-                            {isFollowing ? "Following" : "Follow"}
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => followMutation.mutate(userId)}
+                              disabled={followMutation.isPending}
+                              className={getFollowButtonClass(isFollowing)}
+                            >
+                              {isFollowing ? "Following" : "Follow"}
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem 
+                                  className="text-red-600 focus:text-red-600 cursor-pointer"
+                                  onClick={() => {
+                                    if (confirm("Are you sure you want to block this user?")) {
+                                      blockUserMutation.mutate(userId);
+                                    }
+                                  }}
+                                >
+                                  Block User
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         );
                       })()
                     )}

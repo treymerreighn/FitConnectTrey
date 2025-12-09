@@ -11,6 +11,7 @@ export const userSchema = z.object({
   fitnessGoals: z.array(z.string()).optional(),
   followers: z.array(z.string()).default([]),
   following: z.array(z.string()).default([]),
+  blockedUsers: z.array(z.string()).default([]),
   // Professional verification
   isVerified: z.boolean().default(false),
   professionalType: z.enum(["trainer", "nutritionist"]).optional(),

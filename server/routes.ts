@@ -623,6 +623,77 @@ router.post("/api/users/:id/unfollow", async (req, res) => {
   }
 });
 
+router.post("/api/users/:id/block", async (req, res) => {
+  try {
+    const { currentUserId } = req.body;
+    const targetUserId = req.params.id;
+
+    if (!currentUserId) {
+      return res.status(400).json({ error: "Current user ID is required" });
+    }
+
+    const currentUser = await storage.getUserById(currentUserId);
+    if (!currentUser) {
+      return res.status(404).json({ error: "Current user not found" });
+    }
+
+    const blockedUsers = currentUser.blockedUsers || [];
+    if (!blockedUsers.includes(targetUserId)) {
+      await storage.updateUser(currentUserId, {
+        blockedUsers: [...blockedUsers, targetUserId]
+      });
+    }
+
+    // Also unfollow if following
+    if (currentUser.following.includes(targetUserId)) {
+      await storage.unfollowUser(currentUserId, targetUserId);
+    }
+    
+    // Remove from target user's followers (which is handled by unfollowUser if target was following current, but here we mean if current was following target)
+    // Wait, unfollowUser(followerId, targetId) removes targetId from followerId's following list, and followerId from targetId's followers list.
+    // So calling unfollowUser(currentUserId, targetUserId) handles "I stop following them".
+    
+    // We also need to make sure "They stop following me".
+    const targetUser = await storage.getUserById(targetUserId);
+    if (targetUser && targetUser.following.includes(currentUserId)) {
+      await storage.unfollowUser(targetUserId, currentUserId);
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Failed to block user:", error);
+    res.status(500).json({ error: "Failed to block user" });
+  }
+});
+
+router.post("/api/users/:id/unblock", async (req, res) => {
+  try {
+    const { currentUserId } = req.body;
+    const targetUserId = req.params.id;
+
+    if (!currentUserId) {
+      return res.status(400).json({ error: "Current user ID is required" });
+    }
+
+    const currentUser = await storage.getUserById(currentUserId);
+    if (!currentUser) {
+      return res.status(404).json({ error: "Current user not found" });
+    }
+
+    const blockedUsers = currentUser.blockedUsers || [];
+    if (blockedUsers.includes(targetUserId)) {
+      await storage.updateUser(currentUserId, {
+        blockedUsers: blockedUsers.filter(id => id !== targetUserId)
+      });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Failed to unblock user:", error);
+    res.status(500).json({ error: "Failed to unblock user" });
+  }
+});
+
 // Professional connections
 router.get("/api/professionals", async (req, res) => {
   try {

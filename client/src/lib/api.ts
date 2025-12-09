@@ -69,6 +69,12 @@ export const api = {
   unfollowUser: async (userId: string, followerId: string): Promise<{ success: boolean }> => {
     return await apiRequest("POST", `/api/users/${userId}/unfollow`, { followerId });
   },
+  blockUser: async (userId: string, currentUserId: string): Promise<{ success: boolean }> => {
+    return await apiRequest("POST", `/api/users/${userId}/block`, { currentUserId });
+  },
+  unblockUser: async (userId: string, currentUserId: string): Promise<{ success: boolean }> => {
+    return await apiRequest("POST", `/api/users/${userId}/unblock`, { currentUserId });
+  },
   
   // Professional connections
   getProfessionals: async (type?: "trainer" | "nutritionist"): Promise<User[]> => {

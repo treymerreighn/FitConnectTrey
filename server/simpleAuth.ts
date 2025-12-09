@@ -33,14 +33,23 @@ export async function setupSimpleAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
-  // For development, always authenticate with the current user
-  console.log("Simple auth - user authenticated");
+  const userId = (req as any).session?.userId;
+  if (!userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  
+  // Fetch user to ensure they exist
+  const user = await storage.getUserById(userId);
+  if (!user) {
+    return res.status(401).json({ message: "User not found" });
+  }
+
   (req as any).user = {
     claims: {
-      sub: CURRENT_USER.id,
-      email: CURRENT_USER.email,
-      first_name: CURRENT_USER.firstName,
-      last_name: CURRENT_USER.lastName,
+      sub: user.id,
+      email: user.email,
+      first_name: (user as any).firstName,
+      last_name: (user as any).lastName,
     }
   };
   next();

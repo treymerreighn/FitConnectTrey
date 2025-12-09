@@ -197,16 +197,21 @@ export class PgStorage implements IStorage {
       id: newUser.id,
       username: newUser.username,
       email: newUser.email,
-      fullName: (newUser as any).name || newUser.username,
+      password: (user as any).password,
+      googleId: (user as any).googleId,
+      appleId: (user as any).appleId,
+      firstName: (user as any).firstName,
+      lastName: (user as any).lastName,
+      fullName: (newUser as any).name || `${(user as any).firstName || ''} ${(user as any).lastName || ''}`.trim() || newUser.username,
       bio: newUser.bio,
       avatar: newUser.avatar,
       isVerified: newUser.isVerified,
       accountType: (newUser as any).professionalType || "user",
       fitnessGoals: newUser.fitnessGoals,
       followers: newUser.followers,
-      following: newUser.following
-      ,height: (newUser as any).height
-      ,weight: (newUser as any).weight
+      following: newUser.following,
+      height: (newUser as any).height,
+      weight: (newUser as any).weight
     });
     
     return newUser;
@@ -219,6 +224,21 @@ export class PgStorage implements IStorage {
 
   async getUserByUsername(username: string): Promise<User | null> {
     const result = await db.select().from(users).where(eq(users.username, username)).limit(1);
+    return result[0] || null;
+  }
+
+  async getUserByEmail(email: string): Promise<User | null> {
+    const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    return result[0] || null;
+  }
+
+  async getUserByGoogleId(googleId: string): Promise<User | null> {
+    const result = await db.select().from(users).where(eq(users.googleId, googleId)).limit(1);
+    return result[0] || null;
+  }
+
+  async getUserByAppleId(appleId: string): Promise<User | null> {
+    const result = await db.select().from(users).where(eq(users.appleId, appleId)).limit(1);
     return result[0] || null;
   }
 

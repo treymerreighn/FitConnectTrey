@@ -4,8 +4,12 @@ import { z } from "zod";
 export const userSchema = z.object({
   id: z.string(),
   name: z.string(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
   username: z.string(),
   email: z.string().email(),
+  googleId: z.string().optional(),
+  appleId: z.string().optional(),
   avatar: z.string().optional(),
   bio: z.string().optional(),
   fitnessGoals: z.array(z.string()).optional(),
@@ -316,7 +320,13 @@ export const reportSchema = z.object({
 export type Report = z.infer<typeof reportSchema>;
 
 // Insert schemas
-export const insertUserSchema = userSchema.omit({ id: true, createdAt: true });
+export const insertUserSchema = userSchema.extend({
+  password: z.string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[A-Za-z]/, "Password must contain at least one letter")
+    .regex(/[0-9]/, "Password must contain at least one number")
+    .optional(), // Optional for now to support existing flows, but should be required for new registration
+}).omit({ id: true, createdAt: true, followers: true, following: true, blockedUsers: true, isVerified: true, isAdmin: true, isPremium: true, clients: true, trainers: true });
 export const insertPostSchema = postSchema.omit({ id: true, createdAt: true, likes: true, comments: true });
 export const insertCommentSchema = commentSchema.omit({ id: true, createdAt: true });
 export const insertConnectionSchema = connectionSchema.omit({ id: true, createdAt: true });

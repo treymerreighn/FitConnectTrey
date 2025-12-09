@@ -4,6 +4,11 @@ export const users = pgTable("users", {
   id: text("id").primaryKey(),
   username: text("username").notNull().unique(),
   email: text("email").notNull().unique(),
+  password: text("password"), // Hashed password
+  googleId: text("google_id"),
+  appleId: text("apple_id"),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
   fullName: text("full_name").notNull(),
   bio: text("bio"),
   avatar: text("avatar"),

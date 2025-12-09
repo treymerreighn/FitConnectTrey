@@ -8,6 +8,12 @@
   scrollbar-width: none;
 }
 
+/* Hide Edge's default password reveal button to avoid duplicates with custom UI */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }

@@ -39,6 +39,9 @@ import MealsPage from "./pages/meals";
 import Settings from "./pages/settings";
 import PremiumDemo from "./pages/premium-demo";
 import AdminReports from "./pages/admin-reports";
+import Auth from "./pages/auth";
+import TermsOfService from "./pages/legal/terms";
+import PrivacyPolicy from "./pages/legal/privacy";
 
 // Scroll to top when route changes
 function ScrollToTop() {
@@ -56,6 +59,9 @@ function ScrollToTop() {
 function BottomNavigation() {
   const [location] = useLocation();
   const { isAuthenticated } = useAuth();
+  
+  // Don't show navigation on auth page
+  if (location === "/auth") return null;
   
   // Only show navigation for authenticated users
   if (!isAuthenticated) return null;
@@ -108,13 +114,31 @@ function BottomNavigation() {
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-fit-green border-t-transparent rounded-full animate-spin" />
+          <p className="text-gray-500">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Switch>
-      {isLoading || !isAuthenticated ? (
-        <Route path="/" component={Landing} />
+      <Route path="/terms" component={TermsOfService} />
+      <Route path="/privacy" component={PrivacyPolicy} />
+      {!isAuthenticated ? (
+        <>
+          <Route path="/" component={Auth} />
+          <Route path="/auth" component={Auth} />
+        </>
       ) : (
         <>
           <Route path="/" component={Feed} />
+          <Route path="/auth" component={Auth} />
           <Route path="/profile" component={Profile} />
           <Route path="/profile/:id" component={Profile} />
           <Route path="/create-post" component={CreatePost} />

@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage.ts";
 import { setupSimpleAuth, isAuthenticated } from "./simpleAuth.ts";
-import { insertPostSchema, insertCommentSchema, insertConnectionSchema, insertProgressEntrySchema, insertExerciseSchema, insertWorkoutSessionSchema, insertExerciseProgressSchema } from "../shared/schema.ts";
+import { insertPostSchema, insertCommentSchema, insertConnectionSchema, insertProgressEntrySchema, insertExerciseSchema, insertWorkoutSessionSchema, insertExerciseProgressSchema, insertUserSchema } from "../shared/schema.ts";
 import multer from "multer";
 import { AWSImageService } from "./aws-config.ts";
 import { db } from "./db.ts";
@@ -12,10 +12,22 @@ import { generateExerciseInsights, generateWorkoutVolumeInsights } from "./ai-ex
 import { generatePersonalizedRecipe } from "./ai-meal-helper.ts";
 import { z } from "zod";
 import { nanoid } from "nanoid";
+import session from "express-session";
+import { hashPassword, comparePasswords } from "./password.ts";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Session middleware
+  app.use(
+    session({
+      secret: process.env.SESSION_SECRET || "dev_secret_key_123",
+      resave: false,
+      saveUninitialized: false,
+      cookie: { secure: process.env.NODE_ENV === "production" },
+    })
+  );
+
   // Auth middleware
-  await setupSimpleAuth(app);
+  // await setupSimpleAuth(app); // Disable simple auth to use real auth
 
   // Configure multer for file uploads
   const upload = multer({
@@ -37,6 +49,176 @@ export async function registerRoutes(app: Express): Promise<Server> {
         cb(new Error('Only image and video files are allowed'));
       }
     },
+  });
+
+  // Real Auth Routes
+  app.post("/api/register", async (req, res) => {
+    try {
+      const data = insertUserSchema.parse(req.body);
+      const existingUser = await storage.getUserByUsername(data.username);
+      if (existingUser) {
+        return res.status(400).json({ error: "Username already exists" });
+      }
+      
+      const hashedPassword = await hashPassword(data.password || "");
+      const user = await storage.createUser({
+        ...data,
+        password: hashedPassword,
+      });
+      
+      // Set session
+      (req as any).session = (req as any).session || {};
+      (req as any).session.userId = user.id;
+      
+      res.status(201).json(user);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      console.error("Registration error:", error);
+      res.status(500).json({ error: "Failed to register user" });
+    }
+  });
+
+  app.post("/api/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      // Try to find user by username first, then by email
+      let user = await storage.getUserByUsername(username);
+      if (!user) {
+        user = await storage.getUserByEmail(username);
+      }
+      
+      if (!user || !user.password || !(await comparePasswords(password, user.password))) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+      
+      // Set session
+      (req as any).session = (req as any).session || {};
+      (req as any).session.userId = user.id;
+      
+      res.json(user);
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ error: "Login failed" });
+    }
+  });
+
+  app.post("/api/logout", (req, res) => {
+    if ((req as any).session) {
+      (req as any).session.destroy((err: any) => {
+        if (err) {
+          return res.status(500).json({ error: "Failed to logout" });
+        }
+        res.json({ message: "Logged out successfully" });
+      });
+    } else {
+      res.json({ message: "Logged out successfully" });
+    }
+  });
+
+  // Mock Google Auth Route
+  app.get("/api/auth/google", async (req, res) => {
+    // In a real app, this would redirect to Google's OAuth page
+    // For this demo/dev environment, we'll simulate a successful Google login
+    
+    try {
+      // Simulate getting user info from Google
+      const mockGoogleUser = {
+        googleId: "google_123456789",
+        email: "google_user@example.com",
+        name: "Google User",
+        firstName: "Google",
+        lastName: "User",
+        avatar: "https://lh3.googleusercontent.com/a/default-user=s96-c"
+      };
+
+      // Check if user exists
+      let user = await storage.getUserByGoogleId(mockGoogleUser.googleId);
+
+      if (!user) {
+        // Create new user if not exists
+        // We need a unique username
+        const baseUsername = mockGoogleUser.email.split('@')[0];
+        let username = baseUsername;
+        let counter = 1;
+        while (await storage.getUserByUsername(username)) {
+          username = `${baseUsername}${counter++}`;
+        }
+
+        user = await storage.createUser({
+          username,
+          email: mockGoogleUser.email,
+          name: mockGoogleUser.name,
+          firstName: mockGoogleUser.firstName,
+          lastName: mockGoogleUser.lastName,
+          googleId: mockGoogleUser.googleId,
+          avatar: mockGoogleUser.avatar,
+          isVerified: true // Trust Google verified emails
+        });
+      }
+
+      // Set session
+      (req as any).session = (req as any).session || {};
+      (req as any).session.userId = user.id;
+
+      // Redirect to home
+      res.redirect("/");
+    } catch (error) {
+      console.error("Google auth error:", error);
+      res.redirect("/auth?error=google_auth_failed");
+    }
+  });
+
+  // Mock Apple Auth Route
+  app.get("/api/auth/apple", async (req, res) => {
+    // In a real app, this would redirect to Apple's OAuth page
+    // For this demo/dev environment, we'll simulate a successful Apple login
+    
+    try {
+      // Simulate getting user info from Apple
+      const mockAppleUser = {
+        appleId: "apple_123456789",
+        email: "apple_user@example.com",
+        name: "Apple User",
+        firstName: "Apple",
+        lastName: "User"
+      };
+
+      // Check if user exists
+      let user = await storage.getUserByAppleId(mockAppleUser.appleId);
+
+      if (!user) {
+        // Create new user if not exists
+        const baseUsername = mockAppleUser.email.split('@')[0];
+        let username = baseUsername;
+        let counter = 1;
+        while (await storage.getUserByUsername(username)) {
+          username = `${baseUsername}${counter++}`;
+        }
+
+        user = await storage.createUser({
+          username,
+          email: mockAppleUser.email,
+          name: mockAppleUser.name,
+          firstName: mockAppleUser.firstName,
+          lastName: mockAppleUser.lastName,
+          appleId: mockAppleUser.appleId,
+          isVerified: true
+        });
+      }
+
+      // Set session
+      (req as any).session = (req as any).session || {};
+      (req as any).session.userId = user.id;
+
+      // Redirect to home
+      res.redirect("/");
+    } catch (error) {
+      console.error("Apple auth error:", error);
+      res.redirect("/auth?error=apple_auth_failed");
+    }
   });
 
   // Auth routes

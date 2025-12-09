@@ -39,8 +39,6 @@ import MealsPage from "./pages/meals";
 import Settings from "./pages/settings";
 import PremiumDemo from "./pages/premium-demo";
 import AdminReports from "./pages/admin-reports";
-import WorkoutSummary from "./pages/workout-summary";
-import CreateStory from "./pages/create-story";
 
 // Scroll to top when route changes
 function ScrollToTop() {
@@ -79,7 +77,7 @@ function BottomNavigation() {
   };
 
   return (
-    <nav className="fixed bottom-0 w-full bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 z-40 h-16">
+    <nav className="fixed bottom-0 w-full bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-40 h-16">
       <div className="flex items-center justify-around h-full">
         {navItems.map(({ path, icon: Icon, label }) => {
           const isActive = location === path;
@@ -89,8 +87,8 @@ function BottomNavigation() {
                 variant="ghost"
                 className={`flex items-center justify-center p-0 h-full [&_svg]:!size-auto !bg-transparent hover:!bg-transparent focus:!bg-transparent active:!bg-transparent focus-visible:!bg-transparent ${
                   isActive
-                    ? "text-red-600 dark:text-red-500"
-                    : "text-zinc-600 dark:text-zinc-400 hover:text-red-500"
+                    ? "text-fit-green"
+                    : "text-gray-600 dark:text-gray-300 hover:text-fit-green"
                 }`}
                 aria-label={label}
                 onClick={(e) => handleNavClick(path, e)}
@@ -144,8 +142,6 @@ function Router() {
           <Route path="/settings" component={Settings} />
           <Route path="/premium-demo" component={PremiumDemo} />
           <Route path="/admin/reports" component={AdminReports} />
-          <Route path="/workout-summary" component={WorkoutSummary} />
-          <Route path="/create-story" component={CreateStory} />
         </>
       )}
       <Route component={NotFound} />

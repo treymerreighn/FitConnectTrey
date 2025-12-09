@@ -84,14 +84,13 @@ function ProgressInsightsTab({ userId, isOwner }: { userId: string; isOwner?: bo
 
   // Prepare chart data
   const chartData = progressEntries
-    .filter(entry => entry.weight || entry.bodyFatPercentage || entry.muscleMass)
+    .filter(entry => entry.weight)
     .map(entry => ({
       date: format(new Date(entry.date), 'MMM dd'),
+      rawDate: new Date(entry.date).getTime(),
       weight: entry.weight,
-      bodyFat: entry.bodyFatPercentage,
-      muscle: entry.muscleMass,
     }))
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .sort((a, b) => a.rawDate - b.rawDate)
     .slice(-10); // Last 10 entries
 
   // Calculate progress stats
@@ -100,17 +99,6 @@ function ProgressInsightsTab({ userId, isOwner }: { userId: string; isOwner?: bo
   const weightChange = latestEntry?.weight && firstEntry?.weight 
     ? latestEntry.weight - firstEntry.weight 
     : null;
-  
-  const workoutPosts = userPosts.filter((post: Post) => post.type === 'workout').length;
-  const progressPosts = userPosts.filter((post: Post) => post.type === 'progress').length;
-  const nutritionPosts = userPosts.filter((post: Post) => post.type === 'nutrition').length;
-
-  // Activity breakdown for pie chart
-  const activityData = [
-    { name: 'Workout Posts', value: workoutPosts, color: '#3B82F6' },
-    { name: 'Progress Posts', value: progressPosts, color: '#10B981' },
-    { name: 'Nutrition Posts', value: nutritionPosts, color: '#F59E0B' },
-  ].filter(item => item.value > 0);
 
   return (
     <div className="w-full">
@@ -170,34 +158,8 @@ function ProgressInsightsTab({ userId, isOwner }: { userId: string; isOwner?: bo
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="w-5 h-5 text-red-500" />
-                Progress Trends
+                Weight Trend
               </CardTitle>
-              <div className="flex gap-2">
-                <Button
-                  variant={selectedMetric === "weight" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedMetric("weight")}
-                  className={selectedMetric === "weight" ? "bg-red-600 hover:bg-red-700" : ""}
-                >
-                  Weight
-                </Button>
-                <Button
-                  variant={selectedMetric === "bodyFat" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedMetric("bodyFat")}
-                  className={selectedMetric === "bodyFat" ? "bg-red-600 hover:bg-red-700" : ""}
-                >
-                  Body Fat
-                </Button>
-                <Button
-                  variant={selectedMetric === "muscle" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedMetric("muscle")}
-                  className={selectedMetric === "muscle" ? "bg-red-600 hover:bg-red-700" : ""}
-                >
-                  Muscle
-                </Button>
-              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -210,7 +172,7 @@ function ProgressInsightsTab({ userId, isOwner }: { userId: string; isOwner?: bo
                   <Tooltip />
                   <Line 
                     type="monotone" 
-                    dataKey={selectedMetric} 
+                    dataKey="weight" 
                     stroke="#DC2626" 
                     strokeWidth={2}
                     dot={{ fill: '#DC2626' }}
@@ -222,106 +184,83 @@ function ProgressInsightsTab({ userId, isOwner }: { userId: string; isOwner?: bo
         </Card>
       )}
 
-      {/* Activity Breakdown */}
-      {activityData.length > 0 && (
-        <div className="grid md:grid-cols-2 gap-0">
-          <Card className="rounded-none border-0 border-b md:border-r bg-white dark:bg-zinc-900">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="w-5 h-5 text-red-500" />
-                Activity Breakdown
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-48">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={activityData}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={60}
-                      dataKey="value"
-                    >
-                      {activityData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="space-y-2 mt-4">
-                {activityData.map((item, index) => (
-                  <div key={index} className="flex items-center gap-2 text-sm">
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span>{item.name}: {item.value}</span>
+      {/* Progress History */}
+      <div className="space-y-4 p-4">
+        <h3 className="font-semibold text-lg text-gray-900 dark:text-white">Progress History</h3>
+        {progressEntries.length > 0 ? (
+          <div className="space-y-4">
+            {progressEntries.map((entry) => (
+              <Card key={entry.id} className="overflow-hidden border shadow-sm">
+                <CardHeader className="p-3 bg-zinc-50 dark:bg-zinc-900/50 border-b">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        {format(new Date(entry.date), "MMMM d, yyyy")}
+                      </span>
+                    </div>
+                    {entry.weight && (
+                      <Badge variant="secondary" className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 border-blue-200 dark:border-blue-800">
+                        {entry.weight} lbs
+                      </Badge>
+                    )}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                </CardHeader>
+                <CardContent className="pt-4 pb-4">
+                  {entry.notes && (
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                      <span className="font-medium text-gray-900 dark:text-white">Notes: </span>
+                      {entry.notes}
+                    </p>
+                  )}
+                  
+                  {entry.photos && entry.photos.length > 0 && (
+                    <div className={`grid gap-2 mt-2 ${entry.photos.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                      {entry.photos.map((photo, idx) => (
+                        <OptimizedImage
+                          key={idx}
+                          src={photo}
+                          alt={`Progress photo ${idx + 1}`}
+                          width={400}
+                          height={500}
+                          className="w-full aspect-[4/5] object-cover rounded-md border border-gray-100 dark:border-gray-800"
+                        />
+                      ))}
+                    </div>
+                  )}
 
-          {/* Recent Progress Photos */}
-          <Card className="rounded-none border-0 border-b bg-white dark:bg-gray-800">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Camera className="w-5 h-5 text-purple-500" />
-                Recent Progress Photos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {progressEntries.filter(entry => entry.photos.length > 0).length > 0 ? (
-                <div className="grid grid-cols-2 gap-2">
-                  {progressEntries
-                    .filter(entry => entry.photos.length > 0)
-                    .slice(0, 4)
-                    .map((entry, index) => (
-                      <OptimizedImage
-                        key={index}
-                        src={entry.photos[0]}
-                        alt={`Progress ${index + 1}`}
-                        width={240}
-                        height={96}
-                        className="w-full h-24 object-cover rounded-lg"
-                        placeholder="blur"
-                      />
-                    ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  <Camera className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No progress photos yet</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* No Data State */}
-      {progressEntries.length === 0 && (
-        <Card className="border-dashed border-2 border-gray-200 dark:border-gray-700">
-          <CardContent className="p-12 text-center">
+                  {(entry.bodyFatPercentage || entry.muscleMass) && (
+                    <div className="flex gap-4 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 text-sm text-gray-500">
+                      {entry.bodyFatPercentage && (
+                        <div className="flex items-center gap-1">
+                          <Activity className="h-4 w-4 text-fit-green" />
+                          <span>{entry.bodyFatPercentage}% Body Fat</span>
+                        </div>
+                      )}
+                      {entry.muscleMass && (
+                        <div className="flex items-center gap-1">
+                          <Dumbbell className="h-4 w-4 text-fit-blue" />
+                          <span>{entry.muscleMass} lbs Muscle</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 bg-gray-50 dark:bg-zinc-900 rounded-lg border border-dashed">
             <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              Start Your Progress Journey
+              No progress entries yet
             </h3>
             <p className="text-gray-500 dark:text-gray-400 mb-4">
-              Track your fitness progress with photos, measurements, and notes
+              Start tracking your journey to see your history here.
             </p>
-            <Button 
-              className="bg-blue-500 hover:bg-blue-600 text-white"
-              onClick={() => window.location.href = '/progress'}
-            >
-              Add First Progress Entry
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

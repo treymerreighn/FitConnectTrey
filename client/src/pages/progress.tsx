@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Camera, TrendingUp, Brain, Calendar, Weight, Eye, EyeOff, Share2, Sparkles, BarChart3, Crown, Loader2 } from "lucide-react";
+import { Plus, Camera, TrendingUp, Brain, Calendar, Weight, Eye, EyeOff, Share2, Sparkles, BarChart3, Crown, Loader2, Activity, Dumbbell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +30,7 @@ import { uploadMultipleImages, uploadImage } from "@/lib/imageUpload";
 import { useToast } from "@/hooks/use-toast";
 import { usePreferences } from "@/contexts/preferences-context";
 import { ImageCropper } from "@/components/image-cropper";
+import { OptimizedImage } from "@/components/OptimizedImage";
 
 const progressFormSchema = z.object({
   date: z.string(),
@@ -540,160 +541,124 @@ export default function Progress() {
             </div>
           ) : (
             progressEntries.map((entry) => (
-              <Card key={entry.id} className="border-0 shadow-sm">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="flex items-center space-x-2">
-                        <Calendar className="w-4 h-4 text-gray-500" />
-                        <CardTitle className="text-lg">
-                          {format(new Date(entry.date), "MMMM dd, yyyy")}
-                        </CardTitle>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        {entry.isPrivate ? (
-                          <EyeOff className="w-4 h-4 text-gray-400" />
-                        ) : (
-                          <Eye className="w-4 h-4 text-gray-400" />
-                        )}
-                      </div>
+              <Card key={entry.id} className="overflow-hidden border shadow-sm">
+                <CardHeader className="p-3 bg-zinc-50 dark:bg-zinc-900/50 border-b">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        {format(new Date(entry.date), "MMMM d, yyyy")}
+                      </span>
+                      {entry.isPrivate ? (
+                        <EyeOff className="h-3 w-3 text-gray-400 ml-1" />
+                      ) : (
+                        <Eye className="h-3 w-3 text-gray-400 ml-1" />
+                      )}
                     </div>
-
-                    {entry.photos.length > 0 && !entry.aiInsights && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleGenerateInsights(entry)}
-                        disabled={generatingInsights === entry.id}
-                        className="border-purple-500 text-purple-600 hover:bg-purple-500 hover:text-white text-xs sm:text-sm"
-                      >
-                        {generatingInsights === entry.id ? (
-                          <>
-                            <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mr-1 sm:mr-2" />
-                            <span className="hidden sm:inline">Analyzing...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                            <span className="hidden sm:inline">AI Insights</span>
-                            <span className="sm:hidden">AI</span>
-                            {!isPremiumUser && <Crown className="w-3 h-3 ml-1" />}
-                          </>
-                        )}
-                      </Button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {entry.weight && (
+                        <Badge variant="secondary" className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 border-blue-200 dark:border-blue-800">
+                          {entry.weight} lbs
+                        </Badge>
+                      )}
+                      {entry.photos.length > 0 && !entry.aiInsights && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleGenerateInsights(entry)}
+                          disabled={generatingInsights === entry.id}
+                          className="h-6 text-xs px-2 border-purple-500 text-purple-600 hover:bg-purple-500 hover:text-white"
+                        >
+                          {generatingInsights === entry.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <>
+                              <Sparkles className="h-3 w-3 mr-1" />
+                              AI
+                              {!isPremiumUser && <Crown className="h-2 w-2 ml-1" />}
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
                 
-                <CardContent className="space-y-3 sm:space-y-4">
-                  {/* Metrics */}
-                  <div className="flex flex-wrap gap-2 sm:gap-4">
-                    {entry.weight && (
-                      <div className="text-center p-2 sm:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg min-w-[70px]">
-                        <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{entry.weight}</div>
-                        <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">lbs</div>
-                      </div>
-                    )}
-                    
-
-                  </div>
+                <CardContent className="pt-4 pb-4 space-y-4">
+                  {/* Notes */}
+                  {entry.notes && (
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      <span className="font-medium text-gray-900 dark:text-white">Notes: </span>
+                      {entry.notes}
+                    </p>
+                  )}
 
                   {/* Progress Photos */}
                   {entry.photos.length > 0 && (
-                    <div>
-                      <h4 className="text-sm sm:text-base font-medium text-gray-900 dark:text-white mb-2">Progress Photos</h4>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        {entry.photos.map((photo, index) => (
-                          <img
-                            key={index}
-                            src={photo}
-                            alt={`Progress ${index + 1}`}
-                            className="w-full h-32 sm:h-40 object-cover rounded-lg"
-                          />
-                        ))}
-                      </div>
+                    <div className={`grid gap-2 ${entry.photos.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                      {entry.photos.map((photo, index) => (
+                        <OptimizedImage
+                          key={index}
+                          src={photo}
+                          alt={`Progress ${index + 1}`}
+                          width={400}
+                          height={500}
+                          className="w-full aspect-[4/5] object-cover rounded-md border border-gray-100 dark:border-gray-800"
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Stats Row */}
+                  {(entry.bodyFatPercentage || entry.muscleMass || (entry.measurements && Object.values(entry.measurements).some(val => val))) && (
+                    <div className="flex flex-wrap gap-4 pt-2 border-t border-gray-100 dark:border-gray-800 text-sm text-gray-500">
+                      {entry.bodyFatPercentage && (
+                        <div className="flex items-center gap-1">
+                          <Activity className="h-4 w-4 text-fit-green" />
+                          <span>{entry.bodyFatPercentage}% Body Fat</span>
+                        </div>
+                      )}
+                      {entry.muscleMass && (
+                        <div className="flex items-center gap-1">
+                          <Dumbbell className="h-4 w-4 text-fit-blue" />
+                          <span>{entry.muscleMass} lbs Muscle</span>
+                        </div>
+                      )}
+                      {entry.measurements && Object.entries(entry.measurements).map(([key, value]) => 
+                        value ? (
+                          <div key={key} className="flex items-center gap-1">
+                            <span className="capitalize">{key}:</span>
+                            <span className="font-medium text-gray-900 dark:text-white">{value}"</span>
+                          </div>
+                        ) : null
+                      )}
                     </div>
                   )}
 
                   {/* AI Insights */}
                   {entry.aiInsights && (
-                    <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 p-3 sm:p-4 rounded-lg border border-purple-200 dark:border-purple-800">
-                      <div className="flex items-center flex-wrap gap-2 mb-3">
-                        <div className="flex items-center space-x-2">
-                          <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
-                          <h4 className="text-sm sm:text-base font-medium text-purple-900 dark:text-purple-100">AI Insights</h4>
-                        </div>
-                        <Badge variant="secondary" className="bg-purple-100 text-purple-800 text-xs">
-                          <Crown className="w-3 h-3 mr-1" />
-                          Premium
-                        </Badge>
+                    <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 p-3 rounded-lg border border-purple-200 dark:border-purple-800 text-sm">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Brain className="h-4 w-4 text-purple-600" />
+                        <span className="font-medium text-purple-900 dark:text-purple-100">AI Analysis</span>
                       </div>
                       
-                      {entry.aiInsights.bodyComposition && (
-                        <div className="mb-3">
-                          <h5 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white mb-1">Body Composition Analysis</h5>
-                          <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">{entry.aiInsights.bodyComposition}</p>
-                        </div>
-                      )}
-                      
-                      {entry.aiInsights.progressAnalysis && (
-                        <div className="mb-3">
-                          <h5 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white mb-1">Progress Analysis</h5>
-                          <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">{entry.aiInsights.progressAnalysis}</p>
-                        </div>
-                      )}
-                      
-                      {entry.aiInsights.recommendations.length > 0 && (
-                        <div>
-                          <h5 className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white mb-2">Recommendations</h5>
-                          <ul className="space-y-1">
-                            {entry.aiInsights.recommendations.map((rec, index) => (
-                              <li key={index} className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 flex items-start space-x-2">
-                                <span className="text-purple-600 mt-1">•</span>
-                                <span>{rec}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Notes */}
-                  {entry.notes && (
-                    <div>
-                      <h4 className="text-sm sm:text-base font-medium text-gray-900 dark:text-white mb-2">Notes</h4>
-                      <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 p-2 sm:p-3 rounded-lg">
-                        {entry.notes}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Measurements */}
-                  {entry.measurements && Object.values(entry.measurements).some(val => val) && (
-                    <div>
-                      <h4 className="font-medium text-gray-900 dark:text-white mb-2">Measurements</h4>
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
-                        {Object.entries(entry.measurements).map(([key, value]) => 
-                          value ? (
-                            <div key={key} className="text-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
-                              <div className="font-medium text-gray-900 dark:text-white">{value}"</div>
-                              <div className="text-gray-600 dark:text-gray-400 capitalize">{key}</div>
-                            </div>
-                          ) : null
+                      <div className="space-y-2 text-gray-700 dark:text-gray-300">
+                        {entry.aiInsights.bodyComposition && (
+                          <p>{entry.aiInsights.bodyComposition}</p>
+                        )}
+                        {entry.aiInsights.progressAnalysis && (
+                          <p>{entry.aiInsights.progressAnalysis}</p>
                         )}
                       </div>
                     </div>
                   )}
 
-                  {/* Share to Feed Option */}
+                  {/* Share Status */}
                   {!entry.isPrivate && (
-                    <div className="flex items-center justify-between bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
-                      <div className="flex items-center space-x-2">
-                        <Share2 className="w-4 h-4 text-green-600" />
-                        <span className="text-sm text-green-800 dark:text-green-200">Shared to your feed</span>
-                      </div>
+                    <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400 pt-2">
+                      <Share2 className="h-3 w-3" />
+                      <span>Shared to feed</span>
                     </div>
                   )}
                 </CardContent>

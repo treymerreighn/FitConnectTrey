@@ -211,7 +211,8 @@ export class PgStorage implements IStorage {
       followers: newUser.followers,
       following: newUser.following,
       height: (newUser as any).height,
-      weight: (newUser as any).weight
+      weight: (newUser as any).weight,
+      createdAt: newUser.createdAt
     });
     
     return newUser;

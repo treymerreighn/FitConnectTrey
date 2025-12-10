@@ -27,6 +27,43 @@ export default function Auth() {
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validateRegister = () => {
+    const newErrors: Record<string, string> = {};
+    
+    if (registerFirstName.length < 2 || registerFirstName.length > 50) {
+      newErrors.firstName = "First name must be 2-50 characters";
+    }
+    
+    if (registerLastName.length < 2 || registerLastName.length > 50) {
+      newErrors.lastName = "Last name must be 2-50 characters";
+    }
+    
+    if (!/^[a-zA-Z0-9_]{3,30}$/.test(registerUsername)) {
+      newErrors.username = "Username must be 3-30 chars, alphanumeric & underscore only";
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setRegisterUsername(val);
+    
+    if (val.length >= 30) {
+      setErrors(prev => ({ ...prev, username: "Character limit reached!" }));
+    } else if (/[^a-zA-Z0-9_]/.test(val)) {
+      setErrors(prev => ({ ...prev, username: "No special characters!" }));
+    } else {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.username;
+        return newErrors;
+      });
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,6 +104,10 @@ export default function Auth() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateRegister()) {
+      return;
+    }
     
     if (!registerFirstName || !registerLastName || !registerUsername || !registerEmail || !registerPassword || !registerConfirmPassword) {
       toast({
@@ -336,9 +377,10 @@ export default function Auth() {
                           placeholder="First"
                           value={registerFirstName}
                           onChange={(e) => setRegisterFirstName(e.target.value)}
-                          className="bg-zinc-800 border-zinc-700 text-white placeholder:text-gray-500 focus:border-red-500 focus:ring-red-500"
+                          className={`bg-zinc-800 border-zinc-700 text-white placeholder:text-gray-500 focus:border-red-500 focus:ring-red-500 ${errors.firstName ? "border-red-500" : ""}`}
                           required
                         />
+                        {errors.firstName && <p className="text-xs text-red-500">{errors.firstName}</p>}
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="register-lastName" className="text-gray-300">Last Name</Label>
@@ -348,9 +390,10 @@ export default function Auth() {
                           placeholder="Last"
                           value={registerLastName}
                           onChange={(e) => setRegisterLastName(e.target.value)}
-                          className="bg-zinc-800 border-zinc-700 text-white placeholder:text-gray-500 focus:border-red-500 focus:ring-red-500"
+                          className={`bg-zinc-800 border-zinc-700 text-white placeholder:text-gray-500 focus:border-red-500 focus:ring-red-500 ${errors.lastName ? "border-red-500" : ""}`}
                           required
                         />
+                        {errors.lastName && <p className="text-xs text-red-500">{errors.lastName}</p>}
                       </div>
                     </div>
 
@@ -363,11 +406,15 @@ export default function Auth() {
                           type="text"
                           placeholder="Choose a username"
                           value={registerUsername}
-                          onChange={(e) => setRegisterUsername(e.target.value)}
-                          className="pl-10 bg-zinc-800 border-zinc-700 text-white placeholder:text-gray-500 focus:border-red-500 focus:ring-red-500"
+                          onChange={handleUsernameChange}
+                          className={`pl-10 bg-zinc-800 border-zinc-700 text-white placeholder:text-gray-500 focus:border-red-500 focus:ring-red-500 ${errors.username ? "border-red-500" : ""}`}
                           required
+                          maxLength={30}
                         />
                       </div>
+                      {errors.username && (
+                        <p className="text-xs text-red-500">{errors.username}</p>
+                      )}
                     </div>
                     
                     <div className="space-y-2">

@@ -38,6 +38,8 @@ export interface IStorage {
   getUserById(id: string): Promise<User | null>;
   getUserByUsername(username: string): Promise<User | null>;
   getUserByEmail(email: string): Promise<User | null>;
+  getUserByGoogleId(googleId: string): Promise<User | null>;
+  getUserByAppleId(appleId: string): Promise<User | null>;
   updateUser(id: string, updates: Partial<User>): Promise<User>;
   getAllUsers(): Promise<User[]>;
   upsertUser(user: { id: string; email: string | null | undefined; firstName: string | null | undefined; lastName: string | null | undefined; profileImageUrl: string | null | undefined; isAdmin?: boolean; }): Promise<User>;
@@ -634,6 +636,21 @@ export class MemStorage implements IStorage {
   async getUserByUsername(username: string): Promise<User | null> {
     const users = Array.from(this.users.values());
     return users.find(user => user.username === username) || null;
+  }
+
+  async getUserByEmail(email: string): Promise<User | null> {
+    const users = Array.from(this.users.values());
+    return users.find(user => user.email === email) || null;
+  }
+
+  async getUserByGoogleId(googleId: string): Promise<User | null> {
+    const users = Array.from(this.users.values());
+    return users.find(user => user.googleId === googleId) || null;
+  }
+
+  async getUserByAppleId(appleId: string): Promise<User | null> {
+    const users = Array.from(this.users.values());
+    return users.find(user => user.appleId === appleId) || null;
   }
 
   async updateUser(id: string, updates: Partial<User>): Promise<User> {

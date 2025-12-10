@@ -18,7 +18,7 @@ import { z } from "zod";
 import { api } from "@/lib/api";
 import { useRoute, useLocation } from "wouter";
 import { CURRENT_USER_ID } from "@/lib/constants";
-import { format } from "date-fns";
+import { format, isThisWeek, isThisMonth } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { uploadImage } from "@/lib/imageUpload";
 import { ImageCropper } from "@/components/image-cropper";
@@ -266,6 +266,77 @@ function ProgressInsightsTab({ userId, isOwner }: { userId: string; isOwner?: bo
   );
 }
 
+function WorkoutsTab({ userId }: { userId: string }) {
+  const [filter, setFilter] = useState<"all" | "week" | "month">("all");
+  const { user: authUser } = useAuth();
+  const currentUserId = (authUser as UserType | undefined)?.id;
+
+  const { data: userPosts = [] } = useQuery<Post[]>({
+    queryKey: ["/api/posts", "user", userId],
+    queryFn: async () => api.getPostsByUserId(userId),
+    enabled: Boolean(userId),
+  });
+
+  const workouts = userPosts.filter(post => post.type === "workout");
+
+  const filteredWorkouts = workouts.filter(workout => {
+    const date = new Date(workout.createdAt);
+    if (filter === "week") return isThisWeek(date);
+    if (filter === "month") return isThisMonth(date);
+    return true;
+  });
+
+  return (
+    <div className="space-y-0">
+      {/* Workout filter tabs */}
+      <div className="flex space-x-2 p-4 border-b">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className={filter === "all" ? "bg-red-500/10 text-red-600 border-red-500/20 hover:bg-red-500/20 hover:text-red-700 dark:text-red-400 dark:border-red-500/30 dark:hover:text-red-300" : ""}
+          onClick={() => setFilter("all")}
+        >
+          All Workouts
+        </Button>
+        <Button 
+          variant="outline" 
+          size="sm"
+          className={filter === "week" ? "bg-red-500/10 text-red-600 border-red-500/20 hover:bg-red-500/20 hover:text-red-700 dark:text-red-400 dark:border-red-500/30 dark:hover:text-red-300" : ""}
+          onClick={() => setFilter("week")}
+        >
+          This Week
+        </Button>
+        <Button 
+          variant="outline" 
+          size="sm"
+          className={filter === "month" ? "bg-red-500/10 text-red-600 border-red-500/20 hover:bg-red-500/20 hover:text-red-700 dark:text-red-400 dark:border-red-500/30 dark:hover:text-red-300" : ""}
+          onClick={() => setFilter("month")}
+        >
+          This Month
+        </Button>
+      </div>
+
+      {/* Workout history */}
+      <div className="space-y-4 p-4">
+        {filteredWorkouts.length > 0 ? (
+          filteredWorkouts.map(post => (
+            <PostCard key={post.id} post={post} currentUserId={currentUserId || 0} />
+          ))
+        ) : (
+          <Card className="border-dashed border-2 border-gray-200 dark:border-gray-700 rounded-none border-x-0">
+            <CardContent className="p-6 text-center">
+              <Dumbbell className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                No workouts found for this period
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Profile() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -343,6 +414,16 @@ export default function Profile() {
   // Determine the profile being viewed and whether it's the current user's own profile
   const userId = profileUserId ?? viewerId;
   const isOwner = profileUserId === viewerId;
+
+  const isProfileComplete = Boolean(
+    currentUser && 
+    currentUser.name && 
+    currentUser.bio && 
+    (currentUser as any).location && 
+    (currentUser as any).height && 
+    (currentUser as any).weight
+  );
+
   const { data: userPosts = [], isLoading: postsLoading } = useQuery<Post[]>({
     queryKey: ["/api/posts", "user", userId],
     queryFn: () => api.getPostsByUserId(userId),
@@ -895,10 +976,16 @@ export default function Profile() {
                           }}
                           variant="outline"
                           size="sm"
-                          className="flex items-center gap-1 sm:gap-2"
+                          className="flex items-center gap-1 sm:gap-2 relative"
                         >
                           <Edit3 className="h-3 w-3 sm:h-4 sm:w-4" />
                           <span className="text-xs sm:text-sm">Edit Profile</span>
+                          {!isProfileComplete && (
+                            <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 text-[8px] text-white items-center justify-center font-bold">!</span>
+                            </span>
+                          )}
                         </Button>
                         <Button variant="outline" size="sm" className="p-2" onClick={() => setLocation('/settings')}>
                           <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -1102,83 +1189,7 @@ export default function Profile() {
           </TabsContent>
 
           <TabsContent value="workouts" className="p-0">
-            <div className="space-y-0">
-              {/* Workout filter tabs */}
-              <div className="flex space-x-2 p-4 border-b">
-                <Button variant="outline" size="sm" className="bg-fit-green text-white border-fit-green">
-                  All Workouts
-                </Button>
-                <Button variant="outline" size="sm">This Week</Button>
-                <Button variant="outline" size="sm">This Month</Button>
-              </div>
-
-              {/* Sample workout history */}
-              <div className="space-y-0">
-                <Card className="rounded-none border-0 border-b">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-fit-green rounded-lg flex items-center justify-center">
-                          <Dumbbell className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-gray-900 dark:text-white">
-                            Afternoon Chest & Triceps Workout
-                          </h4>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {format(new Date(Date.now() - 86400000), "MMM d, yyyy")}
-                          </p>
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="sm">
-                        <BarChart3 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    
-                    <div className="grid grid-cols-3 gap-4 mb-3">
-                      <div className="text-center">
-                        <div className="flex items-center justify-center space-x-1">
-                          <Clock className="w-4 h-4 text-blue-500" />
-                          <span className="text-lg font-semibold text-gray-900 dark:text-white">45:30</span>
-                        </div>
-                        <div className="text-xs text-gray-500">Duration</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="flex items-center justify-center space-x-1">
-                          <Flame className="w-4 h-4 text-orange-500" />
-                          <span className="text-lg font-semibold text-gray-900 dark:text-white">380</span>
-                        </div>
-                        <div className="text-xs text-gray-500">Calories</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="flex items-center justify-center space-x-1">
-                          <Dumbbell className="w-4 h-4 text-green-500" />
-                          <span className="text-lg font-semibold text-gray-900 dark:text-white">15/18</span>
-                        </div>
-                        <div className="text-xs text-gray-500">Sets</div>
-                      </div>
-                    </div>
-                    
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      <span className="font-medium">Exercises:</span> Bench Press, Incline Dumbbell Press, Tricep Dips, Close-Grip Push-ups
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Placeholder for when workout is shared to feed */}
-                <Card className="border-dashed border-2 border-gray-200 dark:border-gray-700 rounded-none border-x-0">
-                  <CardContent className="p-6 text-center">
-                    <Dumbbell className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Your completed workouts will appear here
-                    </p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                      Complete a workout session to see your history
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
+            <WorkoutsTab userId={userId} />
           </TabsContent>
 
           <TabsContent value="progress" className="p-0">
@@ -1202,7 +1213,7 @@ export default function Profile() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Name <span className="text-red-500">*</span></FormLabel>
+                      <FormLabel>Name</FormLabel>
                       <FormControl>
                         <Input placeholder="Enter your name" required {...field} />
                       </FormControl>

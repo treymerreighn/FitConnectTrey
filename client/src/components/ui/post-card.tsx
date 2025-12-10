@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Heart, MessageCircle, ExternalLink, Bookmark, MoreHorizontal, Play, Save, Copy, Pencil, Trash2, Flag, ChevronLeft, ChevronRight } from "lucide-react";
+import { Heart, MessageCircle, ExternalLink, Bookmark, MoreHorizontal, Play, Save, Copy, Pencil, Trash2, Flag, ChevronLeft, ChevronRight, Share2 } from "lucide-react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -396,28 +396,63 @@ export function PostCard({ post }: PostCardProps) {
     }
   };
 
-  // Handle sharing a workout
-  const handleShareWorkout = async () => {
+  // Handle sharing a post
+  const handleShare = async () => {
     const shareUrl = `${window.location.origin}/post/${post.id}`;
-    const shareText = `Check out this ${post.workoutData?.workoutType || 'workout'} by @${user?.username} on FitConnect!`;
+    let shareTitle = 'FitConnect Post';
+    let shareText = `Check out this post by @${user?.username} on FitConnect!`;
+
+    if (post.type === 'workout') {
+      shareTitle = post.workoutData?.workoutType || 'Workout';
+      shareText = `Check out this ${shareTitle} workout by @${user?.username} on FitConnect!`;
+    } else if (post.type === 'nutrition') {
+      shareTitle = post.nutritionData?.mealType || 'Meal';
+      shareText = `Check out this ${shareTitle} by @${user?.username} on FitConnect!`;
+    } else if (post.type === 'progress') {
+      shareTitle = 'Progress Update';
+      shareText = `Check out this progress update by @${user?.username} on FitConnect!`;
+    }
     
     if (navigator.share) {
       try {
         await navigator.share({
-          title: post.workoutData?.workoutType || 'Workout',
+          title: shareTitle,
           text: shareText,
           url: shareUrl,
         });
       } catch (err) {
         // User cancelled or error occurred
+        console.log('Error sharing:', err);
       }
     } else {
       // Fallback: copy to clipboard
-      await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
-      toast({
-        title: "Link Copied!",
-        description: "Workout link copied to clipboard",
-      });
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+          toast({
+            title: "Link Copied!",
+            description: "Share link copied to clipboard",
+          });
+        } else {
+          // Fallback for non-secure contexts
+          const textArea = document.createElement("textarea");
+          textArea.value = `${shareText}\n${shareUrl}`;
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+          toast({
+            title: "Link Copied!",
+            description: "Share link copied to clipboard",
+          });
+        }
+      } catch (err) {
+        toast({
+          title: "Share Failed",
+          description: "Could not share or copy link",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -666,7 +701,7 @@ export function PostCard({ post }: PostCardProps) {
       )}
       <CardContent className="pt-4">
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
             <Button
               variant="ghost"
               size="sm"
@@ -689,8 +724,8 @@ export function PostCard({ post }: PostCardProps) {
             <Button
               variant="ghost"
               size="sm"
-              className="p-0 h-auto hover:bg-transparent text-gray-600 hover:text-gray-800 -ml-2"
-              onClick={handleShareWorkout}
+              className="p-0 h-auto hover:bg-transparent text-gray-600 hover:text-gray-800"
+              onClick={handleShare}
             >
               <ExternalLink className="h-5 w-5" />
             </Button>

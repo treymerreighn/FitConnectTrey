@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { eq, ilike, and, desc, sql, inArray } from "drizzle-orm";
 import { db } from "./db.ts";
 import { users, posts, comments, connections, progressEntries, exercises, notifications, conversations, messages } from "../shared/db-schema.ts";
@@ -193,6 +194,8 @@ export class PgStorage implements IStorage {
       ...user
     };
     
+    const fullName = (newUser as any).name || `${(user as any).firstName || ''} ${(user as any).lastName || ''}`.trim() || newUser.username;
+
     await db.insert(users).values({
       id: newUser.id,
       username: newUser.username,
@@ -202,7 +205,7 @@ export class PgStorage implements IStorage {
       appleId: (user as any).appleId,
       firstName: (user as any).firstName,
       lastName: (user as any).lastName,
-      fullName: (newUser as any).name || `${(user as any).firstName || ''} ${(user as any).lastName || ''}`.trim() || newUser.username,
+      fullName: fullName,
       bio: newUser.bio,
       avatar: newUser.avatar,
       isVerified: newUser.isVerified,
@@ -215,36 +218,47 @@ export class PgStorage implements IStorage {
       createdAt: newUser.createdAt
     });
     
-    return newUser;
+    return { ...newUser, name: fullName };
   }
 
   async getUserById(id: string): Promise<User | null> {
     const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
-    return result[0] || null;
+    if (!result[0]) return null;
+    return { ...result[0], name: result[0].fullName } as User;
   }
 
   async getUserByUsername(username: string): Promise<User | null> {
     const result = await db.select().from(users).where(eq(users.username, username)).limit(1);
-    return result[0] || null;
+    if (!result[0]) return null;
+    return { ...result[0], name: result[0].fullName } as User;
   }
 
   async getUserByEmail(email: string): Promise<User | null> {
     const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
-    return result[0] || null;
+    if (!result[0]) return null;
+    return { ...result[0], name: result[0].fullName } as User;
   }
 
   async getUserByGoogleId(googleId: string): Promise<User | null> {
     const result = await db.select().from(users).where(eq(users.googleId, googleId)).limit(1);
-    return result[0] || null;
+    if (!result[0]) return null;
+    return { ...result[0], name: result[0].fullName } as User;
   }
 
   async getUserByAppleId(appleId: string): Promise<User | null> {
     const result = await db.select().from(users).where(eq(users.appleId, appleId)).limit(1);
-    return result[0] || null;
+    if (!result[0]) return null;
+    return { ...result[0], name: result[0].fullName } as User;
   }
 
   async updateUser(id: string, updates: Partial<User>): Promise<User> {
-    await db.update(users).set(updates).where(eq(users.id, id));
+    const dbUpdates: any = { ...updates };
+    if (updates.name) {
+      dbUpdates.fullName = updates.name;
+      delete dbUpdates.name;
+    }
+    
+    await db.update(users).set(dbUpdates).where(eq(users.id, id));
     const updated = await this.getUserById(id);
     if (!updated) throw new Error("User not found");
     return updated;
@@ -252,7 +266,8 @@ export class PgStorage implements IStorage {
 
 
   async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users);
+    const results = await db.select().from(users);
+    return results.map(u => ({ ...u, name: u.fullName } as User));
   }
 
   async upsertUser(userData: { id: string; email: string | null | undefined; firstName: string | null | undefined; lastName: string | null | undefined; profileImageUrl: string | null | undefined; isAdmin?: boolean; }): Promise<User> {
@@ -290,7 +305,7 @@ export class PgStorage implements IStorage {
       })
       .returning();
     
-    return user;
+    return { ...user, name: user.fullName } as User;
   }
 
   // Posts
@@ -488,7 +503,8 @@ export class PgStorage implements IStorage {
 
   async getProfessionals(type?: "trainer" | "nutritionist"): Promise<User[]> {
     const accountTypes = type ? [type] : ["trainer", "nutritionist"];
-    return await db.select().from(users).where(inArray(users.accountType, accountTypes));
+    const results = await db.select().from(users).where(inArray(users.accountType, accountTypes));
+    return results.map(u => ({ ...u, name: u.fullName } as User));
   }
 
   // Progress tracking

@@ -573,9 +573,7 @@ export default function Workouts() {
                 Exercise Library
               </TabsTrigger>
               <TabsTrigger value="community" className="py-3">
-                <Users className="h-5 w-5 mr-2" />
                 Community Workouts
-                <Globe className="h-5 w-5 ml-2" />
               </TabsTrigger>
             </TabsList>
           </div>

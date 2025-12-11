@@ -2113,5 +2113,27 @@
     "safetyNotes": [],
     "images": [],
     "createdAt": "2025-11-20T01:26:53.347Z"
+  },
+  {
+    "id": "nmghEDON7gZh8ICHU1Hqh",
+    "name": "Bar Muscle Up",
+    "category": "functional",
+    "muscleGroups": [
+      "chest",
+      "triceps",
+      "shoulders"
+    ],
+    "equipment": [
+      "bar"
+    ],
+    "difficulty": "advanced",
+    "instructions": [
+      "pull up",
+      "push over"
+    ],
+    "tips": [],
+    "safetyNotes": [],
+    "images": [],
+    "createdAt": "2025-12-11T00:19:12.014Z"
   }
 ]

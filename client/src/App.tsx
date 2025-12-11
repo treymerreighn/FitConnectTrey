@@ -19,6 +19,7 @@ import LogWorkout from "./pages/log-workout";
 import Workouts from "./pages/workouts";
 import ExerciseLibrary from "./pages/exercise-library";
 import WorkoutSession from "./pages/workout-session";
+import WorkoutSummary from "./pages/workout-summary";
 import BuildWorkout from "./pages/build-workout";
 import AdminDashboard from "./pages/admin-dashboard";
 import Progress from "./pages/progress";
@@ -146,6 +147,7 @@ function Router() {
           <Route path="/workouts" component={Workouts} />
           <Route path="/exercise-library" component={ExerciseLibrary} />
           <Route path="/workout-session" component={WorkoutSession} />
+          <Route path="/workout-summary" component={WorkoutSummary} />
           <Route path="/build-workout" component={BuildWorkout} />
           <Route path="/workout-history" component={WorkoutHistory} />
           <Route path="/saved-workouts" component={SavedWorkouts} />

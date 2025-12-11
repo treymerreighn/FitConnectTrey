@@ -81,19 +81,17 @@ export default function ExerciseProgressPage() {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="space-y-2">
+            <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Exercise Progress</h1>
-              <p className="text-slate-600 dark:text-slate-400 mt-1">
-                Track your strength gains and workout performance
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Badge variant="secondary" className="flex items-center gap-1">
+              <Badge variant="secondary" className="flex items-center gap-1 h-fit whitespace-nowrap">
                 <Trophy className="w-4 h-4" />
-                {personalRecords.length} PRs
+                <span>{personalRecords.length} PRs</span>
               </Badge>
             </div>
+            <p className="text-slate-600 dark:text-slate-400">
+              Track your strength gains and workout performance
+            </p>
           </div>
         </div>
 
